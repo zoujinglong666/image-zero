@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { useLocale } from 'uview-pro'
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t } = useLocale()
 const uToastRef = ref()
 
 // 展开的项
@@ -96,13 +96,13 @@ function showToast(title: string) {
 </script>
 
 <template>
-  <app-page :nav-title="$t('about.faqPage.title')">
+  <app-page :nav-title="t('about.faqPage.title')">
     <view class="faq-page">
       <view class="section-card">
         <view class="section-card__header">
           <u-icon name="question-circle" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.faqPage.title') }}
+            {{ t('about.faqPage.title') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -120,25 +120,25 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon name="chat" size="40" color="var(--u-type-success)" />
           <text class="section-card__title">
-            {{ $t('about.faqPage.needHelp') }}
+            {{ t('about.faqPage.needHelp') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="help-text">
-            <text>{{ $t('about.faqPage.helpText') }}</text>
+            <text>{{ t('about.faqPage.helpText') }}</text>
           </view>
           <view class="help-links">
             <view class="help-link" @click="copyLink('https://uviewpro.cn')">
               <u-icon name="chrome-circle-fill" size="32" color="var(--u-type-primary)" />
-              <text>{{ $t('about.faqPage.visitWebsite') }}: https://uviewpro.cn</text>
+              <text>{{ t('about.faqPage.visitWebsite') }}: https://uviewpro.cn</text>
             </view>
             <view class="help-link" @click="copyLink('https://github.com/anyup/uview-pro')">
               <u-icon name="github-circle-fill" size="32" color="var(--u-type-info)" />
-              <text>{{ $t('about.faqPage.visitGithub') }}: https://github.com/anyup/uview-pro</text>
+              <text>{{ t('about.faqPage.visitGithub') }}: https://github.com/anyup/uview-pro</text>
             </view>
             <view class="help-link" @click="preview('weixin-chat-cl')">
               <u-icon name="chat" size="32" color="var(--u-type-success)" />
-              <text>{{ $t('about.faqPage.joinGroup') }}</text>
+              <text>{{ t('about.faqPage.joinGroup') }}</text>
             </view>
           </view>
         </view>

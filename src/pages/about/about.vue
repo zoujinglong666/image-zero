@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { useLocale } from 'uview-pro'
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t } = useLocale()
 const uToastRef = ref()
 
 // 功能菜单列表
@@ -175,7 +175,7 @@ function showToast(title: string) {
 </script>
 
 <template>
-  <app-page :nav-title="$t('about.title')" show-tabbar>
+  <app-page :nav-title="t('about.title')" show-tabbar>
     <view class="about-page">
       <!-- 用户信息卡片 -->
       <view class="hero-card" @click="navigateTo('/pages/about/about-me')">
@@ -200,10 +200,10 @@ function showToast(title: string) {
               <text class="hero-info__desc-icon">
                 💬
               </text>
-              <text>{{ $t('about.wechatId') }}</text>
+              <text>{{ t('about.wechatId') }}</text>
             </view>
             <view class="hero-info__tagline">
-              {{ $t('about.tagline') }}
+              {{ t('about.tagline') }}
             </view>
           </view>
           <view class="hero-arrow">
@@ -217,7 +217,7 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon custom-prefix="custom-icon" name="grid" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.featureEntry') }}
+            {{ t('about.featureEntry') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -247,7 +247,7 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon name="chat" size="40" color="var(--u-type-success)" />
           <text class="section-card__title">
-            {{ $t('about.communication') }}
+            {{ t('about.communication') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -282,7 +282,7 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon name="moments" size="40" color="var(--u-type-warning)" />
           <text class="section-card__title">
-            {{ $t('about.otherInfo') }}
+            {{ t('about.otherInfo') }}
           </text>
         </view>
         <view class="section-card__body">

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { DarkMode } from 'uview-pro/types/global'
 import { storeToRefs } from 'pinia'
-import { $u } from 'uview-pro'
+import { $u, useLocale } from 'uview-pro'
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useCounterStore, useUserStore } from '@/stores'
 
-const { t } = useI18n()
+const { t } = useLocale()
 
 // 使用现有的counter store
 const counterStore = useCounterStore()
@@ -123,18 +122,18 @@ const piniaFeatures = [
 </script>
 
 <template>
-  <app-page :nav-title="$t('demo.pinia.title')" show-nav-back>
+  <app-page :nav-title="t('demo.pinia.title')" show-nav-back>
     <view class="app-container">
       <!-- 标题介绍 -->
       <view class="u-m-b-20">
-        <u-text :text="$t('demo.pinia.intro')" size="32rpx" bold />
+        <u-text :text="t('demo.pinia.intro')" size="32rpx" bold />
         <u-gap />
-        <u-text :text="$t('demo.pinia.introDesc')" size="26rpx" />
+        <u-text :text="t('demo.pinia.introDesc')" size="26rpx" />
       </view>
 
       <!-- 功能概览 -->
       <view class="section">
-        <u-text :text="$t('demo.pinia.featureDemo')" size="28rpx" bold />
+        <u-text :text="t('demo.pinia.featureDemo')" size="28rpx" bold />
         <u-gap />
         <view class="examples-grid">
           <view v-for="(example, index) in examples" :key="index" class="example-card">
@@ -147,21 +146,21 @@ const piniaFeatures = [
 
       <!-- 计数器演示 -->
       <view class="section">
-        <u-card :title="$t('demo.pinia.basicCounter')" margin="0" border-radius="0" custom-class="counter-card">
+        <u-card :title="t('demo.pinia.basicCounter')" margin="0" border-radius="0" custom-class="counter-card">
           <view class="counter-display">
-            <u-text :text="$t('demo.pinia.currentCount')" size="28rpx" bold block align="center" />
+            <u-text :text="t('demo.pinia.currentCount')" size="28rpx" bold block align="center" />
             <u-text :text="count.toString()" size="48rpx" bold color="primary" />
           </view>
 
           <view class="counter-buttons">
             <u-button type="warning" size="mini" :disabled="count <= 0" @click="decrement">
-              {{ $t('demo.pinia.decrease') }}
+              {{ t('demo.pinia.decrease') }}
             </u-button>
             <u-button type="primary" size="mini" @click="increment">
-              {{ $t('demo.pinia.increase') }}
+              {{ t('demo.pinia.increase') }}
             </u-button>
             <u-button type="info" size="mini" @click="reset">
-              {{ $t('demo.pinia.reset') }}
+              {{ t('demo.pinia.reset') }}
             </u-button>
           </view>
         </u-card>
@@ -169,26 +168,26 @@ const piniaFeatures = [
 
       <!-- 用户状态演示 -->
       <view class="section">
-        <u-card :title="$t('demo.pinia.userStatus')" margin="0" border-radius="0">
+        <u-card :title="t('demo.pinia.userStatus')" margin="0" border-radius="0">
           <view class="user-input">
-            <u-input v-model="inputUserName" :placeholder="$t('demo.pinia.enterUsername')" clearable :border="true" />
+            <u-input v-model="inputUserName" :placeholder="t('demo.pinia.enterUsername')" clearable :border="true" />
           </view>
 
           <view class="user-status">
-            <u-text :text="$t('demo.pinia.loginStatusText')" size="26rpx" />
+            <u-text :text="t('demo.pinia.loginStatusText')" size="26rpx" />
             <u-text :text="userInfo.loginStatus" :type="isLoggedIn ? 'success' : 'warning'" size="26rpx" bold />
           </view>
           <view v-if="isLoggedIn" class="user-status">
-            <u-text :text="$t('demo.pinia.currentUser')" size="26rpx" />
+            <u-text :text="t('demo.pinia.currentUser')" size="26rpx" />
             <u-text :text="userName" type="success" size="26rpx" bold />
           </view>
 
           <view class="user-buttons">
             <u-button type="primary" size="mini" :disabled="isLoggedIn" @click="login">
-              {{ $t('demo.pinia.login') }}
+              {{ t('demo.pinia.login') }}
             </u-button>
             <u-button type="warning" size="mini" :disabled="!isLoggedIn" @click="logout">
-              {{ $t('demo.pinia.logout') }}
+              {{ t('demo.pinia.logout') }}
             </u-button>
           </view>
         </u-card>
@@ -196,32 +195,32 @@ const piniaFeatures = [
 
       <!-- 偏好设置演示 -->
       <view class="section">
-        <u-card :title="$t('demo.pinia.preferences')" margin="0" border-radius="0" custom-class="preferences-card">
+        <u-card :title="t('demo.pinia.preferences')" margin="0" border-radius="0" custom-class="preferences-card">
           <view class="preference-item">
-            <u-text :text="$t('demo.pinia.theme')" size="26rpx" />
+            <u-text :text="t('demo.pinia.theme')" size="26rpx" />
             <view class="theme-buttons">
               <u-button
                 :type="preferences.theme === 'light' ? 'primary' : 'default'" size="mini"
                 @click="updateTheme('light')"
               >
-                {{ $t('demo.pinia.light') }}
+                {{ t('demo.pinia.light') }}
               </u-button>
               <u-button
                 :type="preferences.theme === 'dark' ? 'primary' : 'default'" size="mini"
                 @click="updateTheme('dark')"
               >
-                {{ $t('demo.pinia.dark') }}
+                {{ t('demo.pinia.dark') }}
               </u-button>
             </view>
           </view>
 
           <view class="preference-item">
-            <u-text :text="$t('demo.pinia.notification')" size="26rpx" />
+            <u-text :text="t('demo.pinia.notification')" size="26rpx" />
             <u-switch v-model="notifications" @change="toggleNotifications" />
           </view>
 
           <view class="preference-item">
-            <u-text :text="$t('demo.pinia.language')" size="26rpx" />
+            <u-text :text="t('demo.pinia.language')" size="26rpx" />
             <view>
               <u-text :text="preferences.language" size="26rpx" type="primary" />
             </view>
@@ -231,18 +230,18 @@ const piniaFeatures = [
 
       <!-- 数据持久化演示 -->
       <view class="section">
-        <u-card :title="$t('demo.pinia.dataPersistence')" margin="0" border-radius="0" custom-class="persistence-card">
-          <u-text :text="$t('demo.pinia.persistenceDemo')" size="24rpx" custom-class="persistence-desc" />
+        <u-card :title="t('demo.pinia.dataPersistence')" margin="0" border-radius="0" custom-class="persistence-card">
+          <u-text :text="t('demo.pinia.persistenceDemo')" size="24rpx" custom-class="persistence-desc" />
           <u-gap />
           <view class="persistence-data">
-            <u-text :text="$t('demo.pinia.currentData')" size="26rpx" />
+            <u-text :text="t('demo.pinia.currentData')" size="26rpx" />
             <view class="code-block">
               <u-text :text="persistenceData" size="26rpx" color="primary" custom-class="code-text" />
             </view>
           </view>
           <view class="persistence-buttons">
             <u-button type="warning" size="mini" @click="clearData">
-              {{ $t('demo.pinia.clearData') }}
+              {{ t('demo.pinia.clearData') }}
             </u-button>
           </view>
         </u-card>
@@ -250,7 +249,7 @@ const piniaFeatures = [
 
       <!-- Pinia特性 -->
       <view class="section">
-        <u-text :text="$t('demo.pinia.piniaFeatures')" size="28rpx" bold />
+        <u-text :text="t('demo.pinia.piniaFeatures')" size="28rpx" bold />
         <u-gap />
         <u-card margin="0" border-radius="0" :show-head="false" custom-class="features-card">
           <view class="features-list">

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { ButtonType } from 'uview-pro/types/global'
-import { $u } from 'uview-pro'
+import { $u, useLocale } from 'uview-pro'
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t } = useLocale()
 
 // 组件演示状态
 const buttonLoading = ref(false)
@@ -135,17 +134,17 @@ const tabList = [
 </script>
 
 <template>
-  <app-page :nav-title="$t('demo.components.title')" show-nav-back>
+  <app-page :nav-title="t('demo.components.title')" show-nav-back>
     <view class="app-container">
       <!-- 标题介绍 -->
       <view class="intro-section">
-        <u-text :text="$t('demo.components.intro')" size="32rpx" bold />
-        <u-text :text="$t('demo.components.introDesc')" size="26rpx" />
+        <u-text :text="t('demo.components.intro')" size="32rpx" bold />
+        <u-text :text="t('demo.components.introDesc')" size="26rpx" />
       </view>
 
       <!-- 按钮组件 -->
       <view class="section">
-        <u-text :text="`${$t('demo.components.button')} (u-button)`" size="28rpx" bold />
+        <u-text :text="`${t('demo.components.button')} (u-button)`" size="28rpx" bold />
 
         <u-card custom-class="demo-card">
           <view class="button-row">
@@ -158,11 +157,11 @@ const tabList = [
           </view>
 
           <view class="button-row">
-            <u-button type="primary" size="mini" :loading="buttonLoading" @click="handleButtonClick($t('demo.components.loading'))">
-              {{ $t('demo.components.loading') }}
+            <u-button type="primary" size="mini" :loading="buttonLoading" @click="handleButtonClick(t('demo.components.loading'))">
+              {{ t('demo.components.loading') }}
             </u-button>
             <u-button type="primary" size="mini" disabled>
-              {{ $t('demo.components.loading') }}
+              {{ t('demo.components.loading') }}
             </u-button>
           </view>
         </u-card>
@@ -170,58 +169,58 @@ const tabList = [
 
       <!-- 表单组件 -->
       <view class="section">
-        <u-text :text="$t('demo.components.formComponents')" size="28rpx" bold />
+        <u-text :text="t('demo.components.formComponents')" size="28rpx" bold />
 
         <!-- 输入框 -->
-        <u-card :title="`${$t('demo.components.input')} (u-input)`" custom-class="demo-card">
-          <u-input v-model="inputValue" :placeholder="$t('demo.pinia.enterUsername')" clearable @change="handleInputChange" />
+        <u-card :title="`${t('demo.components.input')} (u-input)`" custom-class="demo-card">
+          <u-input v-model="inputValue" :placeholder="t('demo.pinia.enterUsername')" clearable @change="handleInputChange" />
         </u-card>
 
         <!-- 开关 -->
-        <u-card :title="`${$t('demo.components.switch')} (u-switch)`" custom-class="demo-card">
+        <u-card :title="`${t('demo.components.switch')} (u-switch)`" custom-class="demo-card">
           <view class="switch-row">
             <u-text size="26rpx">
-              {{ $t('demo.components.switch') + $t('demo.pinia.loginStatusText') }} {{ switchValue ? $t('demo.pinia.notificationEnabled') : $t('demo.pinia.notificationDisabled') }}
+              {{ t('demo.components.switch') + t('demo.pinia.loginStatusText') }} {{ switchValue ? t('demo.pinia.notificationEnabled') : t('demo.pinia.notificationDisabled') }}
             </u-text>
             <u-switch v-model="switchValue" @change="handleSwitchChange" />
           </view>
         </u-card>
 
         <!-- 滑块 -->
-        <u-card :title="`${$t('demo.components.switch')} (u-slider)`" custom-class="demo-card">
+        <u-card :title="`${t('demo.components.switch')} (u-slider)`" custom-class="demo-card">
           <view class="slider-row">
-            <u-text :text="$t('demo.components.switch') + $t('demo.pinia.currentCount')" size="26rpx" />
+            <u-text :text="t('demo.components.switch') + t('demo.pinia.currentCount')" size="26rpx" />
             <u-text :text="sliderValue.toString()" size="26rpx" color="primary" bold />
           </view>
           <u-slider v-model="sliderValue" :min="0" :max="100" @change="handleSliderChange" />
         </u-card>
 
         <!-- 单选框 -->
-        <u-card :title="`${$t('demo.components.radio')} (u-radio)`" custom-class="demo-card">
+        <u-card :title="`${t('demo.components.radio')} (u-radio)`" custom-class="demo-card">
           <u-radio-group v-model="radioValue" @change="handleRadioChange">
             <u-radio name="option1" :checked="radioValue === 'option1'">
-              {{ $t('demo.components.demo') }}1
+              {{ t('demo.components.demo') }}1
             </u-radio>
             <u-radio name="option2" :checked="radioValue === 'option2'">
-              {{ $t('demo.components.demo') }}2
+              {{ t('demo.components.demo') }}2
             </u-radio>
             <u-radio name="option3" :checked="radioValue === 'option3'">
-              {{ $t('demo.components.demo') }}3
+              {{ t('demo.components.demo') }}3
             </u-radio>
           </u-radio-group>
         </u-card>
 
         <!-- 多选框 -->
-        <u-card v-if="false" :title="`${$t('demo.components.checkbox')} (u-checkbox)`" custom-class="demo-card">
+        <u-card v-if="false" :title="`${t('demo.components.checkbox')} (u-checkbox)`" custom-class="demo-card">
           <u-checkbox-group v-model="checkboxValues" @change="handleCheckboxChange">
             <u-checkbox name="checkbox1" :checked="checkboxValues.includes('checkbox1')">
-              {{ $t('demo.components.demo') }}1
+              {{ t('demo.components.demo') }}1
             </u-checkbox>
             <u-checkbox name="checkbox2" :checked="checkboxValues.includes('checkbox2')">
-              {{ $t('demo.components.demo') }}2
+              {{ t('demo.components.demo') }}2
             </u-checkbox>
             <u-checkbox name="checkbox3" :checked="checkboxValues.includes('checkbox3')">
-              {{ $t('demo.components.demo') }}3
+              {{ t('demo.components.demo') }}3
             </u-checkbox>
           </u-checkbox-group>
         </u-card>
@@ -229,30 +228,30 @@ const tabList = [
 
       <!-- 导航组件 -->
       <view class="section">
-        <u-text :text="$t('demo.components.dataDisplay')" size="28rpx" bold />
+        <u-text :text="t('demo.components.dataDisplay')" size="28rpx" bold />
 
         <!-- 标签页 -->
-        <u-card :title="`${$t('demo.components.tag')} (u-tabs)`" custom-class="demo-card">
+        <u-card :title="`${t('demo.components.tag')} (u-tabs)`" custom-class="demo-card">
           <u-tabs :current="selectedIndex" :list="tabList" @change="handleTabChange" />
           <view class="tab-content">
-            <u-text :text="`${$t('demo.components.demo')} ${selectedIndex + 1}${$t('demo.components.contentContainer')}`" size="26rpx" />
+            <u-text :text="`${t('demo.components.demo')} ${selectedIndex + 1}${t('demo.components.contentContainer')}`" size="26rpx" />
           </view>
         </u-card>
       </view>
 
       <!-- 反馈组件 -->
       <view class="section">
-        <u-text :text="$t('demo.components.feedbackComponents')" size="28rpx" bold />
+        <u-text :text="t('demo.components.feedbackComponents')" size="28rpx" bold />
         <u-gap />
         <view class="feedback-buttons">
           <u-button type="primary" size="mini" @click="showToast">
-            {{ $t('demo.components.toast') }}
+            {{ t('demo.components.toast') }}
           </u-button>
           <u-button type="success" size="mini" @click="showModal">
-            {{ $t('demo.components.modal') }}
+            {{ t('demo.components.modal') }}
           </u-button>
           <u-button type="warning" size="mini" @click="showLoading">
-            {{ $t('demo.components.loading') }}
+            {{ t('demo.components.loading') }}
           </u-button>
         </view>
       </view>
@@ -263,7 +262,7 @@ const tabList = [
 
       <!-- 组件分类 -->
       <view class="section">
-        <u-text :text="$t('demo.components.dataDisplay')" size="28rpx" bold />
+        <u-text :text="t('demo.components.dataDisplay')" size="28rpx" bold />
 
         <view class="categories-list">
           <u-card

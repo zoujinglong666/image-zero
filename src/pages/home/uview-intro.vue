@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useLocale } from 'uview-pro'
 import { computed } from 'vue'
+
+const { t } = useLocale()
 
 // 功能特性数据
 const features = computed(() => [
@@ -47,21 +50,21 @@ const advantages = computed(() => [
 </script>
 
 <template>
-  <app-page :nav-title="$t('demo.uviewIntro.title')" show-nav-back>
+  <app-page :nav-title="t('demo.uviewIntro.title')" show-nav-back>
     <view class="app-container">
       <!-- 头部介绍 -->
       <view class="hero-section">
         <u-image src="/static/logo.png" width="120rpx" height="120rpx" mode="aspectFit" />
         <view class="hero-content">
           <u-text text="uView Pro" size="48rpx" bold color="primary" />
-          <u-text :text="$t('demo.uviewIntro.subtitle')" size="28rpx" />
+          <u-text :text="t('demo.uviewIntro.subtitle')" size="28rpx" />
           <u-text text="v1.0.0" size="24rpx" />
         </view>
       </view>
 
       <!-- 功能特性 -->
       <view class="section">
-        <u-text :text="$t('demo.uviewIntro.features')" size="32rpx" bold />
+        <u-text :text="t('demo.uviewIntro.features')" size="32rpx" bold />
         <u-gap />
         <view class="features-grid">
           <view v-for="(feature, index) in features" :key="index" class="feature-card">
@@ -74,7 +77,7 @@ const advantages = computed(() => [
 
       <!-- 核心优势 -->
       <view class="section">
-        <u-text :text="$t('demo.uviewIntro.advantages')" size="32rpx" bold />
+        <u-text :text="t('demo.uviewIntro.advantages')" size="32rpx" bold />
         <view class="advantages-list">
           <view v-for="(advantage, index) in advantages" :key="index" class="advantage-item">
             <u-icon name="checkmark-circle" size="32rpx" color="success" />
@@ -88,15 +91,15 @@ const advantages = computed(() => [
 
       <!-- 快速开始 -->
       <view class="section">
-        <u-text :text="$t('demo.uviewIntro.quickStart')" size="32rpx" bold />
+        <u-text :text="t('demo.uviewIntro.quickStart')" size="32rpx" bold />
         <u-gap />
-        <u-card :title="$t('guidePage.steps.install')" border-radius="0" margin="0">
+        <u-card :title="t('guidePage.steps.install')" border-radius="0" margin="0">
           <view class="code-block">
-            <u-text :text="$t('demo.uviewIntro.installCommand')" size="26rpx" color="primary" custom-class="code-text" />
+            <u-text :text="t('demo.uviewIntro.installCommand')" size="26rpx" color="primary" custom-class="code-text" />
           </view>
-          <u-text :text="$t('demo.uviewIntro.orPnpm')" size="24rpx" />
+          <u-text :text="t('demo.uviewIntro.orPnpm')" size="24rpx" />
           <view class="code-block">
-            <u-text :text="$t('demo.uviewIntro.pnpmInstall')" size="26rpx" color="primary" custom-class="code-text" />
+            <u-text :text="t('demo.uviewIntro.pnpmInstall')" size="26rpx" color="primary" custom-class="code-text" />
           </view>
         </u-card>
       </view>

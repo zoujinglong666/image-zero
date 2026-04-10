@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useLocale } from 'uview-pro'
 import { ref } from 'vue'
+
+const { t } = useLocale()
 
 // 贡献者列表
 const contributors = ref([
@@ -80,18 +83,18 @@ function getAvatarUrl(github: string) {
 </script>
 
 <template>
-  <app-page :nav-title="$t('about.contributorsPage.title')">
+  <app-page :nav-title="t('about.contributorsPage.title')">
     <view class="contributors-page">
       <view class="section-card">
         <view class="section-card__header">
           <u-icon name="man-add" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.contributorsPage.title') }}
+            {{ t('about.contributorsPage.title') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="contributors-intro">
-            <text>{{ $t('about.contributorsPage.intro') }}</text>
+            <text>{{ t('about.contributorsPage.intro') }}</text>
           </view>
         </view>
       </view>
@@ -100,7 +103,7 @@ function getAvatarUrl(github: string) {
         <view class="section-card__header">
           <u-icon name="star" size="40" color="var(--u-type-warning)" />
           <text class="section-card__title">
-            {{ $t('about.contributorsPage.activeContributors') }}
+            {{ t('about.contributorsPage.activeContributors') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -127,7 +130,7 @@ function getAvatarUrl(github: string) {
         <view class="section-card__header">
           <u-icon name="heart" size="40" color="var(--u-type-error)" />
           <text class="section-card__title">
-            {{ $t('about.contributorsPage.howToContribute') }}
+            {{ t('about.contributorsPage.howToContribute') }}
           </text>
         </view>
         <view class="section-card__body">

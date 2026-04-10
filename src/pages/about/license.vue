@@ -1,14 +1,18 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useLocale } from 'uview-pro'
+
+const { t } = useLocale()
+</script>
 
 <template>
-  <app-page :nav-title="$t('about.licensePage.title')">
+  <app-page :nav-title="t('about.licensePage.title')">
     <view class="license-page">
       <view class="license-header">
         <view class="license-header__title">
-          {{ $t('about.licensePage.licenseTitle') }}
+          {{ t('about.licensePage.licenseTitle') }}
         </view>
         <view class="license-header__subtitle">
-          {{ $t('about.licensePage.copyright', { year: new Date().getFullYear() }) }}
+          {{ t('about.licensePage.copyright', { year: new Date().getFullYear() }) }}
         </view>
       </view>
 
@@ -58,13 +62,13 @@
         <view class="section-card__header">
           <u-icon name="info-circle" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.licensePage.licenseDesc') }}
+            {{ t('about.licensePage.licenseDesc') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="info-text">
             <text>
-              {{ $t('about.licensePage.licenseText') }}
+              {{ t('about.licensePage.licenseText') }}
             </text>
           </view>
         </view>

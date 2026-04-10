@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { ColorType } from 'uview-pro/types/global'
-import { $u } from 'uview-pro'
-import { useI18n } from 'vue-i18n'
+import { $u, useLocale } from 'uview-pro'
 
-const { t } = useI18n()
+const { t } = useLocale()
 
 // 项目统计信息
 const projectStats = {
@@ -112,27 +111,27 @@ function goToUrl(url: string) {
 </script>
 
 <template>
-  <app-page :nav-title="$t('common.home')" show-tabbar>
+  <app-page :nav-title="t('common.home')" show-tabbar>
     <view class="app-container">
       <!-- 欢迎区域 -->
       <view class="hero-section">
         <view class="hero-content">
-          <u-text :text="$t('common.appName')" size="48rpx" bold color="var(--u-white-color)" />
-          <u-text :text="$t('home.heroSubtitle')" size="26rpx" color="var(--u-white-color)" />
-          <u-text :text="$t('home.heroBadge')" size="24rpx" color="var(--u-content-color)" custom-class="hero-badge" />
+          <u-text :text="t('common.appName')" size="48rpx" bold color="var(--u-white-color)" />
+          <u-text :text="t('home.heroSubtitle')" size="26rpx" color="var(--u-white-color)" />
+          <u-text :text="t('home.heroBadge')" size="24rpx" color="var(--u-content-color)" custom-class="hero-badge" />
         </view>
         <view class="hero-stats">
           <view class="stat-item">
             <u-text :text="projectStats.components" size="36rpx" bold color="var(--u-white-color)" />
-            <u-text :text="$t('home.statsComponents')" size="24rpx" color="var(--u-white-color)" />
+            <u-text :text="t('home.statsComponents')" size="24rpx" color="var(--u-white-color)" />
           </view>
           <view class="stat-item">
             <u-text :text="projectStats.tools" size="36rpx" bold color="var(--u-white-color)" />
-            <u-text :text="$t('home.statsTools')" size="24rpx" color="var(--u-white-color)" />
+            <u-text :text="t('home.statsTools')" size="24rpx" color="var(--u-white-color)" />
           </view>
           <view class="stat-item">
             <u-text :text="projectStats.templates" size="36rpx" bold color="var(--u-white-color)" />
-            <u-text :text="$t('home.statsTemplates')" size="24rpx" color="var(--u-white-color)" />
+            <u-text :text="t('home.statsTemplates')" size="24rpx" color="var(--u-white-color)" />
           </view>
         </view>
       </view>
@@ -142,7 +141,7 @@ function goToUrl(url: string) {
         <view class="section-card__header">
           <u-icon name="star" size="40" color="var(--u-type-success)" />
           <text class="section-card__title">
-            {{ $t('home.projectFeatures') }}
+            {{ t('home.projectFeatures') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -179,7 +178,7 @@ function goToUrl(url: string) {
         <view class="section-card__header">
           <u-icon name="grid" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('home.featureDemo') }}
+            {{ t('home.featureDemo') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -198,24 +197,24 @@ function goToUrl(url: string) {
         <view class="section-card__header">
           <u-icon name="play-circle" size="40" color="var(--u-type-warning)" />
           <text class="section-card__title">
-            {{ $t('home.quickStart') }}
+            {{ t('home.quickStart') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="quick-start-content">
             <view class="quick-start-text">
-              {{ $t('home.startExplore') }}
+              {{ t('home.startExplore') }}
             </view>
             <view class="quick-start-desc">
-              {{ $t('home.clickToExperience') }}
+              {{ t('home.clickToExperience') }}
             </view>
           </view>
           <view class="quick-start-actions">
             <u-button type="primary" @click="goToUrl('http://uviewpro.cn')">
-              {{ $t('home.viewDocs') }}
+              {{ t('home.viewDocs') }}
             </u-button>
             <u-button type="success" @click="goToUrl('http://h5.uviewpro.cn')">
-              {{ $t('home.viewComponents') }}
+              {{ t('home.viewComponents') }}
             </u-button>
           </view>
         </view>

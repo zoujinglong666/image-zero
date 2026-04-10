@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { useTheme } from 'uview-pro'
+import { useLocale, useTheme } from 'uview-pro'
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useLang } from '@/composables'
 
-const { t } = useI18n()
+const { t, locales, currentLocale } = useLocale()
 
 const {
   getDarkMode,
@@ -14,7 +13,7 @@ const {
   getAvailableThemes,
 } = useTheme()
 const uToastRef = ref()
-const { switchLang, currentLangLabel, currentLang, availableLangs } = useLang()
+const { switchLang } = useLang()
 
 const showThemePicker = ref(false)
 const showLocalePicker = ref(false)
@@ -53,10 +52,10 @@ function selectTheme(themeName: string) {
   showThemePicker.value = false
   showToast(t('about.settingsPage.themeSwitched', { theme: currentThemeValue.value?.label || themeName }))
 }
-function selectLocale(localeName: string) {
-  switchLang(localeName)
+function selectLocale(lang: string, locale?: string) {
+  switchLang(lang, locale)
   showLocalePicker.value = false
-  showToast(t('about.settingsPage.langSwitched', { lang: currentLangLabel.value }))
+  showToast(t('about.settingsPage.langSwitched', { lang: currentLocale.value.label }))
 }
 
 // 清除缓存
@@ -95,28 +94,28 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
 </script>
 
 <template>
-  <app-page :nav-title="$t('about.settingsPage.title')">
+  <app-page :nav-title="t('about.settingsPage.title')">
     <view class="settings-page">
       <view class="section-card">
         <view class="section-card__header">
           <u-icon name="setting" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.settingsPage.themeSettings') }}
+            {{ t('about.settingsPage.themeSettings') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="setting-item">
             <view class="setting-item__label">
-              {{ $t('about.settingsPage.darkMode') }}
+              {{ t('about.settingsPage.darkMode') }}
             </view>
             <u-switch v-model="darkModeEnabled" @change="handleDarkModeChange" />
           </view>
           <view class="setting-item">
             <view class="setting-item__label">
-              {{ $t('about.settingsPage.themeColor') }}
+              {{ t('about.settingsPage.themeColor') }}
             </view>
             <view class="setting-item__value" @click="showThemePicker = true">
-              {{ $t(`theme.${currentThemeValue?.name}`) || currentThemeValue?.label || currentTheme }}
+              {{ t(`theme.${currentThemeValue?.name}`) || currentThemeValue?.label || currentTheme }}
               <u-icon name="arrow-right" color="#c0c4cc" size="28" />
             </view>
           </view>
@@ -127,22 +126,22 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
         <view class="section-card__header">
           <u-icon name="info-circle" size="40" color="var(--u-type-success)" />
           <text class="section-card__title">
-            {{ $t('about.settingsPage.appSettings') }}
+            {{ t('about.settingsPage.appSettings') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="setting-item">
             <view class="setting-item__label">
-              {{ $t('about.settingsPage.language') }}
+              {{ t('about.settingsPage.language') }}
             </view>
             <view class="setting-item__value" @click="showLocalePicker = true">
-              {{ currentLangLabel }}
+              {{ currentLocale.label }}
               <u-icon name="arrow-right" color="#c0c4cc" size="28" />
             </view>
           </view>
           <view class="setting-item" @click="handleClearCache">
             <view class="setting-item__label">
-              {{ $t('about.settingsPage.clearCache') }}
+              {{ t('about.settingsPage.clearCache') }}
             </view>
             <u-icon name="arrow-right" color="#c0c4cc" size="32" />
           </view>
@@ -153,13 +152,13 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
         <view class="section-card__header">
           <u-icon name="more-circle" size="40" color="var(--u-type-warning)" />
           <text class="section-card__title">
-            {{ $t('about.settingsPage.other') }}
+            {{ t('about.settingsPage.other') }}
           </text>
         </view>
         <view class="section-card__body">
           <view class="setting-item" @click="navigateTo('/pages/about/faq')">
             <view class="setting-item__label">
-              {{ $t('about.faq') }}
+              {{ t('about.faq') }}
             </view>
             <u-icon name="arrow-right" color="#c0c4cc" size="32" />
           </view>
@@ -171,7 +170,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
         <view class="theme-picker">
           <view class="theme-picker__header">
             <text class="theme-picker__title">
-              {{ $t('about.settingsPage.selectTheme') }}
+              {{ t('about.settingsPage.selectTheme') }}
             </text>
             <u-icon name="close" size="40" @click="showThemePicker = false" />
           </view>
@@ -182,7 +181,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             >
               <view class="theme-item__color" :style="{ background: theme.color }" />
               <view class="theme-item__name">
-                {{ $t(`theme.${theme.name}`) }}
+                {{ t(`theme.${theme.name}`) }}
               </view>
               <u-icon
                 v-if="currentTheme === theme.name" name="checkmark-circle" size="32"
@@ -198,20 +197,20 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
         <view class="theme-picker">
           <view class="theme-picker__header">
             <text class="theme-picker__title">
-              {{ $t('about.settingsPage.selectLanguage') }}
+              {{ t('about.settingsPage.selectLanguage') }}
             </text>
             <u-icon name="close" size="40" @click="showLocalePicker = false" />
           </view>
           <view class="theme-picker__body">
             <view
-              v-for="locale in availableLangs" :key="locale.name" class="theme-item"
-              :class="{ 'theme-item--active': currentLang === locale.name }" @click="selectLocale(locale.name)"
+              v-for="locale in locales" :key="locale.name" class="theme-item"
+              :class="{ 'theme-item--active': currentLocale.name === locale.name }" @click="selectLocale(locale.name, locale.locale)"
             >
               <view class="theme-item__name">
                 {{ locale.label }}
               </view>
               <u-icon
-                v-if="currentLang === locale.name" name="checkmark-circle" size="32"
+                v-if="currentLocale.name === locale.name" name="checkmark-circle" size="32"
                 color="var(--u-type-primary)"
               />
             </view>

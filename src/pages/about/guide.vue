@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { useLocale } from 'uview-pro'
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t } = useLocale()
 const uToastRef = ref()
 
 // 快速开始步骤
@@ -118,13 +118,13 @@ function showToast(title: string) {
 </script>
 
 <template>
-  <app-page :nav-title="$t('about.guidePage.title')">
+  <app-page :nav-title="t('about.guidePage.title')">
     <view class="guide-page">
       <view class="section-card">
         <view class="section-card__header">
           <u-icon name="book" size="40" color="var(--u-type-primary)" />
           <text class="section-card__title">
-            {{ $t('about.guidePage.quickStart') }}
+            {{ t('about.guidePage.quickStart') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -153,7 +153,7 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon name="list" size="40" color="var(--u-type-success)" />
           <text class="section-card__title">
-            {{ $t('about.guidePage.learningResources') }}
+            {{ t('about.guidePage.learningResources') }}
           </text>
         </view>
         <view class="section-card__body">
@@ -185,7 +185,7 @@ function showToast(title: string) {
         <view class="section-card__header">
           <u-icon name="lightbulb" size="40" color="var(--u-type-warning)" />
           <text class="section-card__title">
-            {{ $t('about.guidePage.bestPractices') }}
+            {{ t('about.guidePage.bestPractices') }}
           </text>
         </view>
         <view class="section-card__body">
