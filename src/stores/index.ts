@@ -17,3 +17,4 @@ export default pinia
 export * from './counter'
 export * from './tabbar'
 export * from './user'
+export * from './history'

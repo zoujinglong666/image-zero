@@ -10,10 +10,12 @@ import 'uno.css'
 
 export function createApp() {
   const app = createSSRApp(App)
+  
+  // 注册 uView Pro（easycom 自动导入所有 u-* 组件）
   app.use(uViewPro, {
     theme: {
       themes,
-      defaultTheme: 'green',
+      defaultTheme: 'indigo',
       defaultDarkMode: 'light',
     },
     locale: {
@@ -21,6 +23,7 @@ export function createApp() {
       defaultLocale: 'zh-CN',
     },
   })
+  
   app.use(httpPlugin, {
     requestConfig: httpRequestConfig,
     interceptor: httpInterceptor,

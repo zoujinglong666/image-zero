@@ -2,6 +2,34 @@
 // 地址：https://uviewpro.cn/zh/guide/themeGenerate.html
 
 export default [
+  // 主题 0: 靛蓝紫 (图灵绘境默认)
+  {
+    name: 'indigo',
+    label: '靛蓝紫',
+    color: {
+      primary: '#6366f1',
+      error: '#ef4444',
+      warning: '#f59e0b',
+      success: '#10b981',
+      info: '#64748b',
+      primaryLight: '#eef2ff',
+      errorLight: '#fef2f2',
+      warningLight: '#fffbeb',
+      successLight: '#ecfdf5',
+      infoLight: '#f8fafc',
+      primaryDark: '#4f46e5',
+      errorDark: '#dc2626',
+      warningDark: '#d97706',
+      successDark: '#059669',
+      infoDark: '#334155',
+      primaryDisabled: '#a5b4fc',
+      errorDisabled: '#fca5a5',
+      warningDisabled: '#fde68a',
+      successDisabled: '#6ee7b7',
+      infoDisabled: '#cbd5e1',
+    },
+  },
+
   // 主题 1: 紫色
   {
     name: 'purple',
