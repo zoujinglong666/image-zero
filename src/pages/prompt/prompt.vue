@@ -108,7 +108,6 @@
 
       <!-- 加载更多 -->
       <view class="load-more" v-if="loading">
-        <u-loading-icon />
         <text class="load-text">加载中...</text>
       </view>
       <view class="load-more" v-else-if="noMore && prompts.length > 0">

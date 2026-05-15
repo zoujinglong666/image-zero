@@ -18,7 +18,7 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 # 创建必要目录并设置权限（在切换用户之前）
-RUN mkdir -p uploads logs && chown -R nodejs:nodejs /app
+RUN mkdir -p uploads logs data && chown -R nodejs:nodejs /app
 
 USER nodejs
 

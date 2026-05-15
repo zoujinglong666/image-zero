@@ -11,7 +11,7 @@ import fs from 'fs'
 import logger from '../utils/logger.js'
 
 // 数据库文件路径
-const DB_DIR = path.resolve('data')
+const DB_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve('data')
 const DB_PATH = path.join(DB_DIR, 'turing.db')
 
 // 确保 data 目录存在

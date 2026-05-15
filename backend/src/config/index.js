@@ -56,6 +56,9 @@ const config = {
     level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
     dir: process.env.LOG_DIR || 'logs/',
   },
+
+  // 数据目录（Railway Volume 挂载路径）
+  dataDir: process.env.DATA_DIR || '',
 }
 
 /**
