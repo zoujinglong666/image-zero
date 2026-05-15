@@ -10,6 +10,7 @@ import fs from 'fs'
 import config, { validateConfig } from './config/index.js'
 import { requestLogger } from './middlewares/requestLogger.js'
 import { RateLimiter } from './middlewares/rateLimiter.js'
+import { successResponse, globalErrorHandler, notFoundHandler } from './middlewares/responseHandler.js'
 import imageRoutes from './routes/image.js'
 import authRoutes from './routes/auth.js'
 import dataRoutes from './routes/data.js'
@@ -50,6 +51,9 @@ app.set('trust proxy', 1)
 // 请求日志
 app.use(requestLogger)
 
+// 统一结果返回器（在路由之前挂载 res.success / res.successPage）
+app.use(successResponse)
+
 // 确保 uploads 目录存在
 if (!fs.existsSync(config.upload.dest)) {
   fs.mkdirSync(config.upload.dest, { recursive: true })
@@ -88,25 +92,14 @@ app.get('/health', (req, res) => {
 })
 
 // ═══════════════════════════════════════
-//  全局错误处理
+//  全局异常处理
 // ═══════════════════════════════════════
 
-app.use((err, req, res, next) => {
-  logger.error(`未捕获异常: ${err.message}`, { stack: err.stack })
+// 404 兜底（在所有路由之后）
+app.use(notFoundHandler)
 
-  if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({ error: '认证失败', code: 'UNAUTHORIZED' })
-  }
-
-  if (err.message && err.message.includes('CORS')) {
-    return res.status(403).json({ error: '跨域请求被拒绝' })
-  }
-
-  res.status(500).json({
-    error: '服务器内部错误',
-    message: config.isProduction ? '请稍后重试' : err.message,
-  })
-})
+// 全局异常处理器（必须在最后）
+app.use(globalErrorHandler)
 
 // ═══════════════════════════════════════
 //  初始化 AI 客户端
