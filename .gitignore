@@ -3,5 +3,9 @@ dist/
 .unpackage/
 *.local
 .env
+.env.local
 .DS_Store
 *.log
+logs/
+uploads/
+data/

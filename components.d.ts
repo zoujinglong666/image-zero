@@ -9,7 +9,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppPage: typeof import('./src/components/app-page/app-page.vue')['default']
     AppTabbar: typeof import('./src/components/app-tabbar/app-tabbar.vue')['default']
-    UAlertTips: typeof import('uview-pro/components/u-alert-tips/u-alert-tips.vue')['default']
     UAvatar: typeof import('uview-pro/components/u-avatar/u-avatar.vue')['default']
     UButton: typeof import('uview-pro/components/u-button/u-button.vue')['default']
     UCellGroup: typeof import('uview-pro/components/u-cell-group/u-cell-group.vue')['default']
@@ -18,12 +17,8 @@ declare module 'vue' {
     UEmpty: typeof import('uview-pro/components/u-empty/u-empty.vue')['default']
     UGap: typeof import('uview-pro/components/u-gap/u-gap.vue')['default']
     UIcon: typeof import('uview-pro/components/u-icon/u-icon.vue')['default']
-    UImage: typeof import('uview-pro/components/u-image/u-image.vue')['default']
-    UInput: typeof import('uview-pro/components/u-input/u-input.vue')['default']
     ULine: typeof import('uview-pro/components/u-line/u-line.vue')['default']
-    ULineProgress: typeof import('uview-pro/components/u-line-progress/u-line-progress.vue')['default']
     ULoading: typeof import('uview-pro/components/u-loading/u-loading.vue')['default']
-    ULoadingIcon: typeof import('uview-pro/components/u-loading-icon/u-loading-icon.vue')['default']
     UMask: typeof import('uview-pro/components/u-mask/u-mask.vue')['default']
     UNavbar: typeof import('uview-pro/components/u-navbar/u-navbar.vue')['default']
     UPopup: typeof import('uview-pro/components/u-popup/u-popup.vue')['default']
@@ -31,11 +26,7 @@ declare module 'vue' {
     URadioGroup: typeof import('uview-pro/components/u-radio-group/u-radio-group.vue')['default']
     USearch: typeof import('uview-pro/components/u-search/u-search.vue')['default']
     USection: typeof import('uview-pro/components/u-section/u-section.vue')['default']
-    USlider: typeof import('uview-pro/components/u-slider/u-slider.vue')['default']
-    USubsection: typeof import('uview-pro/components/u-subsection/u-subsection.vue')['default']
-    USwipeAction: typeof import('uview-pro/components/u-swipe-action/u-swipe-action.vue')['default']
     UTag: typeof import('uview-pro/components/u-tag/u-tag.vue')['default']
-    UTextarea: typeof import('uview-pro/components/u-textarea/u-textarea.vue')['default']
     UToast: typeof import('uview-pro/components/u-toast/u-toast.vue')['default']
   }
 }

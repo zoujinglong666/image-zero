@@ -2,9 +2,9 @@ import type { ImageAnalysisResult, ImageGenerationParams, EditParams } from '@/t
 
 /**
  * ════════════════════════════════════════════
- *  图灵绘境 - 前端 API 层 v2.0
+ *  图灵绘境 - 前端 API 层 v3.0
  *  全部调用真实后端 · 零模拟
- *  新增: 错误码映射 · 网络检测 · 超时控制
+ *  跨平台兼容: uni.request / uni.compressImage / uni网络API
  * ══════════════════════════════════════════
  */
 
@@ -66,10 +66,11 @@ export function getFriendlyError(err: any): string {
 }
 
 // ══════════════════════════════════════════
-//  网络状态检测
+//  网络状态检测（跨平台 uni API）
 // ══════════════════════════════════════════
 let _isOnline = true
 let _lastCheck = 0
+let _networkWatching = false
 
 /** 检查网络是否可用（带缓存，5秒内不重复检测） */
 export async function checkNetwork(): Promise<boolean> {
@@ -81,7 +82,8 @@ export async function checkNetwork(): Promise<boolean> {
     const res = await uni.getNetworkType()
     _isOnline = res.networkType !== 'none'
   } catch {
-    _isOnline = navigator?.onLine ?? true
+    // 所有平台 fallback：假设在线
+    _isOnline = true
   }
   return _isOnline
 }
@@ -91,27 +93,33 @@ export function isOnlineSync(): boolean {
   return _isOnline
 }
 
-/** 监听网络变化 */
+/** 监听网络变化（跨平台，使用 uni.onNetworkStatusChange） */
 export function watchNetworkChange(callback: (online: boolean) => void): () => void {
-  const handler = () => {
-    _isOnline = navigator?.onLine ?? true
-    callback(_isOnline)
+  // 防止重复注册
+  if (_networkWatching) {
+    return () => {}
   }
-  window.addEventListener('online', handler)
-  window.addEventListener('offline', handler)
+  _networkWatching = true
+
+  // 注册 uni 网络状态监听
+  uni.onNetworkStatusChange((res: any) => {
+    _isOnline = res.isConnected
+    callback(res.isConnected)
+  })
+
+  // 返回取消监听函数
   return () => {
-    window.removeEventListener('online', handler)
-    window.removeEventListener('offline', handler)
+    _networkWatching = false
   }
 }
 
 // ══════════════════════════════════════════
-//  图片压缩（H5 Canvas）
+//  图片压缩（跨平台：小程序用 uni.compressImage，H5 用 Canvas）
 // ══════════════════════════════════════════
 interface CompressOptions {
   maxWidth?: number   // 最大宽度，默认 1500
   maxHeight?: number  // 最大高度，默认 1500
-  quality?: number    // JPEG 质量 0-1，默认 0.8
+  quality?: number    // JPEG 质量 0-100，默认 80
   maxSizeMB?: number  // 最大文件大小 MB，默认 3
 }
 
@@ -125,16 +133,31 @@ interface CompressResult {
 }
 
 /**
- * 使用 Canvas 压缩图片（仅 H5 端）
- * @returns 压缩后的 base64 dataURL
+ * 小程序端图片压缩：uni.compressImage
+ * 只支持 quality 参数，不支持尺寸限制
  */
-export async function compressImage(dataUrl: string, options: CompressOptions = {}): Promise<CompressResult> {
+function compressImageMP(filePath: string, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.compressImage({
+      src: filePath,
+      quality,
+      success: (res) => resolve(res.tempFilePath),
+      fail: (err) => reject(new Error(err.errMsg || '小程序图片压缩失败')),
+    })
+  })
+}
+
+/**
+ * H5 端图片压缩：Canvas 方式
+ * 支持尺寸 + 质量双重压缩
+ */
+function compressImageH5(dataUrl: string, options: CompressOptions = {}): Promise<CompressResult> {
   const {
     maxWidth = 1500,
     maxHeight = 1500,
-    quality = 0.8,
-    maxSizeMB = 3,
+    quality = 80,
   } = options
+  const jpegQuality = quality / 100
 
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -142,9 +165,9 @@ export async function compressImage(dataUrl: string, options: CompressOptions = 
       let { width, height } = img
 
       // 计算缩放比例
-      const ratio = Math.min(maxWidth / width, maxHeight / height, 1)
-      width = Math.round(width * ratio)
-      height = Math.round(height * ratio)
+      const scale = Math.min(maxWidth / width, maxHeight / height, 1)
+      width = Math.round(width * scale)
+      height = Math.round(height * scale)
 
       const canvas = document.createElement('canvas')
       canvas.width = width
@@ -161,9 +184,9 @@ export async function compressImage(dataUrl: string, options: CompressOptions = 
       ctx.fillRect(0, 0, width, height)
       ctx.drawImage(img, 0, 0, width, height)
 
-      // 转为 JPEG（比 PNG 小很多）
-      const compressed = canvas.toDataURL('image/jpeg', quality)
-      const sizeKB = Math.round(compressed.length * 0.75 / 1024) // base64 → KB
+      // 转为 JPEG
+      const compressed = canvas.toDataURL('image/jpeg', jpegQuality)
+      const sizeKB = Math.round(compressed.length * 0.75 / 1024)
       const origSizeKB = Math.round(dataUrl.length * 0.75 / 1024)
 
       resolve({
@@ -175,15 +198,134 @@ export async function compressImage(dataUrl: string, options: CompressOptions = 
         ratio: +(sizeKB / origSizeKB).toFixed(2),
       })
     }
-
     img.onerror = () => reject(new Error('图片加载失败'))
     img.src = dataUrl
   })
 }
 
+/**
+ * 跨平台图片压缩
+ * - 小程序/App: uni.compressImage（仅质量压缩）
+ * - H5: Canvas（尺寸 + 质量双重压缩）
+ */
+export async function compressImage(source: string, options: CompressOptions = {}): Promise<CompressResult> {
+  const { quality = 80 } = options
+  const originalSizeKB = Math.round(source.length * 0.75 / 1024)
+
+  // #ifdef H5
+  try {
+    return await compressImageH5(source, options)
+  } catch (e) {
+    console.warn('[压缩] H5 Canvas 压缩失败:', e)
+    return {
+      dataUrl: source,
+      width: 0,
+      height: 0,
+      sizeKB: originalSizeKB,
+      originalSizeKB,
+      ratio: 1,
+    }
+  }
+  // #endif
+
+  // #ifndef H5
+  // 小程序/App: 使用 uni.compressImage
+  try {
+    const compressedPath = await compressImageMP(source, quality)
+    // 小程序返回临时文件路径，不是 dataUrl
+    // 估算压缩后大小（质量比 × 原大小）
+    const estimatedSizeKB = Math.round(originalSizeKB * quality / 100)
+    return {
+      dataUrl: compressedPath,
+      width: 0,
+      height: 0,
+      sizeKB: estimatedSizeKB,
+      originalSizeKB,
+      ratio: +(estimatedSizeKB / originalSizeKB).toFixed(2),
+    }
+  } catch (e) {
+    console.warn('[压缩] 小程序压缩失败:', e)
+    return {
+      dataUrl: source,
+      width: 0,
+      height: 0,
+      sizeKB: originalSizeKB,
+      originalSizeKB,
+      ratio: 1,
+    }
+  }
+  // #endif
+}
+
 // ══════════════════════════════════════════
-//  核心请求封装（统一超时 + 错误处理）
+//  核心请求封装（uni.request 跨平台）
 // ══════════════════════════════════════════
+const MAX_RETRIES = 3           // 最大重试次数
+const RETRY_DELAY_MS = 1000     // 重试间隔基础值（毫秒）
+const RETRYABLE_STATUS = [408, 429, 500, 502, 503, 504] // 可重试的 HTTP 状态码
+
+/**
+ * uni.request 单次请求（替代 fetch，跨平台兼容）
+ */
+function uniRequest<T>(options: UniApp.RequestOptions): Promise<T> {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      ...options,
+      success: (res) => {
+        resolve(res as unknown as T)
+      },
+      fail: (err) => {
+        reject(err)
+      },
+    })
+  })
+}
+
+/**
+ * 单次请求执行（uni.request 版本）
+ */
+async function fetchOnce<T>(path: string, body?: any, timeoutMs = REQUEST_TIMEOUT): Promise<T> {
+  const token = uni?.getStorageSync('token') || ''
+  const header: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) header['Authorization'] = `Bearer ${token}`
+
+  try {
+    const res = await uniRequest<UniApp.RequestSuccessCallbackResult>({
+      url: `${API_BASE}${path}`,
+      method: 'POST' as any,
+      data: body,
+      header,
+      timeout: timeoutMs,
+    })
+
+    const statusCode = res.statusCode || 0
+    const json = res.data as any
+
+    // HTTP 错误或业务错误
+    if (statusCode < 200 || statusCode >= 300 || !json?.success) {
+      throw {
+        status: statusCode,
+        code: json?.code || statusCode,
+        message: json?.error || json?.message || `请求失败 (${statusCode})`,
+        detail: json,
+      }
+    }
+
+    return json.data as T
+  } catch (err: any) {
+    // 超时判断：uni.request 超时 errMsg 包含 'timeout'
+    if (err.errMsg?.includes('timeout') || err.errMsg?.includes('request:fail')) {
+      throw { code: 'REQUEST_TIMEOUT', message: ERROR_MAP['REQUEST_TIMEOUT'], status: 408 }
+    }
+    throw err
+  }
+}
+
+/**
+ * 带重试的请求封装
+ * - 超时 / 5xx / 429 自动重试
+ * - 指数退避策略
+ */
 async function request<T>(path: string, body?: any, timeoutMs = REQUEST_TIMEOUT): Promise<T> {
   // 网络预检
   const online = await checkNetwork()
@@ -191,37 +333,26 @@ async function request<T>(path: string, body?: any, timeoutMs = REQUEST_TIMEOUT)
     throw { code: 'NETWORK_ERROR', message: ERROR_MAP['NETWORK_ERROR'], status: 0 }
   }
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  let lastError: any
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fetchOnce<T>(path, body, timeoutMs)
+    } catch (err: any) {
+      lastError = err
 
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: controller.signal,
-    })
+      // 不可重试的错误直接抛出
+      const status = err.status || 0
+      const isRetryable = RETRYABLE_STATUS.includes(status) || err.code === 'REQUEST_TIMEOUT' || err.code === 'NETWORK_ERROR'
+      if (!isRetryable || attempt >= MAX_RETRIES) break
 
-    const json = await res.json()
-
-    if (!res.ok || !json.success) {
-      throw {
-        status: res.status,
-        code: json.code || res.status,
-        message: json?.error || json?.message || `请求失败 (${res.status})`,
-        detail: json,
-      }
+      // 指数退避: 1s, 2s, 4s
+      const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1)
+      console.warn(`⚠️ [请求] ${path} 第${attempt}次失败 (${status})，${delay}ms 后重试...`)
+      await new Promise(r => setTimeout(r, delay))
     }
-
-    return json.data as T
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw { code: 'REQUEST_TIMEOUT', message: ERROR_MAP['REQUEST_TIMEOUT'], status: 408 }
-    }
-    throw err
-  } finally {
-    clearTimeout(timer)
   }
+
+  throw lastError
 }
 
 // ══════════════════════════════════════════
@@ -235,17 +366,15 @@ async function request<T>(path: string, body?: any, timeoutMs = REQUEST_TIMEOUT)
 export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
   console.log(`🔍 [API] 开始分析图片... (API: ${API_BASE})`)
 
-  // H5 端自动压缩
+  // 自动压缩
   let processedUrl = imageUrl
-  // #ifdef H5
   try {
-    const compressed = await compressImage(imageUrl, { maxWidth: 1500, quality: 0.82 })
+    const compressed = await compressImage(imageUrl, { maxWidth: 1500, quality: 82 })
     console.log(`📦 [压缩] ${compressed.originalSizeKB}KB → ${compressed.sizeKB}KB (${compressed.ratio}x)`)
     processedUrl = compressed.dataUrl
   } catch (e) {
     console.warn('[压缩] 失败，使用原图:', e)
   }
-  // #endif
 
   const result = await request<ImageAnalysisResult>('/api/analyze', { imageUrl: processedUrl })
   console.log(`✅ [API] 分析完成 | 风格: ${result.style}`)
@@ -265,9 +394,9 @@ export async function generateImage(params: ImageGenerationParams): Promise<stri
     model: params.model || 'flux',
   }, 30_000) // 生成超时 30s
 
-  const imageUrl = data.images[0].url
-  console.log('✅ [API] 生成完成:', imageUrl.substring(0, 80))
-  return imageUrl
+  const imageResultUrl = data.images[0].url
+  console.log('✅ [API] 生成完成:', imageResultUrl.substring(0, 80))
+  return imageResultUrl
 }
 
 /**

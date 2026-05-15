@@ -149,6 +149,25 @@ export interface ApiResponse<T> {
   data: T
 }
 
+// ====== 图片生成参数 ======
+export interface ImageGenerationParams {
+  prompt: string
+  width?: number
+  height?: number
+  model?: string
+}
+
+// ====== 图片编辑参数 ======
+export interface EditParams {
+  originalPrompt: string
+  originalImage?: string
+  colorScheme?: any
+  elementStyle?: any
+  layout?: any
+  text?: string
+  style?: string
+}
+
 // ====== 图片分析结果（页面直接使用） ======
 export interface ImageAnalysisResult {
   style: string
@@ -187,4 +206,57 @@ export interface SimpleHistoryItem {
   prompt: string
   timestamp: number
   favorite: boolean
+}
+
+// ====== 认证相关类型 ======
+
+/** 微信登录请求参数 */
+export interface WechatLoginParams {
+  code: string
+}
+
+/** 微信登录响应 */
+export interface WechatLoginResult {
+  success: boolean
+  token: string
+  expiresIn: string
+  user: {
+    type: 'wechat'
+    uid: string
+  }
+}
+
+/** 匿名登录响应 */
+export interface AnonymousLoginResult {
+  success: boolean
+  token: string
+  expiresIn: string
+}
+
+/** Token 验证响应 */
+export interface VerifyTokenResult {
+  valid: boolean
+  user?: {
+    type: 'wechat' | 'anonymous'
+    uid?: string
+    openid?: string
+    id?: string
+  }
+  error?: string
+}
+
+/** 认证服务状态 */
+export interface AuthStatusResult {
+  jwt: boolean
+  wechat: boolean
+  wechatAppid: string | null
+  anonymousAllowed: boolean
+}
+
+/** 用户信息（Store 使用） */
+export interface UserInfo {
+  uid: string
+  type: 'wechat' | 'anonymous' | 'guest'
+  token: string
+  loginAt: number
 }

@@ -341,25 +341,35 @@ const saveEdit = async () => {
   uni.showLoading({ title: 'AI 正在重新生成...', mask: true })
 
   try {
-    const res = await fetch('http://localhost:3000/api/edit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        originalPrompt: editData.value.prompt.english,
-        originalImage: '',
-        modifications: {
-          colorScheme: editData.value.colorScheme,
-          elementStyle: editData.value.elements,
-          layout: editData.value.layout,
-          text: editData.value.prompt.chinese,
-          style: editData.value.style
-        }
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const token = uni?.getStorageSync('token') || ''
+    const header: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) header['Authorization'] = `Bearer ${token}`
+
+    const res: any = await new Promise((resolve, reject) => {
+      uni.request({
+        url: `${API_BASE}/api/edit`,
+        method: 'POST',
+        data: {
+          originalPrompt: editData.value.prompt.english,
+          originalImage: '',
+          modifications: {
+            colorScheme: editData.value.colorScheme,
+            elementStyle: editData.value.elements,
+            layout: editData.value.layout,
+            text: editData.value.prompt.chinese,
+            style: editData.value.style
+          }
+        },
+        header,
+        success: resolve,
+        fail: reject,
       })
     })
 
-    const json = await res.json()
+    const json = res.data as any
 
-    if (!res.ok || !json.success) {
+    if (res.statusCode < 200 || res.statusCode >= 300 || !json?.success) {
       throw new Error(json?.error || json?.message || '保存失败')
     }
 
@@ -382,25 +392,35 @@ const previewEdit = async () => {
   uni.showLoading({ title: 'AI 正在预览生成...', mask: true })
 
   try {
-    const res = await fetch('http://localhost:3000/api/edit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        originalPrompt: editData.value.prompt.english,
-        originalImage: '',
-        modifications: {
-          colorScheme: editData.value.colorScheme,
-          elementStyle: editData.value.elements,
-          layout: editData.value.layout,
-          text: editData.value.prompt.chinese,
-          style: editData.value.style
-        }
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const token = uni?.getStorageSync('token') || ''
+    const header: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) header['Authorization'] = `Bearer ${token}`
+
+    const res: any = await new Promise((resolve, reject) => {
+      uni.request({
+        url: `${API_BASE}/api/edit`,
+        method: 'POST',
+        data: {
+          originalPrompt: editData.value.prompt.english,
+          originalImage: '',
+          modifications: {
+            colorScheme: editData.value.colorScheme,
+            elementStyle: editData.value.elements,
+            layout: editData.value.layout,
+            text: editData.value.prompt.chinese,
+            style: editData.value.style
+          }
+        },
+        header,
+        success: resolve,
+        fail: reject,
       })
     })
 
-    const json = await res.json()
+    const json = res.data as any
 
-    if (!res.ok || !json.success) {
+    if (res.statusCode < 200 || res.statusCode >= 300 || !json?.success) {
       throw new Error(json?.error || json?.message || '预览失败')
     }
 

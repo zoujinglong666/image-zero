@@ -12,21 +12,42 @@
     <scroll-view scroll-y class="main-scroll">
 
       <!-- 用户信息卡片 -->
-      <view class="user-card">
+      <view class="user-card" @tap="onUserCardTap">
         <view class="user-avatar">
           <u-avatar
             :src="userInfo.avatar"
             size="96"
-            :text="userInfo.name.charAt(0)"
+            :text="userStore.userDisplayName.charAt(0)"
             fontSize="36"
-            bg-color="#D4A017"
+            :bg-color="userStore.isLoggedIn ? '#2979ff' : '#D4A017'"
           />
         </view>
         <view class="user-info">
-          <text class="user-name">{{ userInfo.name }}</text>
-          <text class="user-desc">{{ userInfo.desc }}</text>
+          <text class="user-name">{{ userStore.userDisplayName }}</text>
+          <text class="user-desc">{{ userStore.isLoggedIn ? loginDesc : '点击登录，解锁更多功能' }}</text>
         </view>
-        <u-icon name="arrow-right" size="16" color="#CCCCCC" />
+        <!-- 未登录时显示登录箭头 -->
+        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="16" color="#CCCCCC" />
+        <!-- 已登录时显示微信标识 -->
+        <u-tag v-else-if="userStore.isWechatUser" text="微信" type="success" size="mini" plain />
+      </view>
+
+      <!-- 未登录：登录按钮区域 -->
+      <view v-if="!userStore.isLoggedIn" class="login-section">
+        <!-- #ifdef MP-WEIXIN -->
+        <button class="wechat-login-btn" @tap="handleWechatLogin" :loading="userStore.isLoggingIn">
+          <u-icon name="weixin-fill" size="20" color="#FFFFFF" />
+          <text>微信一键登录</text>
+        </button>
+        <!-- #endif -->
+
+        <!-- #ifndef MP-WEIXIN -->
+        <button class="dev-login-btn" @tap="handleAnonymousLogin" :loading="userStore.isLoggingIn">
+          <text>访客登录（开发模式）</text>
+        </button>
+        <!-- #endif -->
+
+        <text class="login-hint">登录后可保存历史记录和收藏</text>
       </view>
 
       <!-- 统计网格 -->
@@ -147,6 +168,18 @@
             icon="edit-pen"
             @tap="showFeedback"
           />
+
+          <!-- 退出登录（仅已登录时显示） -->
+          <u-cell-item
+            v-if="userStore.isLoggedIn"
+            title="退出登录"
+            icon="logout"
+            @tap="handleLogout"
+          >
+            <template #value>
+              <u-tag text="退出" type="error" size="mini" plain />
+            </template>
+          </u-cell-item>
         </u-cell-group>
       </view>
 
@@ -233,14 +266,23 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
+import { useUserStore } from '@/stores/user'
 
 const historyStore = useHistoryStore()
+const userStore = useUserStore()
 
-// 用户信息
+// 用户信息（UI展示用）
 const userInfo = ref({
   name: '设计师',
   avatar: '',
   desc: 'AI 驱动的图像提示词工具'
+})
+
+// 登录描述
+const loginDesc = computed(() => {
+  if (userStore.isWechatUser) return '已绑定微信账号'
+  if (userStore.isAnonymousUser) return '访客模式 · 功能受限'
+  return 'AI 驱动的图像提示词工具'
 })
 
 // 版本
@@ -316,6 +358,45 @@ const showAbout = () => {
 
 const showFeedback = () => {
   uni.showToast({ title: '感谢您的反馈！', icon: 'none' })
+}
+
+// ====== 登录操作 ======
+const onUserCardTap = () => {
+  if (userStore.isLoggedIn) return
+  // 未登录时点击用户卡片 → 触发登录
+  // #ifdef MP-WEIXIN
+  handleWechatLogin()
+  // #endif
+  // #ifndef MP-WEIXIN
+  handleAnonymousLogin()
+  // #endif
+}
+
+const handleWechatLogin = async () => {
+  const success = await userStore.wechatLogin()
+  if (success) {
+    uni.showToast({ title: '登录成功', icon: 'success' })
+  }
+}
+
+const handleAnonymousLogin = async () => {
+  const success = await userStore.anonymousLogin()
+  if (success) {
+    uni.showToast({ title: '访客登录成功', icon: 'success' })
+  }
+}
+
+const handleLogout = () => {
+  uni.showModal({
+    title: '退出登录',
+    content: '确定要退出登录吗？历史记录将保留在本地。',
+    success: (res) => {
+      if (res.confirm) {
+        userStore.logout()
+        uni.showToast({ title: '已退出登录', icon: 'none' })
+      }
+    }
+  })
 }
 </script>
 
@@ -411,6 +492,62 @@ const showFeedback = () => {
     font-size: 22rpx;
     color: #CCCCCC;
   }
+}
+
+/* 登录区域 */
+.login-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 32rpx 48rpx;
+  margin: 0 24rpx;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.wechat-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 100%;
+  height: 88rpx;
+  background: #07C160;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+  border: none;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.dev-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 100%;
+  height: 88rpx;
+  background: #2979ff;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+  border: none;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.login-hint {
+  font-size: 22rpx;
+  color: #999999;
 }
 
 /* 弹窗 */

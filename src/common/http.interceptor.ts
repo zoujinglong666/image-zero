@@ -1,9 +1,10 @@
 import type { RequestConfig, RequestInterceptor, RequestMeta, RequestOptions } from 'uview-pro'
 
-// 示例：演示如何使用token
-const token = ''
-// 演示
-const baseUrl = 'https://api.example.com'
+// 从 Storage 动态读取 Token（登录后写入，登出时清除）
+const getToken = () => uni?.getStorageSync('token') || ''
+
+// 后端地址
+const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 // 全局配置
 const httpRequestConfig: RequestConfig = {
@@ -25,8 +26,9 @@ const httpInterceptor: RequestInterceptor = {
   request: (config: RequestOptions) => {
     const meta: RequestMeta = config.meta || {}
     meta.loading && showLoading()
-    if (token) {
-      config.header.Authorization = `Bearer ${token}`
+    const currentToken = getToken()
+    if (currentToken) {
+      config.header.Authorization = `Bearer ${currentToken}`
     }
     return config
   },
@@ -46,6 +48,11 @@ const httpInterceptor: RequestInterceptor = {
     }
     // 请求错误
     if (!(statusCode >= 200 && statusCode < 300)) {
+      // 401 身份过期 → 清除本地 Token，提示重新登录
+      if (statusCode === 401) {
+        uni.removeStorageSync('token')
+        meta.toast && showToast('登录已过期，请重新登录', 'error')
+      }
       const errorMessage = `请求错误[${statusCode}]`
       meta.toast && showToast(errorMessage, 'error')
       throw new Error(`${errorMessage}：${errMsg}`)
