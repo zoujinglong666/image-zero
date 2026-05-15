@@ -13,8 +13,14 @@
       </template>
     </u-navbar>
 
+    <!-- 网络状态提示 -->
+    <view v-if="!isOnline" class="offline-banner">
+      <u-icon name="info-circle-fill" size="16" color="#FFF" />
+      <text>网络已断开，请检查连接</text>
+    </view>
+
     <!-- 主内容滚动区 -->
-    <scroll-view scroll-y class="main-scroll">
+    <scroll-view scroll-y class="main-scroll" :scroll-into-view="scrollIntoView" :scroll-with-animation="true">
 
       <!-- ====== Step 1: 上传图片 ====== -->
       <view class="card">
@@ -38,14 +44,15 @@
               <u-icon name="plus" size="28" color="#D4A017" />
             </view>
             <text class="upload-text">点击上传图片</text>
-            <text class="upload-hint">支持 JPG / PNG / WebP</text>
+            <text class="upload-hint">支持 JPG / PNG / WebP · 自动压缩</text>
           </view>
         </view>
 
         <!-- 图片状态栏 -->
         <view v-if="uploadedImage" class="img-status-bar">
           <u-tag text="已就绪" type="success" size="mini" />
-          <text class="status-text">准备 AI 分析</text>
+          <text v-if="compressInfo" class="status-text">{{ compressInfo }}</text>
+          <text v-else class="status-text">准备 AI 分析</text>
           <view class="status-clear" @tap.stop="clearImage">
             <u-icon name="close-circle-fill" size="16" color="#bbb" />
           </view>
@@ -63,13 +70,17 @@
         <!-- 主按钮 -->
         <button
           class="analyze-btn"
-          :class="{ ready: uploadedImage && !analyzing, disabled: !uploadedImage || analyzing }"
-          :disabled="!uploadedImage || analyzing"
+          :class="{ ready: uploadedImage && !analyzing && isOnline, disabled: !uploadedImage || analyzing || !isOnline }"
+          :disabled="!uploadedImage || analyzing || !isOnline"
           @click="analyzeImage"
         >
           <block v-if="analyzing">
             <view class="loading-spinner" />
-            <text>AI 正在分析中...</text>
+            <text>{{ analyzingText }}</text>
+          </block>
+          <block v-else-if="!isOnline">
+            <u-icon name="wifi-off" size="18" color="#999" />
+            <text>网络不可用</text>
           </block>
           <block v-else>
             <u-icon name="search" size="18" :color="uploadedImage ? '#FFF' : '#999'" />
@@ -91,6 +102,7 @@
           <view class="result-badge">
             <u-icon name="checkmark-circle-fill" size="16" color="#D4A017" />
             <text>分析完成</text>
+            <text v-if="analysisElapsed" class="elapsed-text">{{ analysisElapsed }}s</text>
           </view>
           <view class="result-actions">
             <u-button type="primary" size="mini" plain text="复制提示词" icon="copy" @click="copyPrompt" />
@@ -196,13 +208,18 @@
       </view>
 
       <!-- ====== AI 生成结果（在 scroll-view 内部！）====== -->
-      <view v-if="showResult && generatedImage" class="gen-card">
+      <view v-if="showResult && generatedImage" id="gen-result" class="gen-card">
         <view class="gen-head">
           <u-icon name="checkmark-circle-fill" size="18" color="#19be6b" />
           <text class="gen-title">AI 生成结果</text>
           <u-tag text="NEW" type="success" size="mini" />
         </view>
+        <!-- #ifdef H5 -->
+        <img class="gen-image" :src="generatedImage" @click="previewGenImage" />
+        <!-- #endif -->
+        <!-- #ifndef H5 -->
         <image class="gen-image" :src="generatedImage" mode="widthFix" @click="previewGenImage" />
+        <!-- #endif -->
         <view class="gen-actions">
           <button class="gen-btn primary" @click="downloadImage">
             <u-icon name="download" size="16" color="#FFF" />
@@ -232,21 +249,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useHistoryStore } from '@/stores/history'
+import { analyzeImage as apiAnalyze, generateImage as apiGenerate, checkNetwork, watchNetworkChange, getFriendlyError } from '@/api/image'
 import type { ImageAnalysisResult } from '@/types'
 
 const historyStore = useHistoryStore()
 const historyCount = computed(() => historyStore?.history?.length ?? 0)
 
-// 状态
+// ─── 状态 ────────────────────────────────
 const uploadedImage = ref('')
 const analyzing = ref(false)
 const analysisResult = ref<ImageAnalysisResult | null>(null)
 const showResult = ref(false)
 const generatedImage = ref('')
+const scrollIntoView = ref('')
+const isOnline = ref(true)
+const compressInfo = ref('')       // 压缩信息展示
+const analysisElapsed = ref('')    // 分析耗时
+let analyzeStartTime = 0           // 分析开始时间戳
+let analyzeTimer: ReturnType<typeof setInterval> | null = null
 
-// ====== 图片上传 ======
+// 分析中的动态文字（带动画效果）
+const analyzingText = computed(() => {
+  if (!analyzing.value) return ''
+  const elapsed = Math.floor((Date.now() - analyzeStartTime) / 1000)
+  const dots = '.'.repeat((Math.floor(elapsed / 0.8) % 3) + 1)
+  const tips = [
+    `AI 正在分析中${dots}`,
+    `识别设计风格${dots}`,
+    `提取色彩方案${dots}`,
+    `解析布局结构${dots}`,
+    `生成提示词${dots}`,
+  ]
+  return tips[Math.floor(elapsed / 3) % tips.length]
+})
+
+// ─── 生命周期 ────────────────────────────
+onMounted(async () => {
+  // 初始检测网络
+  isOnline.value = await checkNetwork()
+
+  // 监听网络变化
+  const unwatch = watchNetworkChange((online) => {
+    isOnline.value = online
+    if (!online) {
+      uni.showToast({ title: '网络已断开', icon: 'none' })
+    }
+  })
+
+  onUnmounted(() => {
+    unwatch()
+    if (analyzeTimer) clearInterval(analyzeTimer)
+  })
+})
+
+// ====== 图片上传（含自动压缩）======
 const triggerUpload = () => {
   // #ifdef H5
   const existingInput = document.getElementById('__turing_file_input__') as HTMLInputElement
@@ -258,15 +316,34 @@ const triggerUpload = () => {
   input.id = '__turing_file_input__'
   input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;'
 
-  input.onchange = (e: any) => {
+  input.onchange = async (e: any) => {
     const files = e.target.files
     if (!files || !files[0]) return
+
+    // 先读取原始文件大小
+    const origSizeKB = Math.round(files[0].size / 1024)
     const reader = new FileReader()
-    reader.onload = (ev: any) => {
-      uploadedImage.value = ev.target.result as string
+    reader.onload = async (ev: any) => {
+      const dataUrl = ev.target.result as string
+
+      // 展示压缩信息
+      if (origSizeKB > 500) {
+        compressInfo.value = `${(origSizeKB / 1024).toFixed(1)}MB → 压缩中...`
+      }
+
+      uploadedImage.value = dataUrl
       analysisResult.value = null
       showResult.value = false
       generatedImage.value = ''
+
+      // 延迟更新压缩结果（让 UI 先渲染原图）
+      setTimeout(() => {
+        if (origSizeKB > 200) {
+          compressInfo.value = `原 ${(origSizeKB / 1024).toFixed(1)}MB · 上传时自动压缩`
+        } else {
+          compressInfo.value = `${origSizeKB}KB`
+        }
+      }, 500)
     }
     reader.readAsDataURL(files[0])
     setTimeout(() => input.remove(), 100)
@@ -296,31 +373,27 @@ const clearImage = () => {
   analysisResult.value = null
   showResult.value = false
   generatedImage.value = ''
+  compressInfo.value = ''
 }
 
-// ====== 分析图片（真实后端 API）======
+// ====== 分析图片（使用统一 API 层）======
 const analyzeImage = async () => {
-  if (!uploadedImage.value || analyzing.value) return
+  if (!uploadedImage.value || analyzing.value || !isOnline.value) return
   analyzing.value = true
+  analyzeStartTime = Date.now()
+
+  // 启动计时器更新文字动画
+  analyzeTimer = setInterval(() => { /* 触发 computed 重算 */ }, 800)
 
   try {
     uni.showLoading({ title: 'AI 正在深度分析...', mask: true })
 
-    const res = await fetch('http://localhost:3000/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUrl: uploadedImage.value })
-    })
-
-    const json = await res.json()
-
-    if (!res.ok || !json.success) {
-      throw new Error(json?.error || json?.message || `分析失败 (HTTP ${res.status})`)
-    }
-
-    // 后端返回 { success, source, elapsed, data: ImageAnalysisResult }
-    const result = json.data as ImageAnalysisResult
+    const result = await apiAnalyze(uploadedImage.value)
     analysisResult.value = result
+
+    // 计算耗时
+    const elapsed = ((Date.now() - analyzeStartTime) / 1000).toFixed(1)
+    analysisElapsed.value = elapsed + 's'
 
     // 存历史
     historyStore.addHistory({
@@ -332,13 +405,15 @@ const analyzeImage = async () => {
     })
 
     uni.hideLoading()
-    uni.showToast({ title: `✅ ${result.style} 风格`, icon: 'none', duration: 2000 })
-    console.log(`✅ 分析完成 | 风格: ${result.style} | 来源: ${json.source}`)
+    uni.showToast({ title: `✅ ${result.style} 风格 (${elapsed}s)`, icon: 'none', duration: 2000 })
+    console.log(`✅ 分析完成 | 风格: ${result.style} | 耗时: ${elapsed}s`)
   } catch (err: any) {
     console.error('❌ 分析失败:', err)
-    uni.showToast({ title: err.message || '分析失败，请重试', icon: 'none' })
+    const msg = getFriendlyError(err)
+    uni.showToast({ title: msg, icon: 'none', duration: 3000 })
   } finally {
     analyzing.value = false
+    if (analyzeTimer) { clearInterval(analyzeTimer); analyzeTimer = null }
     uni.hideLoading()
   }
 }
@@ -369,7 +444,7 @@ const goToEdit = () => {
   }
 }
 
-// ====== 生成图片（真实后端 API）======
+// ====== 生成图片（使用统一 API 层）======
 const generateImage = async () => {
   if (!analysisResult.value) {
     uni.showToast({ title: '请先分析图片', icon: 'none' })
@@ -380,33 +455,20 @@ const generateImage = async () => {
   uni.showLoading({ title: 'AI 绘画中...', mask: true })
 
   try {
-    const res = await fetch('http://localhost:3000/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, width: 1024, height: 1024, model: 'flux' })
-    })
-
-    const json = await res.json()
-
-    if (!res.ok || !json.success) {
-      throw new Error(json?.error || json?.message || '生成失败')
-    }
-
-    const imageUrl = json.data.images[0].url
+    const imageUrl = await apiGenerate({ prompt, width: 1024, height: 1024, model: 'flux' })
     generatedImage.value = imageUrl
     showResult.value = true
 
-    uni.hideLoading()
     uni.showToast({ title: '图片生成成功 ✓', icon: 'success' })
 
-    // 滚动到生成结果位置
+    // 延迟滚动到生成结果区域
     setTimeout(() => {
-      // 让用户看到新生成的区域
-      console.log('✅ 生成完成，图片URL:', imageUrl)
-    }, 100)
+      scrollIntoView.value = 'gen-result'
+      setTimeout(() => { scrollIntoView.value = '' }, 500)
+    }, 300)
   } catch (err: any) {
     console.error('❌ 生成失败:', err)
-    uni.showToast({ title: err.message || '生成失败', icon: 'none' })
+    uni.showToast({ title: getFriendlyError(err), icon: 'none', duration: 3000 })
   } finally {
     uni.hideLoading()
   }
@@ -429,8 +491,11 @@ const downloadImage = () => {
       uni.saveImageToPhotosAlbum({
         filePath: res.tempFilePath,
         success: () => uni.showToast({ title: '保存成功 ✓', icon: 'success' }),
-        fail: () => uni.showToast({ title: '保存失败', icon: 'none' })
+        fail: () => uni.showToast({ title: '保存失败，请授权相册权限', icon: 'none' })
       })
+    },
+    fail: () => {
+      uni.showToast({ title: '下载失败', icon: 'none' })
     }
   })
 }
@@ -457,6 +522,25 @@ const goToSettings = () => {
 
 .bottom-spacer {
   height: calc(env(safe-area-inset-bottom) + 40rpx);
+}
+
+/* ====== 离线横幅 ====== */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FF6B35, #E74C3C);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  text {
+    font-size: 24rpx;
+    color: #FFF;
+    font-weight: 500;
+  }
 }
 
 /* ====== 卡片通用 ====== */
@@ -655,6 +739,13 @@ const goToSettings = () => {
   }
 }
 
+.elapsed-text {
+  font-size: 22rpx;
+  color: #999;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, monospace;
+}
+
 .result-actions {
   display: flex;
   gap: 12rpx;
@@ -778,7 +869,7 @@ const goToSettings = () => {
 
 .color-ratio {
   font-size: 18rpx;
-  color: #999;
+  color: 999;
   font-family: -apple-system, BlinkMacSystemFont, monospace;
 }
 

@@ -1,13 +1,19 @@
 import { fileURLToPath, URL } from 'node:url'
+import { loadEnv } from 'vite'
 
 import Uni from '@uni-helper/plugin-uni'
 import Components from '@uni-helper/vite-plugin-uni-components'
 import { uViewProResolver, ZPagingResolver } from '@uni-helper/vite-plugin-uni-components/resolvers'
 import UniRoot from '@uni-ku/root'
 import UnoCSS from 'unocss/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, type ConfigEnv } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }: ConfigEnv) => {
+  // 加载环境变量
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:3000'
+
+  return {
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -35,4 +41,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: process.env.UNI_PLATFORM === 'h5' && process.env.NODE_ENV === 'development' ? ['uview-pro'] : [],
   },
+    
+  // 定义全局环境变量（供前端代码读取）
+  define: {
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+    'import.meta.env.VITE_APP_NAME': JSON.stringify(env.VITE_APP_NAME || '图灵绘境'),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(env.VITE_APP_VERSION || '1.0.0'),
+  },
+}
 })

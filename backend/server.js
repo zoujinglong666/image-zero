@@ -1,13 +1,11 @@
 /**
- * ═══════════════════════════════════════
- *  图灵绘境 - 真实 AI 后端服务 v3.0
+ * ══════════════════════════════════════════
+ *  图灵绘境 - 真实 AI 后端服务 v3.1
  *  零模拟 · 全链路真实 API · 国内可达
  *
- *  v3.0 新增:
- *  ✅ IP 级别速率限制 (防狂刷)
- *  ✅ 请求超时自动中断 (防挂起)
- *  ✅ 熔断器 (连续失败自动降级)
- * ═══════════════════════════════════════
+ *  v3.0: 节流 + 超时 + 熔断
+ *  v3.1: 内存缓存 + 请求日志 + 输入验证
+ * ══════════════════════════════════════════
  */
 
 import 'dotenv/config'
@@ -23,13 +21,20 @@ import OpenAI from 'openai'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const app = express()
-const PORT = process.env.PORT || 3000
-
 // ─── 配置 ──────────────────────────────
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY || ''
 const ANALYSIS_MODEL = process.env.ANALYSIS_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free'
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+
+// CORS 允许的域名（从环境变量读取，多个域名用逗号分隔）
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+console.log('✅ CORS 允许的域名:', ALLOWED_ORIGINS)
+
+const app = express()
+const PORT = process.env.PORT || 3000
 
 // ═══════════════════════════════════════
 //  🛡️ 防护系统: 节流 + 超时 + 熔断
@@ -197,18 +202,156 @@ const analyzeCircuitBreaker = new CircuitBreaker({ failureThreshold: 3, recovery
 // 每 2 分钟清理一次节流缓存
 setInterval(() => rateLimiter.cleanup(), 120_000)
 
+// ═══════════════════════════════════════
+//  📦 内存缓存系统 (v3.1 新增)
+// ═══════════════════════════════════════
+
+class AnalysisCache {
+  constructor(ttlMs = 30 * 60 * 1000) {   // 默认 TTL 30 分钟
+    this.cache = new Map()               // Map<hash, { data, createdAt }>
+    this.ttl = ttlMs
+    this.hits = 0
+    this.misses = 0
+  }
+
+  /** 简单 hash：取 base64 前 200 字符 + 长度 */
+  _hash(imageBase64) {
+    const len = imageBase64.length
+    const head = imageBase64.substring(0, 200)
+    return `${len}:${head}`
+  }
+
+  get(imageBase64) {
+    const key = this._hash(imageBase64)
+    const entry = this.cache.get(key)
+    if (!entry) { this.misses++; return null }
+    if (Date.now() - entry.createdAt > this.ttl) {
+      this.cache.delete(key)
+      this.misses++
+      return null
+    }
+    this.hits++
+    console.log(`📦 [缓存命中] 分析结果复用 | 命中率: ${this.getHitRate()}`)
+    return entry.data
+  }
+
+  set(imageBase64, data) {
+    const key = this._hash(imageBase64)
+    this.cache.set(key, { data, createdAt: Date.now() })
+    // 限制缓存最多 50 条，防止内存泄漏
+    if (this.cache.size > 50) {
+      const oldest = this.cache.keys().next().value
+      this.cache.delete(oldest)
+    }
+  }
+
+  getHitRate() {
+    const total = this.hits + this.misses
+    return total === 0 ? '0%' : `${(this.hits / total * 100).toFixed(1)}%`
+  }
+
+  clear() { this.cache.clear(); this.hits = 0; this.misses = 0 }
+
+  stats() { return { size: this.cache.size, hits: this.hits, misses: this.misses, hitRate: this.getHitRate(), ttl: this.ttl / 1000 + 's' } }
+}
+
+const analysisCache = new AnalysisCache()
+
+// ═══════════════════════════════════════
+//  📋 请求日志中间件 (v3.1 新增)
+// ═══════════════════════════════════════
+app.use((req, res, next) => {
+  const start = Date.now()
+  const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || '-'
+
+  // 响应完成后记录日志
+  res.on('finish', () => {
+    const elapsed = Date.now() - start
+    const level = res.statusCode >= 400 ? '⚠️' : '✅'
+    // 只记录 API 路径，忽略静态资源
+    if (req.path.startsWith('/api/')) {
+      console.log(`${level} [${new Date().toLocaleTimeString()}] ${req.method} ${req.path} → ${res.statusCode} (${elapsed}ms) [IP:${ip}]`)
+    }
+  })
+
+  next()
+})
+
+// ═══════════════════════════════════════
+//  🔒 输入验证工具 (v3.1 新增)
+// ═══════════════════════════════════════
+function validateImageUrl(url) {
+  if (!url || typeof url !== 'string') return false
+  // data:image/*;base64,... 格式
+  if (url.startsWith('data:image/')) {
+    const headerMatch = url.match(/^data:image\/([^;]+);base64,/)
+    if (!headerMatch) return false
+    const mime = headerMatch[1]
+    if (!['jpeg', 'png', 'gif', 'webp', 'bmp'].includes(mime)) return false
+    // 检查 base64 数据长度（至少有一些数据）
+    const commaIdx = url.indexOf(',')
+    if (commaIdx < 0 || url.length <= commaIdx + 10) return false
+    return true
+  }
+  // http(s) URL 格式
+  try {
+    const parsed = new URL(url)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+function validatePrompt(prompt) {
+  if (!prompt || typeof prompt !== 'string') return false
+  const trimmed = prompt.trim()
+  return trimmed.length >= 1 && trimmed.length <= 5000
+}
+
 // ─── 中间件 ────────────────────────────
-app.use(cors())
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ extended: true, limit: '50mb' }))
+// CORS 配置（限制允许的域名）
+app.use(cors({
+  origin: (origin, callback) => {
+    // 允许无 origin 的请求（如 curl、postman）
+    if (!origin) return callback(null, true)
+    
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      console.warn(`⚠️  [CORS] 拒绝来源: ${origin}`)
+      callback(new Error('CORS policy: Origin not allowed'))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
+
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // 信任代理以获取真实 IP
 app.set('trust proxy', 1)
 
-// 文件上传配置
+// 文件上传配置（限制文件类型）
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']
+const MAX_FILE_SIZE = (process.env.MAX_FILE_SIZE || 10) * 1024 * 1024  // 默认 10MB
+
+const fileFilter = (req, file, cb) => {
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(new Error(`不支持的文件类型: ${file.mimetype}。仅支持: ${ALLOWED_MIME_TYPES.join(', ')}`), false)
+  }
+}
+
 const upload = multer({
   dest: 'uploads/',
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { 
+    fileSize: MAX_FILE_SIZE,
+    files: 1  // 最多同时上传 1 个文件
+  },
+  fileFilter: fileFilter
 })
 
 if (!fs.existsSync('uploads')) {
@@ -370,6 +513,14 @@ app.post('/api/analyze',
         fs.unlinkSync(req.file.path)
       } else if (req.body.imageUrl) {
         const imageUrl = req.body.imageUrl
+        // 输入验证
+        if (!validateImageUrl(imageUrl)) {
+          return res.status(400).json({
+            error: '图片格式无效',
+            code: 'INVALID_IMAGE',
+            hint: '支持 JPG/PNG/WebP/GIF/BMP，或合法的图片 URL'
+          })
+        }
         if (imageUrl.startsWith('http')) {
           const imgResponse = await axios.get(imageUrl, {
             responseType: 'arraybuffer',
@@ -386,7 +537,24 @@ app.post('/api/analyze',
 
       console.log(`🔍 [${new Date().toLocaleTimeString()}] 开始分析图片... (${(imageBase64.length / 1024 / 1024).toFixed(1)}MB)`)
 
+      // 📦 缓存检查 (v3.1)
+      const cached = analysisCache.get(imageBase64)
+      if (cached) {
+        const elapsed = Date.now() - startTime
+        console.log(`✅ [缓存] 分析结果复用! 耗时 ${elapsed}ms | 风格: ${cached.style}`)
+        return res.json({
+          success: true,
+          source: `缓存 (${analysisCache.ttl / 1000}s TTL)`,
+          elapsed,
+          data: cached,
+          cached: true
+        })
+      }
+
       const analysisResult = await analyzeWithOpenRouter(imageBase64)
+
+      // 📦 写入缓存
+      analysisCache.set(imageBase64, analysisResult)
 
       const elapsed = Date.now() - startTime
       console.log(`✅ 分析完成! 耗时 ${elapsed}ms | 风格: ${analysisResult.style}`)
@@ -395,7 +563,8 @@ app.post('/api/analyze',
         success: true,
         source: `OpenRouter/${ANALYSIS_MODEL}`,
         elapsed,
-        data: analysisResult
+        data: analysisResult,
+        cached: false
       })
 
     } catch (error) {
@@ -455,8 +624,12 @@ app.post('/api/generate',
     try {
       const { prompt, width = 1024, height = 1024, seed, model = 'flux' } = req.body
 
-      if (!prompt) {
-        return res.status(400).json({ error: '请提供提示词' })
+      if (!validatePrompt(prompt)) {
+        return res.status(400).json({
+          error: '提示词无效',
+          code: 'INVALID_PROMPT',
+          hint: '提示词长度应在 1-5000 字符之间'
+        })
       }
 
       console.log(`🎨 [${new Date().toLocaleTimeString()}] 生成图片...`)
@@ -591,7 +764,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: '图灵绘境后端',
-    version: '3.0.0',
+    version: '3.1.0',
     mode: OPENROUTER_API_KEY ? 'production (真实AI)' : 'development (需配置Key)',
     apis: {
       analyze: OPENROUTER_API_KEY
@@ -603,13 +776,10 @@ app.get('/health', (req, res) => {
         : 'Pollinations only (部分)'
     },
     protection: {
-      rateLimiter: {
-        active: true,
-        rules: rateLimiter.rules,
-        trackedIPs: rateLimiter.windows.size
-      },
+      rateLimiter: { active: true, rules: rateLimiter.rules, trackedIPs: rateLimiter.windows.size },
       circuitBreaker: analyzeCircuitBreaker.getStatus()
     },
+    cache: analysisCache.stats(),
     note: OPENROUTER_API_KEY
       ? '全链路真实 AI，国内可达'
       : '⚠️ 请配置 OPENROUTER_API_KEY',
@@ -624,8 +794,8 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
-║     🎨 图灵绘境 后端 v3.0              ║
-║     真实 AI · 防护增强 · 国内可达       ║
+║     🎨 图灵绘境 后端 v3.1              ║
+║     真实 AI · 防护增强 · 缓存加速       ║
 ╠════════════════════════════════════════╣
 ║  📡 服务地址: http://localhost:${PORT}
 ╠════════════════════════════════════════╣
@@ -636,8 +806,10 @@ app.listen(PORT, () => {
 ║  🛡️ 超时保护: 分析/编辑 120s           ║
 ║  🛡️ 熔断器: 连续3次失败→熔断45s        ║
 ║  🛡️ 节流: IP级别限速                   ║
+║  📦 缓存: 分析结果 30min TTL           ║
+║  📋 日志: 全量请求记录                  ║
 ╠════════════════════════════════════════╣
-║  💓 /health — 含防护状态               ║
+║  💓 /health — 含防护+缓存状态          ║
 ╚════════════════════════════════════════╝
 ${OPENROUTER_API_KEY ? '✅ 所有功能就绪！' : '⚠️  需要配置 API Key'}
   `)
