@@ -16,6 +16,10 @@ WORKDIR /app
 
 # 安全: 使用非 root 用户
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# 创建必要目录并设置权限（在切换用户之前）
+RUN mkdir -p uploads logs && chown -R nodejs:nodejs /app
+
 USER nodejs
 
 # 复制依赖
@@ -23,9 +27,6 @@ COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # 复制源码
 COPY --chown=nodejs:nodejs . .
-
-# 创建必要目录
-RUN mkdir -p uploads logs
 
 # 暴露端口
 EXPOSE 3000
