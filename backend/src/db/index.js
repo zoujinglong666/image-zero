@@ -1,7 +1,7 @@
 /**
  * ════════════════════════════════════════════
  *  图灵绘境 - 数据库层 (better-sqlite3)
- *  表结构设计: 用户 / 历史记录 / 用户偏好 / VIP
+ *  表结构设计: 用户 / 历史记录 / 用户偏好 / VIP / 提示词库
  *  设计原则: 后期好维护 · VIP 预留 · 索引合理
  * ══════════════════════════════════════════
  */
@@ -110,6 +110,100 @@ CREATE TABLE IF NOT EXISTS vip_subscriptions (
 CREATE INDEX IF NOT EXISTS idx_vip_user_id    ON vip_subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_vip_status     ON vip_subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_vip_expire_at  ON vip_subscriptions(expire_at);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  提示词分类表
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS prompt_categories (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  name         TEXT    NOT NULL UNIQUE,                   -- 分类名: 人像摄影 / 海报设计 / 信息图 等
+  name_en      TEXT    DEFAULT '',                        -- 英文名
+  icon         TEXT    DEFAULT '',                        -- 分类图标 (emoji)
+  sort_order   INTEGER NOT NULL DEFAULT 0,                -- 排序权重
+  prompt_count INTEGER NOT NULL DEFAULT 0,                -- 提示词数量 (缓存)
+  created_at   INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_cat_name ON prompt_categories(name);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  提示词库表
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS prompt_library (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id    INTEGER NOT NULL DEFAULT 0,              -- 分类 ID
+  title          TEXT    NOT NULL,                         -- 标题/简短描述
+  prompt_text    TEXT    NOT NULL,                         -- 完整提示词内容
+  prompt_hash    TEXT    NOT NULL UNIQUE,                  -- SHA256 去重哈希
+  source         TEXT    DEFAULT '',                       -- 来源仓库: freestylefly / youmind / anil-matcha
+  source_url     TEXT    DEFAULT '',                       -- 原始链接
+  author         TEXT    DEFAULT '',                       -- 原始作者
+  language       TEXT    DEFAULT 'zh',                     -- zh / en / ja / mixed
+  is_template    INTEGER NOT NULL DEFAULT 0,              -- 0=普通 1=含参数模板
+  tags           TEXT    DEFAULT '',                       -- 逗号分隔标签
+  view_count     INTEGER NOT NULL DEFAULT 0,
+  like_count     INTEGER NOT NULL DEFAULT 0,
+  copy_count     INTEGER NOT NULL DEFAULT 0,
+  favorite_count INTEGER NOT NULL DEFAULT 0,
+  created_at     INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  FOREIGN KEY (category_id) REFERENCES prompt_categories(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_cat_id    ON prompt_library(category_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_hash      ON prompt_library(prompt_hash);
+CREATE INDEX IF NOT EXISTS idx_prompt_source    ON prompt_library(source);
+CREATE INDEX IF NOT EXISTS idx_prompt_lang      ON prompt_library(language);
+CREATE INDEX IF NOT EXISTS idx_prompt_views     ON prompt_library(view_count DESC);
+CREATE INDEX IF NOT EXISTS idx_prompt_likes     ON prompt_library(like_count DESC);
+CREATE INDEX IF NOT EXISTS idx_prompt_created   ON prompt_library(created_at DESC);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  提示词互动表 (浏览/点赞/复制)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS prompt_interactions (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL DEFAULT 0,
+  prompt_id     INTEGER NOT NULL,
+  action        TEXT    NOT NULL,                         -- view / like / copy
+  created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  UNIQUE(user_id, prompt_id, action)
+);
+
+CREATE INDEX IF NOT EXISTS idx_interact_user   ON prompt_interactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_interact_prompt ON prompt_interactions(prompt_id);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  提示词收藏表
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS prompt_favorites (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL,
+  prompt_id     INTEGER NOT NULL,
+  created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  UNIQUE(user_id, prompt_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (prompt_id) REFERENCES prompt_library(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_fav_user   ON prompt_favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_fav_prompt ON prompt_favorites(prompt_id);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  用户自创提示词表
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS user_prompts (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL,
+  title         TEXT    NOT NULL,
+  prompt_text   TEXT    NOT NULL,
+  category_id   INTEGER DEFAULT 0,
+  is_public     INTEGER NOT NULL DEFAULT 0,              -- 0=私密 1=公开
+  created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  updated_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_prompts_uid ON user_prompts(user_id);
 `
 
 // 执行建表

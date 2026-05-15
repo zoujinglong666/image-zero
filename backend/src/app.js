@@ -14,6 +14,7 @@ import { successResponse, globalErrorHandler, notFoundHandler } from './middlewa
 import imageRoutes from './routes/image.js'
 import authRoutes from './routes/auth.js'
 import dataRoutes from './routes/data.js'
+import promptRoutes from './routes/prompt.js'
 import { initAIClient, getAIServiceStatus } from './services/aiService.js'
 import logger from './utils/logger.js'
 
@@ -66,6 +67,7 @@ if (!fs.existsSync(config.upload.dest)) {
 app.use('/api', imageRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/data', dataRoutes)
+app.use('/api/prompt', promptRoutes)
 
 // ═══════════════════════════════════════
 //  健康检查
