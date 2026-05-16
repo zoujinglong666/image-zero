@@ -9,13 +9,13 @@
       :placeholder="true"
     >
       <template #right>
-        <u-icon name="setting" size="18" color="#7C4DFF" @click="goToSettings" />
+        <u-icon name="setting" size="40" color="#7C4DFF" @click="goToSettings" />
       </template>
     </u-navbar>
 
     <!-- 网络状态提示 -->
     <view v-if="!isOnline" class="offline-banner">
-      <u-icon name="info-circle-fill" size="14" color="#FFF" />
+      <u-icon name="info-circle-fill" size="40" color="#FFF" />
       <text>网络已断开，请检查连接</text>
     </view>
 
@@ -25,7 +25,7 @@
       <!-- ====== Step 1: 上传图片 ====== -->
       <view class="card">
         <view class="card-header">
-          <u-icon name="photo" size="18" color="#7C4DFF" />
+          <u-icon name="photo" size="40" color="#7C4DFF" />
           <text class="card-title">上传图片</text>
           <text class="card-sub">选择需要分析的截图或设计稿</text>
         </view>
@@ -35,13 +35,13 @@
           <block v-if="uploadedImage">
             <image class="upload-preview" :src="uploadedImage" mode="aspectFill" />
             <view class="upload-overlay">
-              <u-icon name="reload" size="18" color="#fff" />
+              <u-icon name="reload" size="40" color="#fff" />
               <text>点击更换</text>
             </view>
           </block>
           <view v-else class="upload-placeholder">
             <view class="upload-icon-ring">
-              <u-icon name="plus" size="28" color="#7C4DFF" />
+              <u-icon name="plus" size="40" color="#7C4DFF" />
             </view>
             <text class="upload-text">点击上传图片</text>
             <text class="upload-hint">支持 JPG / PNG / WebP · 自动压缩</text>
@@ -54,7 +54,7 @@
           <text v-if="compressInfo" class="status-text">{{ compressInfo }}</text>
           <text v-else class="status-text">准备 AI 分析</text>
           <view class="status-clear" @tap.stop="clearImage">
-            <u-icon name="close-circle-fill" size="14" color="#bbb" />
+            <u-icon name="close-circle-fill" size="40" color="#bbb" />
           </view>
         </view>
       </view>
@@ -62,7 +62,7 @@
       <!-- ====== Step 2: 分析操作 ====== -->
       <view class="card">
         <view class="card-header">
-          <u-icon name="file-text" size="18" color="#7C4DFF" />
+          <u-icon name="file-text" size="40" color="#7C4DFF" />
           <text class="card-title">AI 提取提示词</text>
           <text class="card-sub">自动识别风格 / 元素 / 配色</text>
         </view>
@@ -79,18 +79,18 @@
             <text>{{ analyzingText }}</text>
           </block>
           <block v-else-if="!isOnline">
-            <u-icon name="wifi-off" size="18" color="#999" />
+            <u-icon name="wifi-off" size="40" color="#999" />
             <text>网络不可用</text>
           </block>
           <block v-else>
-            <u-icon name="search" size="18" :color="uploadedImage ? '#FFF' : '#999'" />
+            <u-icon name="search" size="40" :color="uploadedImage ? '#FFF' : '#999'" />
             <text>{{ uploadedImage ? '开始解析图片' : '请先上传图片' }}</text>
           </block>
         </button>
 
         <!-- 提示条 -->
         <view v-if="!uploadedImage" class="tip-bar">
-          <u-icon name="info-circle" size="14" color="#999" />
+          <u-icon name="info-circle" size="40" color="#999" />
           <text>上传任意设计稿，AI 将反推完整的 Midjourney / SD 提示词</text>
         </view>
       </view>
@@ -100,7 +100,7 @@
         <!-- 结果头部 -->
         <view class="result-head">
           <view class="result-badge">
-            <u-icon name="checkmark-circle-fill" size="18" color="#7C4DFF" />
+            <u-icon name="checkmark-circle-fill" size="40" color="#7C4DFF" />
             <text>分析完成</text>
             <text v-if="analysisElapsed" class="elapsed-text">{{ analysisElapsed }}s</text>
           </view>
@@ -120,7 +120,7 @@
         <!-- 英文提示词 -->
         <view class="prompt-block">
           <view class="prompt-label-row">
-            <u-icon name="language" size="14" color="#7C4DFF" />
+            <u-icon name="language" size="40" color="#7C4DFF" />
             <text>English Prompt</text>
           </view>
           <view class="prompt-body en">{{ analysisResult.prompt.english }}</view>
@@ -129,7 +129,7 @@
         <!-- 中文描述 -->
         <view class="prompt-block">
           <view class="prompt-label-row">
-            <u-icon name="chat" size="14" color="#666" />
+            <u-icon name="chat" size="40" color="#666" />
             <text>中文描述</text>
           </view>
           <view class="prompt-body cn">{{ analysisResult.prompt.chinese }}</view>
@@ -138,7 +138,7 @@
         <!-- 关键词 -->
         <view v-if="analysisResult.prompt.keywords?.length" class="kw-section">
           <view class="prompt-label-row">
-            <u-icon name="tags" size="14" color="#7C4DFF" />
+            <u-icon name="tags" size="40" color="#7C4DFF" />
             <text>关键词权重</text>
           </view>
           <view class="kw-flex">
@@ -156,7 +156,7 @@
         <!-- 配色方案 -->
         <view v-if="analysisResult.colorScheme?.length" class="color-section">
           <view class="prompt-label-row">
-            <u-icon name="color-fill" size="14" color="#E91E63" />
+            <u-icon name="color-fill" size="40" color="#E91E63" />
             <text>配色方案</text>
           </view>
           <scroll-view scroll-x class="color-scroll-x">
@@ -179,7 +179,7 @@
         <!-- 元素识别 -->
         <view v-if="analysisResult.elements?.length" class="elem-section">
           <view class="prompt-label-row">
-            <u-icon name="grid" size="14" color="#19be6b" />
+            <u-icon name="grid" size="40" color="#19be6b" />
             <text>元素识别</text>
           </view>
           <view class="elem-list">
@@ -197,11 +197,11 @@
         <!-- 操作按钮组 -->
         <view class="action-grid">
           <button class="action-btn primary" @click="goToEdit">
-            <u-icon name="edit-pen" size="18" color="#FFF" />
+            <u-icon name="edit-pen" size="40" color="#FFF" />
             <text>编辑优化</text>
           </button>
           <button class="action-btn warning" @click="generateImage">
-            <u-icon name="photo-fill" size="18" color="#7C4DFF" />
+            <u-icon name="photo-fill" size="40" color="#7C4DFF" />
             <text>生成图片</text>
           </button>
         </view>
@@ -210,13 +210,13 @@
       <!-- ====== AI 生成结果（在 scroll-view 内部！）====== -->
       <view v-if="showResult && generatedImage" id="gen-result" class="gen-card">
         <view class="gen-head">
-          <u-icon name="checkmark-circle-fill" size="18" color="#19be6b" />
+          <u-icon name="checkmark-circle-fill" size="40" color="#19be6b" />
           <text class="gen-title">AI 生成结果</text>
           <u-tag text="NEW" type="success" size="mini" />
         </view>
         <!-- 图片加载状态 -->
         <view v-if="genImageLoading" class="gen-image-loading">
-          <u-icon name="hourglass" size="24" color="#999" />
+          <u-icon name="hourglass" size="40" color="#999" />
           <text>图片加载中...</text>
         </view>
         <!-- #ifdef H5 -->
@@ -241,17 +241,17 @@
         <!-- #endif -->
         <!-- 图片加载失败提示 -->
         <view v-if="genImageError" class="gen-image-error">
-          <u-icon name="warning" size="18" color="#f56c6c" />
+          <u-icon name="warning" size="40" color="#f56c6c" />
           <text>图片加载失败</text>
           <text class="gen-retry" @tap="retryLoadGenImage">点击重试</text>
         </view>
         <view class="gen-actions">
           <button class="gen-btn primary" @click="downloadImage">
-            <u-icon name="download" size="18" color="#FFF" />
+            <u-icon name="download" size="40" color="#FFF" />
             <text>保存到相册</text>
           </button>
           <button class="gen-btn outline" :disabled="generating" @click="generateImage">
-            <u-icon name="reload" size="18" color="#7C4DFF" />
+            <u-icon name="reload" size="40" color="#7C4DFF" />
             <text>{{ generating ? '生成中...' : '重新生成' }}</text>
           </button>
         </view>
@@ -260,10 +260,10 @@
       <!-- 历史记录入口 -->
       <view v-if="!analysisResult" class="history-link" @tap="goToHistory">
         <view class="history-link-inner">
-          <u-icon name="clock" size="18" color="#999" />
+          <u-icon name="clock" size="40" color="#999" />
           <text>最近解析记录</text>
           <text class="history-count">{{ historyCount }} 条</text>
-          <u-icon name="arrow-right" size="14" color="#ccc" />
+          <u-icon name="arrow-right" size="40" color="#ccc" />
         </view>
       </view>
 

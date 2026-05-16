@@ -130,7 +130,7 @@ function copyCommand(command: string) {
         <u-gap />
         <view class="features-grid">
           <view v-for="(feature, index) in features" :key="index" class="feature-card">
-            <u-icon :name="feature.icon" size="48rpx" color="primary" />
+            <u-icon :name="feature.icon" size="40" color="primary" />
             <u-text :text="feature.title" size="28rpx" bold />
             <u-text :text="feature.desc" size="24rpx" />
           </view>
@@ -151,7 +151,7 @@ function copyCommand(command: string) {
                 <u-text :text="step.title" size="28rpx" bold class="step-title" />
                 <view class="command-block">
                   <u-text :text="step.command" size="24rpx" />
-                  <u-icon name="copy" size="28rpx" color="grey-5" @click="copyCommand(step.command)" />
+                  <u-icon name="copy" size="40" color="grey-5" @click="copyCommand(step.command)" />
                 </view>
                 <u-text :text="step.desc" size="24rpx" />
               </view>
@@ -166,7 +166,7 @@ function copyCommand(command: string) {
         <u-gap />
         <view class="platforms-grid">
           <view v-for="(platform, index) in platforms" :key="index" class="platform-card">
-            <u-icon :name="platform.icon" size="48rpx" color="primary" />
+            <u-icon :name="platform.icon" size="40" color="primary" />
             <u-text :text="platform.name" size="28rpx" bold />
             <u-text :text="platform.desc" size="24rpx" />
           </view>
@@ -182,7 +182,7 @@ function copyCommand(command: string) {
             <view v-for="(cmd, index) in commands" :key="index" class="command-item">
               <view class="command-block">
                 <u-text :text="cmd.command" size="26rpx" color="primary" />
-                <u-icon name="copy" size="28rpx" color="grey-5" @click="copyCommand(cmd.command)" />
+                <u-icon name="copy" size="40" color="grey-5" @click="copyCommand(cmd.command)" />
               </view>
               <u-text :text="cmd.desc" size="24rpx" />
             </view>

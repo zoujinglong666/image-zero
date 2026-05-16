@@ -246,7 +246,7 @@ const configExamples = [
         <u-gap />
         <u-card :title="error ? t('demo.http.errorInfo') : t('demo.http.successResponse')" :border-radius="0" margin="0">
           <view v-if="error" class="error-content">
-            <u-icon name="info-circle" color="error" size="32rpx" />
+            <u-icon name="info-circle" color="error" size="40" />
             <u-text :text="error" color="error" />
           </view>
 

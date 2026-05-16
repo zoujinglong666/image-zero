@@ -129,15 +129,15 @@ function showToast(title: string) {
           </view>
           <view class="help-links">
             <view class="help-link" @click="copyLink('https://uviewpro.cn')">
-              <u-icon name="chrome-circle-fill" size="32" color="var(--u-type-primary)" />
+              <u-icon name="chrome-circle-fill" size="40" color="var(--u-type-primary)" />
               <text>{{ t('about.faqPage.visitWebsite') }}: https://uviewpro.cn</text>
             </view>
             <view class="help-link" @click="copyLink('https://github.com/anyup/uview-pro')">
-              <u-icon name="github-circle-fill" size="32" color="var(--u-type-info)" />
+              <u-icon name="github-circle-fill" size="40" color="var(--u-type-info)" />
               <text>{{ t('about.faqPage.visitGithub') }}: https://github.com/anyup/uview-pro</text>
             </view>
             <view class="help-link" @click="preview('weixin-chat-cl')">
-              <u-icon name="chat" size="32" color="var(--u-type-success)" />
+              <u-icon name="chat" size="40" color="var(--u-type-success)" />
               <text>{{ t('about.faqPage.joinGroup') }}</text>
             </view>
           </view>

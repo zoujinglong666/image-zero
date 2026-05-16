@@ -137,7 +137,7 @@ const piniaFeatures = [
         <u-gap />
         <view class="examples-grid">
           <view v-for="(example, index) in examples" :key="index" class="example-card">
-            <u-icon :name="example.icon" size="48rpx" color="primary" />
+            <u-icon :name="example.icon" size="40" color="primary" />
             <u-text :text="example.title" size="28rpx" bold />
             <u-text :text="example.desc" size="24rpx" />
           </view>
@@ -254,7 +254,7 @@ const piniaFeatures = [
         <u-card margin="0" border-radius="0" :show-head="false" custom-class="features-card">
           <view class="features-list">
             <view v-for="(feature, index) in piniaFeatures" :key="index" class="feature-item">
-              <u-icon name="checkmark-circle" color="success" size="28rpx" />
+              <u-icon name="checkmark-circle" color="success" size="40" />
               <u-text :text="feature" size="26rpx" />
             </view>
           </view>

@@ -68,7 +68,7 @@ const advantages = computed(() => [
         <u-gap />
         <view class="features-grid">
           <view v-for="(feature, index) in features" :key="index" class="feature-card">
-            <u-icon :name="feature.icon" size="48rpx" color="primary" />
+            <u-icon :name="feature.icon" size="40" color="primary" />
             <u-text :text="feature.title" size="28rpx" />
             <u-text :text="feature.desc" size="24rpx" />
           </view>
@@ -80,7 +80,7 @@ const advantages = computed(() => [
         <u-text :text="t('demo.uviewIntro.advantages')" size="32rpx" bold />
         <view class="advantages-list">
           <view v-for="(advantage, index) in advantages" :key="index" class="advantage-item">
-            <u-icon name="checkmark-circle" size="32rpx" color="success" />
+            <u-icon name="checkmark-circle" size="40" color="success" />
             <view class="advantage-content">
               <u-text :text="advantage.title" size="28rpx" bold />
               <u-text :text="advantage.desc" size="24rpx" />

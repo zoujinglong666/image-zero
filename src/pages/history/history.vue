@@ -118,7 +118,7 @@
                 <image class="thumb-img" :src="item.imageUrl" mode="aspectFill" />
                 <!-- #endif -->
                 <view v-if="item.favorite" class="fav-badge">
-                  <u-icon name="star-fill" size="12" color="#7C4DFF" />
+                  <u-icon name="star-fill" size="40" color="#7C4DFF" />
                 </view>
               </view>
 
@@ -127,19 +127,19 @@
                 <view class="card-prompt">{{ item.prompt }}</view>
                 <view class="card-meta">
                   <view class="meta-left">
-                    <u-icon name="clock" size="12" color="#BBBBBB" />
+                    <u-icon name="clock" size="40" color="#BBBBBB" />
                     <text>{{ formatTime(item.timestamp) }}</text>
                   </view>
                   <view class="meta-right">
                     <u-icon
                       :name="item.favorite ? 'star-fill' : 'star'"
-                      size="18"
+                      size="40"
                       :color="item.favorite ? '#7C4DFF' : '#CCCCCC'"
                       @tap.stop="toggleFavorite(item)"
                     />
                     <u-icon
                       name="trash-fill"
-                      size="18"
+                      size="40"
                       color="#CCCCCC"
                       style="margin-left: 16rpx;"
                       @tap.stop="deleteItem(item.id)"

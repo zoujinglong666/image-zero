@@ -207,7 +207,7 @@ function showToast(title: string) {
             </view>
           </view>
           <view class="hero-arrow">
-            <u-icon name="arrow-right" color="rgba(255,255,255,0.8)" size="36" />
+            <u-icon name="arrow-right" color="rgba(255,255,255,0.8)" size="40" />
           </view>
         </view>
       </view>
@@ -229,7 +229,7 @@ function showToast(title: string) {
               @click="navigateTo(item.path)"
             >
               <view class="menu-item__icon" :style="{ background: item.color }">
-                <u-icon :name="item.icon" size="48" color="#ffffff" />
+                <u-icon :name="item.icon" size="40" color="#ffffff" />
               </view>
               <view class="menu-item__title">
                 {{ item.title }}
@@ -271,7 +271,7 @@ function showToast(title: string) {
               </view>
             </view>
             <view class="info-item__arrow">
-              <u-icon name="arrow-right" color="#c0c4cc" size="32" />
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
         </view>
@@ -306,7 +306,7 @@ function showToast(title: string) {
               </view>
             </view>
             <view class="info-item__arrow">
-              <u-icon name="arrow-right" color="#c0c4cc" size="32" />
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
         </view>

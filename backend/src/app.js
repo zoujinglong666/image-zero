@@ -30,11 +30,11 @@ const app = express()
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
+      defaultSrc: ["'self'", 'https://www.image-zero.art'],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https://image.pollinations.ai'],
-      connectSrc: ["'self'", 'https://openrouter.ai'],
+      imgSrc: ["'self'", 'data:', 'https://image.pollinations.ai', 'https:'],
+      connectSrc: ["'self'", 'https://openrouter.ai', 'https://*.myqcloud.com', 'https://www.image-zero.art'],
     },
   },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -76,6 +76,9 @@ app.use(successResponse)
 if (!fs.existsSync(config.upload.dest)) {
   fs.mkdirSync(config.upload.dest, { recursive: true })
 }
+
+// 静态文件服务 (社区图片本地回退)
+app.use('/uploads', express.static(config.upload.dest))
 
 // ═══════════════════════════════════════
 //  路由注册

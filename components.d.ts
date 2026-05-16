@@ -20,6 +20,7 @@ declare module 'vue' {
     ULine: typeof import('uview-pro/components/u-line/u-line.vue')['default']
     ULoading: typeof import('uview-pro/components/u-loading/u-loading.vue')['default']
     UMask: typeof import('uview-pro/components/u-mask/u-mask.vue')['default']
+    UModal: typeof import('uview-pro/components/u-modal/u-modal.vue')['default']
     UNavbar: typeof import('uview-pro/components/u-navbar/u-navbar.vue')['default']
     UPopup: typeof import('uview-pro/components/u-popup/u-popup.vue')['default']
     URadio: typeof import('uview-pro/components/u-radio/u-radio.vue')['default']

@@ -22,7 +22,7 @@ const config = {
   cors: {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-      : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+      : ['https://www.image-zero.art', 'http://localhost:5173', 'http://localhost:3000'],
   },
 
   // 文件上传配置

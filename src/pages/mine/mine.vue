@@ -27,7 +27,7 @@
           <text class="user-desc">{{ userStore.isLoggedIn ? loginDesc : '点击登录，解锁更多功能' }}</text>
         </view>
         <!-- 未登录时显示登录箭头 -->
-        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="16" color="#CCCCCC" />
+        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="40" color="#CCCCCC" />
         <!-- 已登录时显示微信标识 -->
         <u-tag v-else-if="userStore.isWechatUser" text="微信" type="success" size="mini" plain />
       </view>
@@ -36,7 +36,7 @@
       <view v-if="!userStore.isLoggedIn" class="login-section">
         <!-- #ifdef MP-WEIXIN -->
         <button class="wechat-login-btn" @tap="handleWechatLogin" :loading="userStore.isLoggingIn">
-          <u-icon name="weixin-fill" size="20" color="#FFFFFF" />
+          <u-icon name="weixin-fill" size="40" color="#FFFFFF" />
           <text>微信一键登录</text>
         </button>
         <!-- #endif -->
@@ -53,22 +53,22 @@
       <!-- 统计网格 -->
       <view class="stats-grid">
         <view class="grid-item" @tap="goToHistory">
-          <u-icon name="clock-fill" size="28" color="#7C4DFF" />
+          <u-icon name="clock-fill" size="40" color="#7C4DFF" />
           <text class="grid-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="grid-label">解析记录</text>
         </view>
         <view class="grid-item">
-          <u-icon name="star-fill" size="28" color="#7C4DFF" />
+          <u-icon name="star-fill" size="40" color="#7C4DFF" />
           <text class="grid-num">{{ favoriteCount }}</text>
           <text class="grid-label">我的收藏</text>
         </view>
         <view class="grid-item">
-          <u-icon name="bookmark-fill" size="28" color="#19be6b" />
+          <u-icon name="bookmark-fill" size="40" color="#19be6b" />
           <text class="grid-num">{{ savedPrompts.length }}</text>
           <text class="grid-label">保存提示词</text>
         </view>
         <view class="grid-item">
-          <u-icon name="photo-fill" size="28" color="#6200EA" />
+          <u-icon name="photo-fill" size="40" color="#6200EA" />
           <text class="grid-num">{{ generatedCount }}</text>
           <text class="grid-label">生成图片</text>
         </view>
@@ -203,7 +203,7 @@
       <view class="picker-popup">
         <view class="picker-header">
           <text class="picker-title">选择生成质量</text>
-          <u-icon name="close" size="18" color="#999" @click="showQualityPopup = false" />
+          <u-icon name="close" size="40" color="#999" @click="showQualityPopup = false" />
         </view>
         <u-radio-group v-model="currentQuality" @change="(val: any) => { currentQuality = val; showQualityPopup = false }">
           <u-cell-group :border="false">
@@ -237,7 +237,7 @@
       <view class="picker-popup">
         <view class="picker-header">
           <text class="picker-title">选择默认尺寸</text>
-          <u-icon name="close" size="18" color="#999" @click="showSizePopup = false" />
+          <u-icon name="close" size="40" color="#999" @click="showSizePopup = false" />
         </view>
         <u-radio-group v-model="currentSize" @change="(val: any) => { currentSize = val; showSizePopup = false }">
           <u-cell-group :border="false">

@@ -175,7 +175,7 @@ function showToast(title: string) {
               </view>
             </view>
             <view class="resource-item__arrow">
-              <u-icon name="arrow-right" color="#c0c4cc" size="32" />
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
         </view>
@@ -191,7 +191,7 @@ function showToast(title: string) {
         <view class="section-card__body">
           <view v-for="(item, index) in bestPractices" :key="index" class="practice-item">
             <view class="practice-item__icon">
-              <u-icon name="checkmark-circle" size="32" color="var(--u-type-success)" />
+              <u-icon name="checkmark-circle" size="40" color="var(--u-type-success)" />
             </view>
             <view class="practice-item__text">
               {{ item }}

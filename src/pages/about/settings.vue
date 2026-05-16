@@ -116,7 +116,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             </view>
             <view class="setting-item__value" @click="showThemePicker = true">
               {{ t(`theme.${currentThemeValue?.name}`) || currentThemeValue?.label || currentTheme }}
-              <u-icon name="arrow-right" color="#c0c4cc" size="28" />
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
         </view>
@@ -136,14 +136,14 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             </view>
             <view class="setting-item__value" @click="showLocalePicker = true">
               {{ currentLocale.label }}
-              <u-icon name="arrow-right" color="#c0c4cc" size="28" />
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
           <view class="setting-item" @click="handleClearCache">
             <view class="setting-item__label">
               {{ t('about.settingsPage.clearCache') }}
             </view>
-            <u-icon name="arrow-right" color="#c0c4cc" size="32" />
+            <u-icon name="arrow-right" color="#c0c4cc" size="40" />
           </view>
         </view>
       </view>
@@ -160,7 +160,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             <view class="setting-item__label">
               {{ t('about.faq') }}
             </view>
-            <u-icon name="arrow-right" color="#c0c4cc" size="32" />
+            <u-icon name="arrow-right" color="#c0c4cc" size="40" />
           </view>
         </view>
       </view>
@@ -184,7 +184,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
                 {{ t(`theme.${theme.name}`) }}
               </view>
               <u-icon
-                v-if="currentTheme === theme.name" name="checkmark-circle" size="32"
+                v-if="currentTheme === theme.name" name="checkmark-circle" size="40"
                 color="var(--u-type-primary)"
               />
             </view>
@@ -210,7 +210,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
                 {{ locale.label }}
               </view>
               <u-icon
-                v-if="currentLocale.name === locale.name" name="checkmark-circle" size="32"
+                v-if="currentLocale.name === locale.name" name="checkmark-circle" size="40"
                 color="var(--u-type-primary)"
               />
             </view>

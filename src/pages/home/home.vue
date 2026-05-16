@@ -156,7 +156,7 @@ function goToUrl(url: string) {
               >
                 <view class="card-inner">
                   <view class="card-icon" :style="card.style">
-                    <u-icon :name="card.icon" size="28" color="white" />
+                    <u-icon :name="card.icon" size="40" color="white" />
                   </view>
                   <view class="card-body">
                     <view class="card-title">

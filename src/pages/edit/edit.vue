@@ -11,7 +11,7 @@
     >
       <template #right>
         <button class="nav-preview-btn" @click="previewEdit">
-          <u-icon name="eye" size="15" color="#7C4DFF" />
+          <u-icon name="eye" size="40" color="#7C4DFF" />
           <text>预览</text>
         </button>
       </template>
@@ -20,12 +20,12 @@
     <!-- 无数据空状态 -->
     <view v-if="!editData" class="empty-state">
       <view class="empty-icon-wrap">
-        <u-icon name="file-text" size="64" color="#DDD" />
+        <u-icon name="file-text" size="40" color="#DDD" />
       </view>
       <text class="empty-title">暂无编辑数据</text>
       <text class="empty-desc">请先在首页上传并解析图片</text>
       <button class="empty-btn" @click="goHome">
-        <u-icon name="arrow-leftward" size="16" color="#FFF" />
+        <u-icon name="arrow-leftward" size="40" color="#FFF" />
         <text>去首页解析</text>
       </button>
     </view>
@@ -89,7 +89,7 @@
             <view v-for="(kw, idx) in editData.prompt.keywords" :key="idx" class="kw-item">
               <input class="kw-input" v-model="kw.keyword" placeholder="关键词" />
               <input class="kw-weight" v-model.number="kw.weight" type="digit" placeholder="权重" />
-              <u-icon name="close-circle-fill" size="20" color="#fa3534" @click="removeKeyword(idx)" />
+              <u-icon name="close-circle-fill" size="40" color="#fa3534" @click="removeKeyword(idx)" />
             </view>
           </view>
         </view>
@@ -119,7 +119,7 @@
               :style="{ backgroundColor: c }"
               @tap="editData.primaryColor = c"
             >
-              <u-icon v-if="editData.primaryColor === c" name="checkmark" size="12" color="#fff" />
+              <u-icon v-if="editData.primaryColor === c" name="checkmark" size="40" color="#fff" />
             </view>
           </view>
         </view>
@@ -238,11 +238,11 @@
       <!-- 底部操作栏 -->
       <view class="bottom-bar">
         <button class="bottom-btn reset" @click="resetEdit">
-          <u-icon name="reload" size="16" color="#999" />
+          <u-icon name="reload" size="40" color="#999" />
           <text>重置</text>
         </button>
         <button class="bottom-btn save" @click="saveEdit">
-          <u-icon name="checkmark" size="16" color="#FFF" />
+          <u-icon name="checkmark" size="40" color="#FFF" />
           <text>保存并生成</text>
         </button>
       </view>

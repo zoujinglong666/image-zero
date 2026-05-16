@@ -189,7 +189,7 @@ CREATE INDEX IF NOT EXISTS idx_fav_user   ON prompt_favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_fav_prompt ON prompt_favorites(prompt_id);
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
---  用户自创提示词表
+--  用户自创提示词表（含社区分享）
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CREATE TABLE IF NOT EXISTS user_prompts (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,14 +197,71 @@ CREATE TABLE IF NOT EXISTS user_prompts (
   title         TEXT    NOT NULL,
   prompt_text   TEXT    NOT NULL,
   category_id   INTEGER DEFAULT 0,
-  is_public     INTEGER NOT NULL DEFAULT 0,              -- 0=私密 1=公开
+  is_public     INTEGER NOT NULL DEFAULT 0,              -- 0=私密 1=公开(社区可见)
+  image_url     TEXT    DEFAULT '',                       -- 示例图片 URL (COS)
+  image_hash    TEXT    DEFAULT '',                       -- 图片指纹(去重/校验)
+  view_count    INTEGER NOT NULL DEFAULT 0,               -- 浏览数
+  like_count    INTEGER NOT NULL DEFAULT 0,               -- 点赞数
+  status        TEXT    NOT NULL DEFAULT 'published',     -- published / pending_review / hidden / reported
+  report_count  INTEGER NOT NULL DEFAULT 0,               -- 举报次数
   created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   updated_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_prompts_uid ON user_prompts(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_prompts_uid    ON user_prompts(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_prompts_pub   ON user_prompts(is_public, status);
+CREATE INDEX IF NOT EXISTS idx_user_prompts_likes ON user_prompts(like_count DESC);
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  社区举报表
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE TABLE IF NOT EXISTS community_reports (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  prompt_id     INTEGER NOT NULL,
+  reporter_id   INTEGER NOT NULL,
+  reason        TEXT    NOT NULL DEFAULT '',
+  description   TEXT    DEFAULT '',
+  status        TEXT    NOT NULL DEFAULT 'pending',
+  created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  FOREIGN KEY (prompt_id) REFERENCES user_prompts(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_reports_prompt ON community_reports(prompt_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON community_reports(status);
 `
+
+// ══════════════════════════════════════════
+//  兼容迁移: 为已存在的数据库添加新列
+// ══════════════════════════════════════════
+function runMigrations() {
+  // user_prompts 新增字段
+  const userPromptsCols = db.prepare('PRAGMA table_info(user_prompts)').all()
+  const colNames = userPromptsCols.map(c => c.name)
+
+  const newColumns = [
+    { name: 'image_url',     sql: "ALTER TABLE user_prompts ADD COLUMN image_url TEXT DEFAULT ''" },
+    { name: 'image_hash',    sql: "ALTER TABLE user_prompts ADD COLUMN image_hash TEXT DEFAULT ''" },
+    { name: 'view_count',    sql: "ALTER TABLE user_prompts ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0" },
+    { name: 'like_count',    sql: "ALTER TABLE user_prompts ADD COLUMN like_count INTEGER NOT NULL DEFAULT 0" },
+    { name: 'status',        sql: "ALTER TABLE user_prompts ADD COLUMN status TEXT NOT NULL DEFAULT 'published'" },
+    { name: 'report_count',  sql: "ALTER TABLE user_prompts ADD COLUMN report_count INTEGER NOT NULL DEFAULT 0" },
+  ]
+
+  for (const col of newColumns) {
+    if (!colNames.includes(col.name)) {
+      try {
+        db.exec(col.sql)
+        logger.info(`[DB Migration] 添加列 user_prompts.${col.name}`)
+      } catch (e) {
+        // 列可能已存在，忽略
+      }
+    }
+  }
+}
+
+runMigrations()
 
 // 执行建表
 db.exec(CREATE_TABLES)
