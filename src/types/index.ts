@@ -142,11 +142,11 @@ export interface HistoryItem {
   createdAt: number
 }
 
-// API 响应
+// API 响应（后端统一格式）
 export interface ApiResponse<T> {
   code: number
-  message: string
   data: T
+  message: string
 }
 
 // ====== 图片生成参数 ======
@@ -215,9 +215,8 @@ export interface WechatLoginParams {
   code: string
 }
 
-/** 微信登录响应 */
+/** 微信登录响应（拦截器已解包，直接是 data 字段） */
 export interface WechatLoginResult {
-  success: boolean
   token: string
   expiresIn: string
   user: {
@@ -228,7 +227,6 @@ export interface WechatLoginResult {
 
 /** 匿名登录响应 */
 export interface AnonymousLoginResult {
-  success: boolean
   token: string
   expiresIn: string
 }
@@ -249,7 +247,6 @@ export interface VerifyTokenResult {
 export interface AuthStatusResult {
   jwt: boolean
   wechat: boolean
-  wechatAppid: string | null
   anonymousAllowed: boolean
 }
 

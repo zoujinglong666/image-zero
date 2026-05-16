@@ -186,7 +186,7 @@ export function watchNetworkChange(callback: (online: boolean) => void): () => v
 // ══════════════════════════════════════════
 
 /**
- * 分析图片 - 调用后端真实 AI (OpenRouter/NVIDIA 视觉模型)
+ * 分析图片 - 调用后端 AI 服务
  * 自动压缩大图后再上传，支持重试
  */
 export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
@@ -208,17 +208,19 @@ export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResul
 
   console.log(`🔍 [API] 开始分析图片...`)
 
-  const result = await retryRequest<ImageAnalysisResult>(
-    () => http.post<ImageAnalysisResult>('/analyze', { imageUrl: processedUrl }, { timeout: 120_000 }),
+  const response = await retryRequest<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>(
+    () => http.post<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>('/analyze', { imageUrl: processedUrl }, { timeout: 120_000 }),
     '/analyze',
   )
 
-  console.log(`✅ [API] 分析完成 | 风格: ${result.style}`)
-  return result
+  // 后端返回 { elapsed, result, cached }，提取分析结果
+  const analysisResult = response.result
+  console.log(`✅ [API] 分析完成 | 风格: ${analysisResult.style}`)
+  return analysisResult
 }
 
 /**
- * 生成图片 - 调用后端 (Pollinations.AI)
+ * 生成图片 - 调用后端 AI 服务
  */
 export async function generateImage(params: ImageGenerationParams): Promise<string> {
   console.log(`🎨 [API] 开始生成图片...`)
@@ -239,7 +241,7 @@ export async function generateImage(params: ImageGenerationParams): Promise<stri
 }
 
 /**
- * 编辑图片 - 调用后端 (AI 重分析 + Pollinations 重生成)
+ * 编辑图片 - 调用后端 AI 服务
  */
 export async function editImage(params: EditParams): Promise<{ imageUrl: string; prompt: string }> {
   console.log(`✏️ [API] 开始编辑图片...`)

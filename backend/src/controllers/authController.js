@@ -21,7 +21,7 @@ import logger from '../utils/logger.js'
  */
 function generateToken(payload) {
   if (!config.jwt.secret) {
-    throw new InternalError('认证服务未配置', 'AUTH_NOT_CONFIGURED')
+    throw new InternalError('认证服务未配置')
   }
   return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn })
 }
@@ -31,20 +31,18 @@ function generateToken(payload) {
  * 前端调用 wx.login() 获取 code，发送到此处换取 JWT
  *
  * 请求体: { code: string }
- * 响应:   { success: true, data: { token, expiresIn, user } }
+ *  响应:   { code: 0, data: { token, expiresIn, user }, message: '...' }
  */
 export async function wechatLogin(req, res, next) {
   try {
     const { code } = req.body
 
     if (!code) {
-      throw new BadRequestError('缺少 code 参数', 'MISSING_CODE')
+      throw new BadRequestError('缺少 code 参数')
     }
 
     if (!isWechatConfigured()) {
-      throw new ServiceUnavailableError('微信登录未配置', 'WECHAT_NOT_CONFIGURED', {
-        hint: '请在 .env 中配置 WX_APPID 和 WX_SECRET',
-      })
+      throw new ServiceUnavailableError('微信登录暂未开通')
     }
 
     // 微信 code2Session
@@ -72,7 +70,7 @@ export async function wechatLogin(req, res, next) {
       return next(err)
     }
     logger.error(`微信登录失败: ${err.message}`)
-    next(new InternalError('登录失败，请重试', 'WECHAT_LOGIN_FAILED'))
+    next(new InternalError('登录失败，请重试'))
   }
 }
 
@@ -83,12 +81,12 @@ export async function wechatLogin(req, res, next) {
 export function anonymousLogin(req, res, next) {
   try {
     if (!config.jwt.secret) {
-      throw new InternalError('认证服务未配置', 'AUTH_NOT_CONFIGURED')
+      throw new InternalError('认证服务未配置')
     }
 
     // 生产环境限制匿名登录
     if (config.isProduction) {
-      throw new ForbiddenError('生产环境不允许匿名登录', 'ANONYMOUS_DISABLED')
+      throw new ForbiddenError('生产环境不允许匿名登录')
     }
 
     const token = generateToken({
@@ -110,7 +108,7 @@ export function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('未提供令牌', 'NO_TOKEN')
+      throw new UnauthorizedError('未提供令牌')
     }
 
     const token = authHeader.substring(7)
@@ -119,9 +117,9 @@ export function verifyToken(req, res, next) {
       res.success({ valid: true, user: decoded })
     } catch (err) {
       if (err.name === 'TokenExpiredError') {
-        throw new UnauthorizedError('令牌已过期', 'TOKEN_EXPIRED')
+        throw new UnauthorizedError('令牌已过期')
       }
-      throw new UnauthorizedError('令牌无效', 'INVALID_TOKEN')
+      throw new UnauthorizedError('令牌无效')
     }
   } catch (err) {
     next(err)
@@ -135,7 +133,6 @@ export function authStatus(req, res) {
   res.success({
     jwt: !!config.jwt.secret,
     wechat: isWechatConfigured(),
-    wechatAppid: isWechatConfigured() ? config.wechat.appid : null,
     anonymousAllowed: !config.isProduction,
   })
 }

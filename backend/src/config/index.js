@@ -22,7 +22,7 @@ const config = {
   cors: {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-      : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://43.138.156.217'],
+      : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   },
 
   // 文件上传配置
@@ -78,6 +78,10 @@ export function validateConfig() {
     if (config.cors.allowedOrigins.some(o => o.includes('localhost'))) {
       errors.push('CORS ALLOWED_ORIGINS 包含 localhost，生产环境不安全')
     }
+  }
+
+  if (!config.jwt.secret) {
+    console.warn('⚠️  未配置 JWT_SECRET，认证功能不可用')
   }
 
   if (!config.openrouter.apiKey) {

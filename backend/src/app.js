@@ -7,6 +7,7 @@
 import express from 'express'
 import cors from 'cors'
 import fs from 'fs'
+import helmet from 'helmet'
 import config, { validateConfig } from './config/index.js'
 import { requestLogger } from './middlewares/requestLogger.js'
 import { RateLimiter } from './middlewares/rateLimiter.js'
@@ -22,6 +23,22 @@ import logger from './utils/logger.js'
 validateConfig()
 
 const app = express()
+
+// ═══════════════════════════════════════
+//  安全响应头（Helmet）
+// ═══════════════════════════════════════
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https://image.pollinations.ai'],
+      connectSrc: ["'self'", 'https://openrouter.ai'],
+    },
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}))
 
 // ═══════════════════════════════════════
 //  全局中间件

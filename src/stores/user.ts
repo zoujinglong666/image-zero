@@ -66,7 +66,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const result = await apiWechatLogin()
 
-      if (result.success && result.token) {
+      if (result.token) {
         saveToken(result.token)
 
         userInfo.value = {
@@ -117,7 +117,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const result = await apiAnonymousLogin()
 
-      if (result.success && result.token) {
+      if (result.token) {
         saveToken(result.token)
 
         userInfo.value = {

@@ -2,6 +2,9 @@
  * 图灵绘境 - 数据控制器
  * 历史记录 / 用户偏好 / 用户信息
  * 使用统一结果返回器 + AppError
+ *
+ * 写操作由 authMiddleware 在路由层保护，handler 从 req.user 获取用户
+ * 读操作允许未认证访问，通过 resolveUser 静默降级为 guest
  */
 import jwt from 'jsonwebtoken'
 import config from '../config/index.js'
@@ -26,7 +29,8 @@ import {
 import logger from '../utils/logger.js'
 
 /**
- * 从请求中解析用户（可选认证）
+ * 从请求中解析用户（可选认证，仅用于读操作）
+ * 写操作应使用 authMiddleware，从 req.user 获取已认证用户
  */
 function resolveUser(req) {
   const authHeader = req.headers.authorization
@@ -39,6 +43,14 @@ function resolveUser(req) {
   } catch {
     return { id: 0, uid: 'guest', type: 'guest', vip_level: 0, daily_quota: 10 }
   }
+}
+
+/**
+ * 获取已认证用户（写操作专用）
+ * 从 authMiddleware 设置的 req.user 解析出完整用户对象
+ */
+function getAuthenticatedUser(req) {
+  return findOrCreateUserFromToken(req.user)
 }
 
 // ══════════════════════════════════════════
@@ -60,8 +72,7 @@ export function listHistory(req, res) {
 
 /** POST /api/data/history */
 export function createHistory(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后保存记录')
+  const user = getAuthenticatedUser(req)
 
   const { type, imageUrl, promptCn, promptEn, style, resultJson, generatedUrl } = req.body
   if (!imageUrl && !promptCn && !promptEn) {
@@ -83,8 +94,7 @@ export function createHistory(req, res) {
 
 /** PUT /api/data/history/:id/favorite */
 export function favoriteHistory(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后操作')
+  const user = getAuthenticatedUser(req)
 
   const result = toggleFavorite(parseInt(req.params.id), user.id)
   if (!result) throw new NotFoundError('记录不存在')
@@ -94,8 +104,7 @@ export function favoriteHistory(req, res) {
 
 /** DELETE /api/data/history/:id */
 export function removeHistory(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后操作')
+  const user = getAuthenticatedUser(req)
 
   const deleted = deleteHistory(parseInt(req.params.id), user.id)
   if (!deleted) throw new NotFoundError('记录不存在')
@@ -105,8 +114,7 @@ export function removeHistory(req, res) {
 
 /** DELETE /api/data/history */
 export function removeAllHistory(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后操作')
+  const user = getAuthenticatedUser(req)
 
   const count = clearHistory(user.id)
   res.success({ deleted: count }, `已清空 ${count} 条记录`)
@@ -125,8 +133,7 @@ export function listPreferences(req, res) {
 
 /** PUT /api/data/preferences */
 export function updatePreferences(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后保存偏好')
+  const user = getAuthenticatedUser(req)
 
   const prefs = req.body
   if (!prefs || typeof prefs !== 'object') throw new BadRequestError('偏好数据格式错误')
@@ -159,8 +166,7 @@ export function getProfile(req, res) {
 
 /** PUT /api/data/profile */
 export function updateProfile(req, res) {
-  const user = resolveUser(req)
-  if (user.id === 0) throw new UnauthorizedError('请登录后修改')
+  const user = getAuthenticatedUser(req)
 
   const updated = updateUser(user.uid, req.body)
   res.success({ uid: updated.uid, nickname: updated.nickname, avatarUrl: updated.avatar_url }, '信息已更新')

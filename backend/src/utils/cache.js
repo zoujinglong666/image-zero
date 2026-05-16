@@ -2,6 +2,7 @@
  * 内存缓存系统
  * 相同图片 hash 缓存分析结果，避免重复调用 AI API
  */
+import crypto from 'crypto'
 import logger from './logger.js'
 
 export class AnalysisCache {
@@ -13,9 +14,7 @@ export class AnalysisCache {
   }
 
   _hash(imageBase64) {
-    const len = imageBase64.length
-    const head = imageBase64.substring(0, 200)
-    return `${len}:${head}`
+    return crypto.createHash('sha256').update(imageBase64).digest('hex')
   }
 
   get(imageBase64) {

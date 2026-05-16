@@ -1,6 +1,9 @@
 /**
  * IP 速率限制中间件
  * 基于内存的滑动窗口限流
+ *
+ * IP 获取仅依赖 req.ip（由 Express trust proxy 控制），
+ * 不手动解析 X-Forwarded-For，防止客户端伪造绕过限流。
  */
 import { RateLimitError } from './responseHandler.js'
 
@@ -18,7 +21,8 @@ export class RateLimiter {
   middleware(path) {
     const rule = this.rules[path] || this.rules.default
     return (req, res, next) => {
-      const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'unknown'
+      // 仅使用 req.ip，由 Express trust proxy 设置，不手动解析 X-Forwarded-For
+      const ip = req.ip || req.socket?.remoteAddress || 'unknown'
       const now = Date.now()
 
       let entry = this.windows.get(ip)
@@ -31,7 +35,7 @@ export class RateLimiter {
 
       if (entry.count > rule.max) {
         const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
-        return next(new RateLimitError('操作过于频繁，请稍后再试', 'RATE_LIMITED', {
+        return next(new RateLimitError('操作过于频繁，请稍后再试', undefined, {
           retryAfter,
           limit: rule.max,
           windowSec: rule.windowMs / 1000,

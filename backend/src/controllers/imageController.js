@@ -3,7 +3,7 @@
  */
 import fs from 'fs'
 import axios from 'axios'
-import { analyzeImage, generatePollinationsURL, editImageWithAI, analyzeCircuitBreaker } from '../services/aiService.js'
+import { analyzeImage, generatePollinationsURL, editImageWithAI } from '../services/aiService.js'
 import { validateImageUrl, validatePrompt, validateMagicBytes, sanitizeFilename, safeUnlink, isPathSafe } from '../utils/validator.js'
 import { findOrCreateUserFromToken, addHistory } from '../services/dbService.js'
 import config from '../config/index.js'
@@ -45,41 +45,54 @@ export async function analyze(req, res, next) {
       // 路径安全检查 — 防止路径穿越
       if (!isPathSafe(req.file.path, config.upload.dest)) {
         safeUnlink(req.file.path)
-        throw new BadRequestError('文件路径异常', 'INVALID_PATH')
+        throw new BadRequestError('文件路径异常')
       }
 
       // 魔术字节校验
       const imageBuffer = fs.readFileSync(req.file.path)
       if (!validateMagicBytes(imageBuffer, req.file.mimetype)) {
         safeUnlink(req.file.path)
-        throw new BadRequestError('文件内容与声明类型不匹配', 'INVALID_FILE_CONTENT')
+        throw new BadRequestError('文件内容与声明类型不匹配')
       }
       imageBase64 = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`
       safeUnlink(req.file.path)
     } else if (req.body.imageUrl) {
       const imageUrl = req.body.imageUrl
       if (!validateImageUrl(imageUrl)) {
-        throw new BadRequestError('图片格式无效', 'INVALID_IMAGE', {
-          hint: '支持 JPG/PNG/WebP/GIF/BMP，或合法的图片 URL',
-        })
+        throw new BadRequestError('图片格式无效')
       }
       if (imageUrl.startsWith('http')) {
         // SSRF 防护：禁止请求内网地址
         try {
           const parsed = new URL(imageUrl)
           const hostname = parsed.hostname
+          // 检查 IPv4 私网地址（RFC 1918）
+          const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+          if (ipv4Match) {
+            const [, a, b] = ipv4Match.map(Number)
+            if (
+              a === 127 ||                           // 127.0.0.0/8 (loopback)
+              a === 10 ||                            // 10.0.0.0/8
+              (a === 172 && b >= 16 && b <= 31) ||   // 172.16.0.0/12
+              (a === 192 && b === 168) ||             // 192.168.0.0/16
+              (a === 169 && b === 254) ||             // 169.254.0.0/16 (link-local)
+              a === 0                                // 0.0.0.0/8
+            ) {
+              throw new BadRequestError('不允许请求内网地址')
+            }
+          }
           if (
-            hostname === 'localhost' || hostname === '127.0.0.1' ||
-            hostname === '0.0.0.0' || hostname.startsWith('192.168.') ||
-            hostname.startsWith('10.') || hostname.startsWith('172.') ||
-            hostname === '169.254.169.254' ||
+            hostname === 'localhost' ||
+            hostname === '0.0.0.0' ||
+            hostname === '::1' ||                     // IPv6 loopback
+            hostname.startsWith('fc') || hostname.startsWith('fd') || // IPv6 ULA fc00::/7
             hostname.endsWith('.internal') || hostname.endsWith('.local')
           ) {
-            throw new BadRequestError('不允许请求内网地址', 'SSRF_BLOCKED')
+            throw new BadRequestError('不允许请求内网地址')
           }
         } catch (e) {
           if (e instanceof BadRequestError) throw e
-          throw new BadRequestError('图片 URL 格式无效', 'INVALID_URL')
+          throw new BadRequestError('图片 URL 格式无效')
         }
         const imgResponse = await axios.get(imageUrl, {
           responseType: 'arraybuffer',
@@ -91,7 +104,7 @@ export async function analyze(req, res, next) {
         imageBase64 = imageUrl
       }
     } else {
-      throw new BadRequestError('请提供图片文件或图片URL', 'MISSING_IMAGE')
+      throw new BadRequestError('请提供图片文件或图片URL')
     }
 
     logger.info(`开始分析图片... (${(imageBase64.length / 1024 / 1024).toFixed(1)}MB)`)
@@ -122,9 +135,8 @@ export async function analyze(req, res, next) {
     }
 
     res.success({
-      source: cached ? '缓存' : 'OpenRouter',
       elapsed,
-      data,
+      result: data,
       cached,
     })
   } catch (err) {
@@ -136,34 +148,24 @@ export async function analyze(req, res, next) {
       return next(err)
     }
 
-    // 根据错误特征映射为结构化异常
+    // 根据错误特征映射为结构化异常（不暴露技术细节）
     if (err.message.includes('服务暂时不可用') || err.message.includes('熔断')) {
-      return next(new ServiceUnavailableError('AI 服务繁忙', 'AI_CIRCUIT_OPEN', {
-        circuitBreaker: analyzeCircuitBreaker.getStatus(),
-        retryHint: '请等待片刻后重试',
-      }))
+      return next(new ServiceUnavailableError('服务繁忙，请稍后重试'))
     }
 
     if (err.message.includes('未初始化') || err.message.includes('API Key')) {
-      return next(new ServiceUnavailableError('AI 服务未配置', 'AI_NOT_CONFIGURED', {
-        hint: '请在后端 .env 文件中配置 OPENROUTER_API_KEY',
-        setupUrl: 'https://openrouter.ai/keys',
-      }))
+      return next(new ServiceUnavailableError('服务暂未就绪'))
     }
 
     if (err.message.includes('quota') || err.message.includes('429')) {
-      return next(new RateLimitError('API 配额不足', 'AI_QUOTA_EXCEEDED', {
-        hint: '免费额度已用完，请稍后重试或在 OpenRouter 充值',
-      }))
+      return next(new RateLimitError('服务额度已用完，请稍后再试'))
     }
 
     if (err.message.includes('超时')) {
-      return next(new GatewayTimeoutError('图片分析耗时过长', 'AI_TIMEOUT', {
-        hint: '尝试压缩图片后重新上传',
-      }))
+      return next(new GatewayTimeoutError('处理超时，请尝试压缩图片后重试'))
     }
 
-    next(new InternalError('分析失败', 'ANALYZE_FAILED'))
+    next(new InternalError('分析失败，请重试'))
   }
 }
 
@@ -175,9 +177,7 @@ export async function generate(req, res, next) {
     const { prompt, width = 1024, height = 1024, seed, model = 'flux' } = req.body
 
     if (!validatePrompt(prompt)) {
-      throw new BadRequestError('提示词无效', 'INVALID_PROMPT', {
-        hint: '提示词长度应在 1-5000 字符之间',
-      })
+      throw new BadRequestError('提示词无效')
     }
 
     logger.info('生成图片...')
@@ -200,18 +200,16 @@ export async function generate(req, res, next) {
     }
 
     res.success({
-      source: 'Pollinations.AI (免费)',
       images: [{ url: imageUrl, revised_prompt: prompt }],
       prompt,
       size: `${width}x${height}`,
-      model,
     })
   } catch (err) {
     if (err instanceof BadRequestError) {
       return next(err)
     }
     logger.error(`生成失败: ${err.message}`)
-    next(new InternalError('生成失败', 'GENERATE_FAILED'))
+    next(new InternalError('生成失败，请重试'))
   }
 }
 
@@ -223,7 +221,7 @@ export async function edit(req, res, next) {
     const { originalPrompt, originalImage, modifications } = req.body
 
     if (!originalPrompt && !originalImage) {
-      throw new BadRequestError('请提供原始提示词或原始图片', 'MISSING_INPUT')
+      throw new BadRequestError('请提供原始提示词或原始图片')
     }
 
     logger.info('编辑图片...')
@@ -264,17 +262,13 @@ export async function edit(req, res, next) {
         }
 
         res.success({
-          source: 'OpenRouter + Pollinations.AI',
           imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
           prompt: newPrompt,
         })
         return
       } catch (e) {
         if (e.message.includes('熔断') || e.message.includes('暂时不可用')) {
-          return next(new ServiceUnavailableError('AI 服务繁忙', 'AI_CIRCUIT_OPEN', {
-            circuitBreaker: analyzeCircuitBreaker.getStatus(),
-            retryHint: '请等待片刻后重试',
-          }))
+          return next(new ServiceUnavailableError('服务繁忙，请稍后重试'))
         }
         logger.warn(`AI 编辑分析失败，使用基础方案: ${e.message}`)
       }
@@ -282,7 +276,6 @@ export async function edit(req, res, next) {
 
     // 基础方案（无 AI 时降级）
     res.success({
-      source: 'Pollinations.AI',
       imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
       prompt: newPrompt,
     })
@@ -291,6 +284,6 @@ export async function edit(req, res, next) {
       return next(err)
     }
     logger.error(`编辑失败: ${err.message}`)
-    next(new InternalError('编辑失败', 'EDIT_FAILED'))
+    next(new InternalError('编辑失败，请重试'))
   }
 }

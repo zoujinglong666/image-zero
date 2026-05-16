@@ -10,7 +10,7 @@ export function useUserApi() {
     loading.value = true
     try {
       const res = await http.get<any>('/users')
-      users.value = res.data
+      users.value = res
     }
     finally {
       loading.value = false

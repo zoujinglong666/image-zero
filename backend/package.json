@@ -6,9 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "start:legacy": "node server.js",
-    "dev:legacy": "nodemon server.js"
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -18,6 +16,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "form-data": "^4.0.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.1",
     "openai": "^4.104.0",

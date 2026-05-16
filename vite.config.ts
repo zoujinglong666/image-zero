@@ -14,7 +14,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
   const isH5Dev = mode === 'development' && process.env.UNI_PLATFORM === 'h5'
   // H5 开发模式用相对路径 /api，走 Vite proxy 避免跨域
   // 生产环境用完整 URL（由 .env 配置）
-  const apiBaseUrl = isH5Dev ? '/api' : (env.VITE_API_BASE_URL || 'http://43.138.156.217/api')
+  const apiBaseUrl = isH5Dev ? '/api' : (env.VITE_API_BASE_URL || '')
 
   return {
   resolve: {
@@ -46,11 +46,12 @@ export default defineConfig(({ mode }: ConfigEnv) => {
   },
     
   // H5 开发环境代理，解决跨域
-  // 前端请求 /api/xxx → proxy 转发到后端 http://43.138.156.217/api/xxx
+  // 前端请求 /api/xxx → proxy 转发到后端
+  // 开发时请设置 .env.development 中的 VITE_DEV_PROXY_TARGET
   server: mode === 'development' ? {
     proxy: {
       '/api': {
-        target: 'http://43.138.156.217',
+        target: env.VITE_DEV_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
       },
     },
@@ -61,6 +62,16 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
     'import.meta.env.VITE_APP_NAME': JSON.stringify(env.VITE_APP_NAME || '图灵绘境'),
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(env.VITE_APP_VERSION || '1.0.0'),
+  },
+
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
 }
 })
