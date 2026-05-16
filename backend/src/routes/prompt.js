@@ -51,10 +51,8 @@ const upload = multer({
   },
 })
 
-// ── 分类 ──
-router.get('/categories', listCategories)
-
 // ── 提示词列表/搜索 ──
+router.get('/categories', listCategories)
 router.get('/list', listPrompts)
 router.get('/search', searchPrompts)
 
@@ -83,6 +81,15 @@ router.post('/community/:id/report', optionalAuth, reportCommunityPost)
 // 删除自己的分享 (需登录)
 router.delete('/community/:id', authMiddleware, deleteCommunityPost)
 
+// ── 收藏列表（必须在 /:id 之前注册，否则被通配路由拦截）──
+router.get('/favorites/list', authMiddleware, listFavorites)
+
+// ── 用户自创提示词 CRUD（必须在 /:id 之前注册）──
+router.post('/mine', authMiddleware, createUserPrompt)
+router.put('/mine/:id', authMiddleware, updateUserPrompt)
+router.delete('/mine/:id', authMiddleware, deleteUserPrompt)
+router.get('/mine/list', authMiddleware, listUserPrompts)
+
 // ── 提示词详情（放在最后，作为兜底）──
 router.get('/:id', getPromptDetail)
 
@@ -91,12 +98,5 @@ router.post('/:id/interact', optionalAuth, toggleInteraction)
 
 // ── 收藏 ──
 router.post('/:id/favorite', authMiddleware, toggleFavorite)
-router.get('/favorites/list', authMiddleware, listFavorites)
-
-// ── 用户自创提示词 CRUD ──
-router.post('/mine', authMiddleware, createUserPrompt)
-router.put('/mine/:id', authMiddleware, updateUserPrompt)
-router.delete('/mine/:id', authMiddleware, deleteUserPrompt)
-router.get('/mine/list', authMiddleware, listUserPrompts)
 
 export default router

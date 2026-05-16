@@ -579,39 +579,9 @@ onMounted(async () => {
 // ── 加载分类 ──
 async function loadCategories() {
   try {
-    const data = await getCategories()
-    // 如果 API 返回空数据，使用默认分类
-    categories.value = data.length > 0 ? data : [
-      { id: 1, name: '人像摄影', name_en: 'Portrait', icon: '👤', sort_order: 1, prompt_count: 0 },
-      { id: 2, name: '海报设计', name_en: 'Poster', icon: '🎨', sort_order: 2, prompt_count: 0 },
-      { id: 3, name: '信息图', name_en: 'Infographic', icon: '📊', sort_order: 3, prompt_count: 0 },
-      { id: 4, name: '角色设计', name_en: 'Character', icon: '🦸', sort_order: 4, prompt_count: 0 },
-      { id: 5, name: '游戏美术', name_en: 'Game Art', icon: '🎮', sort_order: 5, prompt_count: 0 },
-      { id: 6, name: 'UI设计', name_en: 'UI Design', icon: '🖥️', sort_order: 6, prompt_count: 0 },
-      { id: 7, name: '插画艺术', name_en: 'Illustration', icon: '🖌️', sort_order: 7, prompt_count: 0 },
-      { id: 8, name: '排版设计', name_en: 'Typography', icon: '🔤', sort_order: 8, prompt_count: 0 },
-      { id: 9, name: '产品摄影', name_en: 'Product', icon: '📦', sort_order: 9, prompt_count: 0 },
-      { id: 10, name: '风景摄影', name_en: 'Landscape', icon: '🏔️', sort_order: 10, prompt_count: 0 },
-      { id: 11, name: 'Logo设计', name_en: 'Logo', icon: '⭕', sort_order: 11, prompt_count: 0 },
-      { id: 12, name: '图像编辑', name_en: 'Image Edit', icon: '✂️', sort_order: 12, prompt_count: 0 },
-    ]
+    categories.value = await getCategories()
   } catch (e) {
     console.error('加载分类失败', e)
-    // 加载失败时使用默认分类
-    categories.value = [
-      { id: 1, name: '人像摄影', name_en: 'Portrait', icon: '👤', sort_order: 1, prompt_count: 0 },
-      { id: 2, name: '海报设计', name_en: 'Poster', icon: '🎨', sort_order: 2, prompt_count: 0 },
-      { id: 3, name: '信息图', name_en: 'Infographic', icon: '📊', sort_order: 3, prompt_count: 0 },
-      { id: 4, name: '角色设计', name_en: 'Character', icon: '🦸', sort_order: 4, prompt_count: 0 },
-      { id: 5, name: '游戏美术', name_en: 'Game Art', icon: '🎮', sort_order: 5, prompt_count: 0 },
-      { id: 6, name: 'UI设计', name_en: 'UI Design', icon: '🖥️', sort_order: 6, prompt_count: 0 },
-      { id: 7, name: '插画艺术', name_en: 'Illustration', icon: '🖌️', sort_order: 7, prompt_count: 0 },
-      { id: 8, name: '排版设计', name_en: 'Typography', icon: '🔤', sort_order: 8, prompt_count: 0 },
-      { id: 9, name: '产品摄影', name_en: 'Product', icon: '📦', sort_order: 9, prompt_count: 0 },
-      { id: 10, name: '风景摄影', name_en: 'Landscape', icon: '🏔️', sort_order: 10, prompt_count: 0 },
-      { id: 11, name: 'Logo设计', name_en: 'Logo', icon: '⭕', sort_order: 11, prompt_count: 0 },
-      { id: 12, name: '图像编辑', name_en: 'Image Edit', icon: '✂️', sort_order: 12, prompt_count: 0 },
-    ]
   }
 }
 

@@ -230,8 +230,8 @@ export function toggleInteraction(req, res, next) {
     // 插入互动记录 (UNIQUE 约束去重)
     try {
       db.prepare(
-        'INSERT INTO prompt_interactions (user_id, prompt_id, action) VALUES (?, ?, ?)'
-      ).run(user.id, +id, action)
+        'INSERT INTO prompt_interactions (user_id, prompt_id, target_type, action) VALUES (?, ?, ?, ?)'
+      ).run(user.id, +id, 'library', action)
     } catch {
       // 已存在则忽略
     }
@@ -477,13 +477,14 @@ export function createCommunityPost(req, res, next) {
     }
 
     const result = db.prepare(
-      `INSERT INTO user_prompts (user_id, title, prompt_text, category_id, is_public, image_url, image_hash, status)
-       VALUES (?, ?, ?, ?, 1, ?, ?, 'published')`
+      `INSERT INTO user_prompts (user_id, title, prompt_text, category_id, tags, is_public, image_url, image_hash, status)
+       VALUES (?, ?, ?, ?, ?, 1, ?, ?, 'published')`
     ).run(
       user.id,
       title.trim(),
       prompt_text.trim(),
       +category_id,
+      tags || '',
       image_url,
       image_hash || ''
     )
@@ -561,8 +562,8 @@ export function listCommunityPosts(req, res, next) {
     if (currentUser.id > 0) {
       for (const item of list) {
         const liked = db.prepare(
-          'SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND action = ?'
-        ).get(currentUser.id, item.id, 'community_like')
+          "SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND target_type = 'community' AND action = 'like'"
+        ).get(currentUser.id, item.id)
         item.is_liked = !!liked
       }
     }
@@ -603,8 +604,8 @@ export function getCommunityPostDetail(req, res, next) {
     let is_liked = false
     if (user.id > 0) {
       const liked = db.prepare(
-        'SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND action = ?'
-      ).get(user.id, +id, 'community_like')
+        "SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND target_type = 'community' AND action = 'like'"
+      ).get(user.id, +id)
       is_liked = !!liked
     }
 
@@ -628,7 +629,7 @@ export function toggleCommunityLike(req, res, next) {
     if (!post) throw new NotFoundError('内容不存在')
 
     const existing = db.prepare(
-      "SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND action = 'community_like'"
+      "SELECT id FROM prompt_interactions WHERE user_id = ? AND prompt_id = ? AND target_type = 'community' AND action = 'like'"
     ).get(user.id, +id)
 
     if (existing) {
@@ -637,7 +638,7 @@ export function toggleCommunityLike(req, res, next) {
       res.success({ is_liked: false, like_count: Math.max(0, post.like_count - 1) }, '已取消点赞')
     } else {
       db.prepare(
-        "INSERT INTO prompt_interactions (user_id, prompt_id, action) VALUES (?, ?, 'community_like')"
+        "INSERT INTO prompt_interactions (user_id, prompt_id, target_type, action) VALUES (?, ?, 'community', 'like')"
       ).run(user.id, +id)
       db.prepare('UPDATE user_prompts SET like_count = like_count + 1 WHERE id = ?').run(+id)
       res.success({ is_liked: true, like_count: (post.like_count || 0) + 1 }, '点赞成功 👍')
