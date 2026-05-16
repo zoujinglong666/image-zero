@@ -74,23 +74,7 @@ app.use('/api/prompt', promptRoutes)
 // ═══════════════════════════════════════
 
 app.get('/health', (req, res) => {
-  const aiStatus = getAIServiceStatus()
-  res.json({
-    status: 'ok',
-    service: '图灵绘境后端',
-    version: '4.0.0',
-    mode: config.openrouter.apiKey ? 'production (真实AI)' : 'development (需配置Key)',
-    apis: {
-      analyze: config.openrouter.apiKey ? `${aiStatus.openrouter} ✅` : 'OpenRouter (❌ 缺少 API Key)',
-      generate: 'Pollinations.AI (免费 ✅)',
-      edit: config.openrouter.apiKey ? 'OpenRouter + Pollinations ✅' : 'Pollinations only (部分)',
-    },
-    protection: {
-      rateLimiter: true,
-      circuitBreaker: aiStatus.circuitBreaker,
-    },
-    cache: aiStatus.cache,
-  })
+  res.json({ status: 'ok' })
 })
 
 // ═══════════════════════════════════════

@@ -31,7 +31,7 @@ const themes = computed(() => {
   return getAvailableThemes().map(theme => ({
     name: theme.name,
     label: theme.label || theme.name,
-    color: theme?.color?.primary || '#2979ff',
+    color: theme?.color?.primary || '#7C4DFF',
   }))
 })
 

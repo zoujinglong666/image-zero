@@ -11,7 +11,10 @@ import { defineConfig, type ConfigEnv } from 'vite'
 export default defineConfig(({ mode }: ConfigEnv) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:3000'
+  const isH5Dev = mode === 'development' && process.env.UNI_PLATFORM === 'h5'
+  // H5 开发模式用相对路径 /api，走 Vite proxy 避免跨域
+  // 生产环境用完整 URL（由 .env 配置）
+  const apiBaseUrl = isH5Dev ? '/api' : (env.VITE_API_BASE_URL || 'http://43.138.156.217/api')
 
   return {
   resolve: {
@@ -42,6 +45,17 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     exclude: process.env.UNI_PLATFORM === 'h5' && process.env.NODE_ENV === 'development' ? ['uview-pro'] : [],
   },
     
+  // H5 开发环境代理，解决跨域
+  // 前端请求 /api/xxx → proxy 转发到后端 http://43.138.156.217/api/xxx
+  server: mode === 'development' ? {
+    proxy: {
+      '/api': {
+        target: 'http://43.138.156.217',
+        changeOrigin: true,
+      },
+    },
+  } : {},
+
   // 定义全局环境变量（供前端代码读取）
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),

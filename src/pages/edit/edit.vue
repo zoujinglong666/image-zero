@@ -11,7 +11,7 @@
     >
       <template #right>
         <button class="nav-preview-btn" @click="previewEdit">
-          <u-icon name="eye" size="15" color="#D4A017" />
+          <u-icon name="eye" size="15" color="#7C4DFF" />
           <text>预览</text>
         </button>
       </template>
@@ -213,7 +213,7 @@
             :value="editData.styleConfidence * 100"
             min="0"
             max="100"
-            activeColor="#D4A017"
+            activeColor="#7C4DFF"
             backgroundColor="#EEE"
             block-size="20"
             @change="(e: any) => editData.styleConfidence = e.detail.value / 100"
@@ -257,6 +257,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { ImageAnalysisResult } from '@/types'
+import { editImage } from '@/api/image'
 
 // 接收首页传来的数据
 const editData = ref<ImageAnalysisResult | null>(null)
@@ -281,7 +282,7 @@ onLoad((options) => {
 })
 
 // ====== 常量 ======
-const presetColors = ['#1C1C1C', '#D4A017', '#2979FF', '#19be6b', '#fa3534', '#9c27b0', '#FF6B35']
+const presetColors = ['#7C4DFF', '#6200EA', '#B388FF', '#00C853', '#FF5252', '#FF9100', '#FF6B35']
 
 const layoutOptions = ['flex-column', 'grid-3', 'grid-2', 'free-form']
 const layoutLabels: Record<string, string> = {
@@ -341,39 +342,17 @@ const saveEdit = async () => {
   uni.showLoading({ title: 'AI 正在重新生成...', mask: true })
 
   try {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-    const token = uni?.getStorageSync('token') || ''
-    const header: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (token) header['Authorization'] = `Bearer ${token}`
-
-    const res: any = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_BASE}/api/edit`,
-        method: 'POST',
-        data: {
-          originalPrompt: editData.value.prompt.english,
-          originalImage: '',
-          modifications: {
-            colorScheme: editData.value.colorScheme,
-            elementStyle: editData.value.elements,
-            layout: editData.value.layout,
-            text: editData.value.prompt.chinese,
-            style: editData.value.style
-          }
-        },
-        header,
-        success: resolve,
-        fail: reject,
-      })
+    const result = await editImage({
+      originalPrompt: editData.value.prompt.english,
+      originalImage: '',
+      colorScheme: editData.value.colorScheme,
+      elementStyle: editData.value.elements,
+      layout: editData.value.layout,
+      text: editData.value.prompt.chinese,
+      style: editData.value.style,
     })
 
-    const json = res.data as any
-
-    if (res.statusCode < 200 || res.statusCode >= 300 || !json?.success) {
-      throw new Error(json?.error || json?.message || '保存失败')
-    }
-
-    console.log('✅ [Edit] 保存完成:', json.data.imageUrl)
+    console.log('✅ [Edit] 保存完成:', result.imageUrl)
     uni.showToast({ title: '保存成功 ✓', icon: 'success' })
 
     setTimeout(() => { uni.navigateBack() }, 800)
@@ -392,42 +371,18 @@ const previewEdit = async () => {
   uni.showLoading({ title: 'AI 正在预览生成...', mask: true })
 
   try {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-    const token = uni?.getStorageSync('token') || ''
-    const header: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (token) header['Authorization'] = `Bearer ${token}`
-
-    const res: any = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_BASE}/api/edit`,
-        method: 'POST',
-        data: {
-          originalPrompt: editData.value.prompt.english,
-          originalImage: '',
-          modifications: {
-            colorScheme: editData.value.colorScheme,
-            elementStyle: editData.value.elements,
-            layout: editData.value.layout,
-            text: editData.value.prompt.chinese,
-            style: editData.value.style
-          }
-        },
-        header,
-        success: resolve,
-        fail: reject,
-      })
+    const result = await editImage({
+      originalPrompt: editData.value.prompt.english,
+      originalImage: '',
+      colorScheme: editData.value.colorScheme,
+      elementStyle: editData.value.elements,
+      layout: editData.value.layout,
+      text: editData.value.prompt.chinese,
+      style: editData.value.style,
     })
 
-    const json = res.data as any
-
-    if (res.statusCode < 200 || res.statusCode >= 300 || !json?.success) {
-      throw new Error(json?.error || json?.message || '预览失败')
-    }
-
-    const imageUrl = json.data.imageUrl
-    console.log('✅ [Edit] 预览完成:', imageUrl)
-
-    uni.previewImage({ urls: [imageUrl], current: imageUrl })
+    console.log('✅ [Edit] 预览完成:', result.imageUrl)
+    uni.previewImage({ urls: [result.imageUrl], current: result.imageUrl })
   } catch (err: any) {
     console.error('❌ [Edit] 预览失败:', err)
     uni.showToast({ title: err.message || '预览失败', icon: 'none' })
@@ -493,7 +448,7 @@ const goHome = () => {
   align-items: center;
   gap: 8rpx;
   padding: 20rpx 48rpx;
-  background: #1C1C1C;
+  background: linear-gradient(135deg, #6200EA, #7C4DFF);
   color: #FFF;
   border-radius: 14rpx;
   font-size: 28rpx;
@@ -507,11 +462,11 @@ const goHome = () => {
   align-items: center;
   gap: 6rpx;
   padding: 8rpx 20rpx;
-  background: #FFFEF8;
-  border: 1rpx solid #D4A017;
+  background: #EDE7F6;
+  border: 1rpx solid #7C4DFF;
   border-radius: 20rpx;
   font-size: 24rpx;
-  color: #D4A017;
+  color: #7C4DFF;
   font-weight: 500;
   border: none;
   line-height: 1;
@@ -537,7 +492,7 @@ const goHome = () => {
   width: 52rpx;
   height: 52rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, #1C1C1C, #333);
+  background: linear-gradient(135deg, #6200EA, #7C4DFF);
   color: #FFF;
   font-size: 26rpx;
   font-weight: 700;
@@ -592,14 +547,14 @@ const goHome = () => {
   border-radius: 50%;
   flex-shrink: 0;
 
-  &.en { background: #D4A017; }
+  &.en { background: #7C4DFF; }
   &.cn { background: #666; }
-  &.kw { background: #2979ff; }
+  &.kw { background: #6200EA; }
   &.color { background: #E91E63; }
   &.scheme { background: #9c27b0; }
   &.layout { background: #FF6B35; }
   &.style { background: #009688; }
-  &.conf { background: #D4A017; }
+  &.conf { background: #7C4DFF; }
   &.desc { background: #795548; }
 }
 
@@ -620,7 +575,7 @@ const goHome = () => {
   }
 
   &:focus {
-    border-color: #D4A017;
+    border-color: #7C4DFF;
   }
 }
 
@@ -636,7 +591,7 @@ const goHome = () => {
   box-sizing: border-box;
 
   &:focus {
-    border-color: #D4A017;
+    border-color: #7C4DFF;
   }
 }
 
@@ -650,7 +605,7 @@ const goHome = () => {
 .add-kw-btn {
   margin-left: auto;
   padding: 6rpx 20rpx;
-  background: #1C1C1C;
+  background: linear-gradient(135deg, #6200EA, #7C4DFF);
   color: #FFF;
   border-radius: 8rpx;
   font-size: 22rpx;
@@ -799,7 +754,7 @@ const goHome = () => {
   width: 48rpx;
   height: 48rpx;
   border-radius: 12rpx;
-  background: #1C1C1C;
+  background: #7C4DFF;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -875,11 +830,11 @@ const goHome = () => {
   }
 
   &.active {
-    background: #FFFEF8;
-    border-color: #D4A017;
+    background: #EDE7F6;
+    border-color: #7C4DFF;
 
     text {
-      color: #D4A017;
+      color: #7C4DFF;
       font-weight: 600;
     }
   }
@@ -919,9 +874,9 @@ const goHome = () => {
   }
 
   &.save {
-    background: linear-gradient(135deg, #1C1C1C, #333);
+    background: linear-gradient(135deg, #6200EA, #7C4DFF);
     color: #FFF;
-    box-shadow: 0 4rpx 12rpx rgba(28, 28, 28, 0.25);
+    box-shadow: 0 4rpx 12rpx rgba(124, 77, 255, 0.3);
 
     &:active {
       transform: scale(0.97);

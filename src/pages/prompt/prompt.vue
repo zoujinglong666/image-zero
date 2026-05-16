@@ -163,7 +163,7 @@ import {
   searchPrompts,
   getPromptDetail,
   interactPrompt,
-  toggleFavorite,
+  togglePromptFavorite as toggleFavorite,
   type PromptCategory,
   type PromptItem,
 } from '../../api/prompt'
@@ -376,7 +376,7 @@ function langLabel(lang: string) {
   color: #666;
 
   &.active {
-    background: #6366F1;
+    background: #7C4DFF;
     color: #fff;
   }
 }
@@ -394,7 +394,7 @@ function langLabel(lang: string) {
   color: #999;
 
   &.active {
-    color: #6366F1;
+    color: #7C4DFF;
     font-weight: 600;
   }
 }
@@ -420,8 +420,8 @@ function langLabel(lang: string) {
 
 .card-category {
   font-size: 22rpx;
-  color: #6366F1;
-  background: #EEF2FF;
+  color: #7C4DFF;
+  background: #EDE7F6;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
 }
@@ -487,7 +487,7 @@ function langLabel(lang: string) {
   }
 
   &.favored {
-    background: #6366F1;
+    background: #7C4DFF;
     color: #fff;
   }
 }
@@ -567,8 +567,8 @@ function langLabel(lang: string) {
 
 .detail-cat {
   font-size: 24rpx;
-  color: #6366F1;
-  background: #EEF2FF;
+  color: #7C4DFF;
+  background: #EDE7F6;
   padding: 4rpx 16rpx;
   border-radius: 8rpx;
 }
@@ -619,7 +619,7 @@ function langLabel(lang: string) {
   font-weight: 600;
 
   &.copy {
-    background: #6366F1;
+    background: linear-gradient(135deg, #6200EA, #7C4DFF);
     color: #fff;
   }
 
@@ -629,8 +629,8 @@ function langLabel(lang: string) {
   }
 
   &.favored {
-    background: #EEF2FF;
-    color: #6366F1;
+    background: #EDE7F6;
+    color: #7C4DFF;
   }
 }
 </style>

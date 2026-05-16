@@ -22,7 +22,7 @@ const config = {
   cors: {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-      : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'https://image-zero-nine.vercel.app'],
+      : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://43.138.156.217'],
   },
 
   // 文件上传配置
@@ -57,7 +57,7 @@ const config = {
     dir: process.env.LOG_DIR || 'logs/',
   },
 
-  // 数据目录（Railway Volume 挂载路径）
+  // 数据目录
   dataDir: process.env.DATA_DIR || '',
 }
 

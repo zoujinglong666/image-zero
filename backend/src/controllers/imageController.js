@@ -9,6 +9,13 @@ import { findOrCreateUserFromToken, addHistory } from '../services/dbService.js'
 import config from '../config/index.js'
 import logger from '../utils/logger.js'
 import jwt from 'jsonwebtoken'
+import {
+  BadRequestError,
+  RateLimitError,
+  ServiceUnavailableError,
+  GatewayTimeoutError,
+  InternalError,
+} from '../middlewares/responseHandler.js'
 
 /**
  * 从请求中解析用户 ID（可选）
@@ -28,7 +35,7 @@ function resolveUserId(req) {
 /**
  * POST /api/analyze — AI 图片分析
  */
-export async function analyze(req, res) {
+export async function analyze(req, res, next) {
   const startTime = Date.now()
 
   try {
@@ -38,33 +45,42 @@ export async function analyze(req, res) {
       // 路径安全检查 — 防止路径穿越
       if (!isPathSafe(req.file.path, config.upload.dest)) {
         safeUnlink(req.file.path)
-        return res.status(400).json({
-          error: '文件路径异常',
-          code: 'INVALID_PATH',
-        })
+        throw new BadRequestError('文件路径异常', 'INVALID_PATH')
       }
 
       // 魔术字节校验
       const imageBuffer = fs.readFileSync(req.file.path)
       if (!validateMagicBytes(imageBuffer, req.file.mimetype)) {
         safeUnlink(req.file.path)
-        return res.status(400).json({
-          error: '文件内容与声明类型不匹配',
-          code: 'INVALID_FILE_CONTENT',
-        })
+        throw new BadRequestError('文件内容与声明类型不匹配', 'INVALID_FILE_CONTENT')
       }
       imageBase64 = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`
       safeUnlink(req.file.path)
     } else if (req.body.imageUrl) {
       const imageUrl = req.body.imageUrl
       if (!validateImageUrl(imageUrl)) {
-        return res.status(400).json({
-          error: '图片格式无效',
-          code: 'INVALID_IMAGE',
+        throw new BadRequestError('图片格式无效', 'INVALID_IMAGE', {
           hint: '支持 JPG/PNG/WebP/GIF/BMP，或合法的图片 URL',
         })
       }
       if (imageUrl.startsWith('http')) {
+        // SSRF 防护：禁止请求内网地址
+        try {
+          const parsed = new URL(imageUrl)
+          const hostname = parsed.hostname
+          if (
+            hostname === 'localhost' || hostname === '127.0.0.1' ||
+            hostname === '0.0.0.0' || hostname.startsWith('192.168.') ||
+            hostname.startsWith('10.') || hostname.startsWith('172.') ||
+            hostname === '169.254.169.254' ||
+            hostname.endsWith('.internal') || hostname.endsWith('.local')
+          ) {
+            throw new BadRequestError('不允许请求内网地址', 'SSRF_BLOCKED')
+          }
+        } catch (e) {
+          if (e instanceof BadRequestError) throw e
+          throw new BadRequestError('图片 URL 格式无效', 'INVALID_URL')
+        }
         const imgResponse = await axios.get(imageUrl, {
           responseType: 'arraybuffer',
           timeout: 15000,
@@ -75,7 +91,7 @@ export async function analyze(req, res) {
         imageBase64 = imageUrl
       }
     } else {
-      return res.status(400).json({ error: '请提供图片文件或图片URL' })
+      throw new BadRequestError('请提供图片文件或图片URL', 'MISSING_IMAGE')
     }
 
     logger.info(`开始分析图片... (${(imageBase64.length / 1024 / 1024).toFixed(1)}MB)`)
@@ -105,64 +121,61 @@ export async function analyze(req, res) {
       }
     }
 
-    res.json({
-      success: true,
-      source: cached ? '缓存' : `OpenRouter`,
+    res.success({
+      source: cached ? '缓存' : 'OpenRouter',
       elapsed,
       data,
       cached,
     })
-  } catch (error) {
+  } catch (err) {
     const elapsed = Date.now() - startTime
-    logger.error(`分析失败 (${elapsed}ms): ${error.message}`)
+    logger.error(`分析失败 (${elapsed}ms): ${err.message}`)
 
-    if (error.message.includes('服务暂时不可用') || error.message.includes('熔断')) {
-      return res.status(503).json({
-        error: 'AI 服务繁忙',
-        message: error.message,
+    // AppError 直接交给全局处理器
+    if (err instanceof BadRequestError) {
+      return next(err)
+    }
+
+    // 根据错误特征映射为结构化异常
+    if (err.message.includes('服务暂时不可用') || err.message.includes('熔断')) {
+      return next(new ServiceUnavailableError('AI 服务繁忙', 'AI_CIRCUIT_OPEN', {
         circuitBreaker: analyzeCircuitBreaker.getStatus(),
         retryHint: '请等待片刻后重试',
-      })
+      }))
     }
 
-    if (error.message.includes('未初始化') || error.message.includes('API Key')) {
-      return res.status(503).json({
-        error: 'AI 服务未配置',
-        message: '请在后端 .env 文件中配置 OPENROUTER_API_KEY',
-        hint: '免费申请: https://openrouter.ai/keys',
-      })
+    if (err.message.includes('未初始化') || err.message.includes('API Key')) {
+      return next(new ServiceUnavailableError('AI 服务未配置', 'AI_NOT_CONFIGURED', {
+        hint: '请在后端 .env 文件中配置 OPENROUTER_API_KEY',
+        setupUrl: 'https://openrouter.ai/keys',
+      }))
     }
 
-    if (error.message.includes('quota') || error.message.includes('429')) {
-      return res.status(429).json({
-        error: 'API 配额不足',
-        message: '免费额度已用完，请稍后重试或在 OpenRouter 充值',
-      })
+    if (err.message.includes('quota') || err.message.includes('429')) {
+      return next(new RateLimitError('API 配额不足', 'AI_QUOTA_EXCEEDED', {
+        hint: '免费额度已用完，请稍后重试或在 OpenRouter 充值',
+      }))
     }
 
-    if (error.message.includes('超时')) {
-      return res.status(504).json({
-        error: '处理超时',
-        message: '图片分析耗时过长，可能是图片过大或网络拥堵',
+    if (err.message.includes('超时')) {
+      return next(new GatewayTimeoutError('图片分析耗时过长', 'AI_TIMEOUT', {
         hint: '尝试压缩图片后重新上传',
-      })
+      }))
     }
 
-    res.status(500).json({ error: '分析失败', message: error.message })
+    next(new InternalError('分析失败', 'ANALYZE_FAILED'))
   }
 }
 
 /**
  * POST /api/generate — AI 图片生成
  */
-export async function generate(req, res) {
+export async function generate(req, res, next) {
   try {
     const { prompt, width = 1024, height = 1024, seed, model = 'flux' } = req.body
 
     if (!validatePrompt(prompt)) {
-      return res.status(400).json({
-        error: '提示词无效',
-        code: 'INVALID_PROMPT',
+      throw new BadRequestError('提示词无效', 'INVALID_PROMPT', {
         hint: '提示词长度应在 1-5000 字符之间',
       })
     }
@@ -186,31 +199,31 @@ export async function generate(req, res) {
       }
     }
 
-    res.json({
-      success: true,
+    res.success({
       source: 'Pollinations.AI (免费)',
-      data: {
-        images: [{ url: imageUrl, revised_prompt: prompt }],
-        prompt,
-        size: `${width}x${height}`,
-        model,
-      },
+      images: [{ url: imageUrl, revised_prompt: prompt }],
+      prompt,
+      size: `${width}x${height}`,
+      model,
     })
-  } catch (error) {
-    logger.error(`生成失败: ${error.message}`)
-    res.status(500).json({ error: '生成失败', message: error.message })
+  } catch (err) {
+    if (err instanceof BadRequestError) {
+      return next(err)
+    }
+    logger.error(`生成失败: ${err.message}`)
+    next(new InternalError('生成失败', 'GENERATE_FAILED'))
   }
 }
 
 /**
  * POST /api/edit — 编辑图片
  */
-export async function edit(req, res) {
+export async function edit(req, res, next) {
   try {
     const { originalPrompt, originalImage, modifications } = req.body
 
     if (!originalPrompt && !originalImage) {
-      return res.status(400).json({ error: '请提供原始提示词或原始图片' })
+      throw new BadRequestError('请提供原始提示词或原始图片', 'MISSING_INPUT')
     }
 
     logger.info('编辑图片...')
@@ -250,39 +263,34 @@ export async function edit(req, res) {
           }
         }
 
-        res.json({
-          success: true,
+        res.success({
           source: 'OpenRouter + Pollinations.AI',
-          data: {
-            imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
-            prompt: newPrompt,
-          },
+          imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
+          prompt: newPrompt,
         })
         return
       } catch (e) {
         if (e.message.includes('熔断') || e.message.includes('暂时不可用')) {
-          return res.status(503).json({
-            error: 'AI 服务繁忙',
-            message: e.message,
+          return next(new ServiceUnavailableError('AI 服务繁忙', 'AI_CIRCUIT_OPEN', {
             circuitBreaker: analyzeCircuitBreaker.getStatus(),
             retryHint: '请等待片刻后重试',
-          })
+          }))
         }
         logger.warn(`AI 编辑分析失败，使用基础方案: ${e.message}`)
       }
     }
 
     // 基础方案（无 AI 时降级）
-    res.json({
-      success: true,
+    res.success({
       source: 'Pollinations.AI',
-      data: {
-        imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
-        prompt: newPrompt,
-      },
+      imageUrl: generatePollinationsURL(newPrompt, { width: 1024, height: 1024 }),
+      prompt: newPrompt,
     })
-  } catch (error) {
-    logger.error(`编辑失败: ${error.message}`)
-    res.status(500).json({ error: '编辑失败', message: error.message })
+  } catch (err) {
+    if (err instanceof BadRequestError) {
+      return next(err)
+    }
+    logger.error(`编辑失败: ${err.message}`)
+    next(new InternalError('编辑失败', 'EDIT_FAILED'))
   }
 }

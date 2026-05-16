@@ -9,7 +9,7 @@ export function useUserApi() {
   const fetchUsers = async () => {
     loading.value = true
     try {
-      const res = await http.get<any>('/api/users')
+      const res = await http.get<any>('/users')
       users.value = res.data
     }
     finally {
@@ -19,17 +19,17 @@ export function useUserApi() {
 
   // 创建用户
   const createUser = async (data: any) => {
-    return await http.post('/api/users', data)
+    return await http.post('/users', data)
   }
 
   // 更新用户
   const updateUser = async (id: string, data: any) => {
-    return await http.put(`/api/users/${id}`, data)
+    return await http.put(`/users/${id}`, data)
   }
 
   // 删除用户
   const deleteUser = async (id: string) => {
-    return await http.delete(`/api/users/${id}`)
+    return await http.delete(`/users/${id}`)
   }
 
   return {

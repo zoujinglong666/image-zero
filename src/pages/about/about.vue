@@ -346,7 +346,7 @@ function showToast(title: string) {
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, #2979ff 0%, #19be6b 50%, #ff9900 100%);
+      background: linear-gradient(135deg, #7C4DFF 0%, #19be6b 50%, #ff9900 100%);
       opacity: 0.95;
 
       &::before {
@@ -517,7 +517,7 @@ function showToast(title: string) {
 
   &__highlight {
       font-weight: 700;
-      background: linear-gradient(135deg, #2979ff, #19be6b);
+      background: linear-gradient(135deg, #7C4DFF, #19be6b);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;

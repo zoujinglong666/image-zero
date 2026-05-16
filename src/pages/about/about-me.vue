@@ -117,7 +117,7 @@ const { t } = useLocale()
 
     &__highlight {
         font-weight: 700;
-        background: linear-gradient(135deg, #2979ff, #19be6b);
+        background: linear-gradient(135deg, #7C4DFF, #19be6b);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;

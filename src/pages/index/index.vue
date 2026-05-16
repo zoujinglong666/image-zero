@@ -9,13 +9,13 @@
       :placeholder="true"
     >
       <template #right>
-        <u-icon name="setting" size="20" color="#1C1C1C" @click="goToSettings" />
+        <u-icon name="setting" size="18" color="#7C4DFF" @click="goToSettings" />
       </template>
     </u-navbar>
 
     <!-- 网络状态提示 -->
     <view v-if="!isOnline" class="offline-banner">
-      <u-icon name="info-circle-fill" size="16" color="#FFF" />
+      <u-icon name="info-circle-fill" size="14" color="#FFF" />
       <text>网络已断开，请检查连接</text>
     </view>
 
@@ -25,7 +25,7 @@
       <!-- ====== Step 1: 上传图片 ====== -->
       <view class="card">
         <view class="card-header">
-          <u-icon name="photo" size="18" color="#D4A017" />
+          <u-icon name="photo" size="18" color="#7C4DFF" />
           <text class="card-title">上传图片</text>
           <text class="card-sub">选择需要分析的截图或设计稿</text>
         </view>
@@ -35,13 +35,13 @@
           <block v-if="uploadedImage">
             <image class="upload-preview" :src="uploadedImage" mode="aspectFill" />
             <view class="upload-overlay">
-              <u-icon name="reload" size="16" color="#fff" />
+              <u-icon name="reload" size="18" color="#fff" />
               <text>点击更换</text>
             </view>
           </block>
           <view v-else class="upload-placeholder">
             <view class="upload-icon-ring">
-              <u-icon name="plus" size="28" color="#D4A017" />
+              <u-icon name="plus" size="28" color="#7C4DFF" />
             </view>
             <text class="upload-text">点击上传图片</text>
             <text class="upload-hint">支持 JPG / PNG / WebP · 自动压缩</text>
@@ -54,7 +54,7 @@
           <text v-if="compressInfo" class="status-text">{{ compressInfo }}</text>
           <text v-else class="status-text">准备 AI 分析</text>
           <view class="status-clear" @tap.stop="clearImage">
-            <u-icon name="close-circle-fill" size="16" color="#bbb" />
+            <u-icon name="close-circle-fill" size="14" color="#bbb" />
           </view>
         </view>
       </view>
@@ -62,7 +62,7 @@
       <!-- ====== Step 2: 分析操作 ====== -->
       <view class="card">
         <view class="card-header">
-          <u-icon name="file-text" size="18" color="#D4A017" />
+          <u-icon name="file-text" size="18" color="#7C4DFF" />
           <text class="card-title">AI 提取提示词</text>
           <text class="card-sub">自动识别风格 / 元素 / 配色</text>
         </view>
@@ -100,7 +100,7 @@
         <!-- 结果头部 -->
         <view class="result-head">
           <view class="result-badge">
-            <u-icon name="checkmark-circle-fill" size="16" color="#D4A017" />
+            <u-icon name="checkmark-circle-fill" size="18" color="#7C4DFF" />
             <text>分析完成</text>
             <text v-if="analysisElapsed" class="elapsed-text">{{ analysisElapsed }}s</text>
           </view>
@@ -120,7 +120,7 @@
         <!-- 英文提示词 -->
         <view class="prompt-block">
           <view class="prompt-label-row">
-            <u-icon name="language" size="14" color="#D4A017" />
+            <u-icon name="language" size="14" color="#7C4DFF" />
             <text>English Prompt</text>
           </view>
           <view class="prompt-body en">{{ analysisResult.prompt.english }}</view>
@@ -138,7 +138,7 @@
         <!-- 关键词 -->
         <view v-if="analysisResult.prompt.keywords?.length" class="kw-section">
           <view class="prompt-label-row">
-            <u-icon name="tags" size="14" color="#2979ff" />
+            <u-icon name="tags" size="14" color="#7C4DFF" />
             <text>关键词权重</text>
           </view>
           <view class="kw-flex">
@@ -184,7 +184,7 @@
           </view>
           <view class="elem-list">
             <view v-for="(el, ei) in analysisResult.elements" :key="ei" class="elem-item">
-              <view class="elem-dot" :style="{ background: '#D4A017' }">{{ el.label.charAt(0) }}</view>
+              <view class="elem-dot" :style="{ background: '#7C4DFF' }">{{ el.label.charAt(0) }}</view>
               <view class="elem-info">
                 <text class="elem-name">{{ el.label }}</text>
                 <text class="elem-desc">{{ el.description }}</text>
@@ -201,7 +201,7 @@
             <text>编辑优化</text>
           </button>
           <button class="action-btn warning" @click="generateImage">
-            <u-icon name="photo-fill" size="18" color="#D4A017" />
+            <u-icon name="photo-fill" size="18" color="#7C4DFF" />
             <text>生成图片</text>
           </button>
         </view>
@@ -214,20 +214,45 @@
           <text class="gen-title">AI 生成结果</text>
           <u-tag text="NEW" type="success" size="mini" />
         </view>
+        <!-- 图片加载状态 -->
+        <view v-if="genImageLoading" class="gen-image-loading">
+          <u-icon name="hourglass" size="24" color="#999" />
+          <text>图片加载中...</text>
+        </view>
         <!-- #ifdef H5 -->
-        <img class="gen-image" :src="generatedImage" @click="previewGenImage" />
-        <!-- #endif -->
+        <img
+          v-show="!genImageLoading"
+          class="gen-image"
+          :src="generatedImage"
+          @load="genImageLoading = false"
+          @error="genImageLoading = false; genImageError = true"
+          @click="previewGenImage"
+        />\n        <!-- #endif -->
         <!-- #ifndef H5 -->
-        <image class="gen-image" :src="generatedImage" mode="widthFix" @click="previewGenImage" />
+        <image
+          v-show="!genImageLoading"
+          class="gen-image"
+          :src="generatedImage"
+          mode="widthFix"
+          @load="genImageLoading = false"
+          @error="genImageLoading = false; genImageError = true"
+          @click="previewGenImage"
+        />
         <!-- #endif -->
+        <!-- 图片加载失败提示 -->
+        <view v-if="genImageError" class="gen-image-error">
+          <u-icon name="warning" size="18" color="#f56c6c" />
+          <text>图片加载失败</text>
+          <text class="gen-retry" @tap="retryLoadGenImage">点击重试</text>
+        </view>
         <view class="gen-actions">
           <button class="gen-btn primary" @click="downloadImage">
-            <u-icon name="download" size="16" color="#FFF" />
+            <u-icon name="download" size="18" color="#FFF" />
             <text>保存到相册</text>
           </button>
-          <button class="gen-btn outline" @click="generateImage">
-            <u-icon name="reload" size="16" color="#D4A017" />
-            <text>重新生成</text>
+          <button class="gen-btn outline" :disabled="generating" @click="generateImage">
+            <u-icon name="reload" size="18" color="#7C4DFF" />
+            <text>{{ generating ? '生成中...' : '重新生成' }}</text>
           </button>
         </view>
       </view>
@@ -249,9 +274,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useHistoryStore } from '@/stores/history'
-import { analyzeImage as apiAnalyze, generateImage as apiGenerate, checkNetwork, watchNetworkChange, getFriendlyError } from '@/api/image'
+import { analyzeImage as apiAnalyze, generateImage as apiGenerate, checkNetwork, watchNetworkChange } from '@/api/image'
+import { getFriendlyError } from '@/common/http.interceptor'
 import type { ImageAnalysisResult } from '@/types'
 
 const historyStore = useHistoryStore()
@@ -260,9 +286,12 @@ const historyCount = computed(() => historyStore?.history?.length ?? 0)
 // ─── 状态 ────────────────────────────────
 const uploadedImage = ref('')
 const analyzing = ref(false)
+const generating = ref(false)
 const analysisResult = ref<ImageAnalysisResult | null>(null)
 const showResult = ref(false)
 const generatedImage = ref('')
+const genImageLoading = ref(false)  // 生成图片加载中
+const genImageError = ref(false)  // 生成图片加载失败
 const scrollIntoView = ref('')
 const isOnline = ref(true)
 const compressInfo = ref('')       // 压缩信息展示
@@ -404,7 +433,6 @@ const analyzeImage = async () => {
       favorite: false
     })
 
-    uni.hideLoading()
     uni.showToast({ title: `✅ ${result.style} 风格 (${elapsed}s)`, icon: 'none', duration: 2000 })
     console.log(`✅ 分析完成 | 风格: ${result.style} | 耗时: ${elapsed}s`)
   } catch (err: any) {
@@ -450,28 +478,44 @@ const generateImage = async () => {
     uni.showToast({ title: '请先分析图片', icon: 'none' })
     return
   }
+  if (generating.value) return // 防止重复点击
 
   const prompt = analysisResult.value?.prompt?.english
+  generating.value = true
   uni.showLoading({ title: 'AI 绘画中...', mask: true })
 
   try {
     const imageUrl = await apiGenerate({ prompt, width: 1024, height: 1024, model: 'flux' })
     generatedImage.value = imageUrl
     showResult.value = true
+    genImageLoading.value = true
+    genImageError.value = false
 
     uni.showToast({ title: '图片生成成功 ✓', icon: 'success' })
 
-    // 延迟滚动到生成结果区域
+    // 使用 nextTick 确保 DOM 更新后再滚动
+    await nextTick()
     setTimeout(() => {
       scrollIntoView.value = 'gen-result'
       setTimeout(() => { scrollIntoView.value = '' }, 500)
-    }, 300)
+    }, 150)
   } catch (err: any) {
     console.error('❌ 生成失败:', err)
     uni.showToast({ title: getFriendlyError(err), icon: 'none', duration: 3000 })
   } finally {
+    generating.value = false
     uni.hideLoading()
   }
+}
+
+// 重试加载生成图片
+const retryLoadGenImage = () => {
+  genImageError.value = false
+  genImageLoading.value = true
+  // 触发重新加载：清空 src 再赋值
+  const url = generatedImage.value
+  generatedImage.value = ''
+  setTimeout(() => { generatedImage.value = url }, 50)
 }
 
 // 预览生成的图片（全屏）
@@ -583,7 +627,7 @@ const goToSettings = () => {
   justify-content: center;
 
   &:active {
-    border-color: #D4A017;
+    border-color: #7C4DFF;
   }
 }
 
@@ -626,7 +670,7 @@ const goToSettings = () => {
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFF9E6, #FFE8B0);
+  background: linear-gradient(135deg, #EDE7F6, #E8DEF8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -679,13 +723,13 @@ const goToSettings = () => {
   transition: all 0.2s;
 
   &.ready {
-    background: linear-gradient(135deg, #1C1C1C, #333);
+    background: linear-gradient(135deg, #6200EA, #7C4DFF);
     color: #FFF;
-    box-shadow: 0 4rpx 16rpx rgba(28, 28, 28, 0.3);
+    box-shadow: 0 4rpx 16rpx rgba(124, 77, 255, 0.35);
 
     &:active {
       transform: scale(0.98);
-      box-shadow: 0 2rpx 8rpx rgba(28, 28, 28, 0.2);
+      box-shadow: 0 2rpx 8rpx rgba(124, 77, 255, 0.25);
     }
   }
 
@@ -760,12 +804,12 @@ const goToSettings = () => {
 
 .conf-pill {
   padding: 4rpx 16rpx;
-  background: #FFF9E6;
+  background: #EDE7F6;
   border-radius: 20rpx;
 
   text {
     font-size: 22rpx;
-    color: #D4A017;
+    color: #7C4DFF;
     font-weight: 500;
   }
 }
@@ -798,7 +842,7 @@ const goToSettings = () => {
   &.en {
     color: #1C1C1C;
     background: #FAFAFA;
-    border-left: 6rpx solid #D4A017;
+    border-left: 6rpx solid #7C4DFF;
     word-break: break-word;
   }
 
@@ -949,9 +993,9 @@ const goToSettings = () => {
   border: none;
 
   &.primary {
-    background: #1C1C1C;
+    background: linear-gradient(135deg, #6200EA, #7C4DFF);
     color: #FFF;
-    box-shadow: 0 4rpx 12rpx rgba(28, 28, 28, 0.2);
+    box-shadow: 0 4rpx 12rpx rgba(124, 77, 255, 0.3);
 
     &:active {
       transform: scale(0.97);
@@ -960,11 +1004,11 @@ const goToSettings = () => {
 
   &.warning {
     background: #FFF;
-    color: #D4A017;
-    border: 2rpx solid #D4A017;
+    color: #7C4DFF;
+    border: 2rpx solid #7C4DFF;
 
     &:active {
-      background: #FFFEF8;
+      background: #EDE7F6;
     }
   }
 }
@@ -1008,6 +1052,41 @@ const goToSettings = () => {
   width: 100%;
   border-radius: 14rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  min-height: 200rpx;
+  background: #f5f5f5;
+}
+
+.gen-image-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300rpx;
+  gap: 12rpx;
+  color: #999;
+  font-size: 28rpx;
+  background: #fafafa;
+  border-radius: 14rpx;
+}
+
+.gen-image-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300rpx;
+  gap: 12rpx;
+  color: #f56c6c;
+  font-size: 28rpx;
+  background: #fef0f0;
+  border-radius: 14rpx;
+  margin-bottom: 10rpx;
+
+  .gen-retry {
+    color: #7C4DFF;
+    text-decoration: underline;
+    margin-top: 8rpx;
+  }
 }
 
 .gen-actions {
@@ -1029,14 +1108,14 @@ const goToSettings = () => {
   border: none;
 
   &.primary {
-    background: #1C1C1C;
+    background: linear-gradient(135deg, #6200EA, #7C4DFF);
     color: #FFF;
   }
 
   &.outline {
     background: #FFF;
-    color: #D4A017;
-    border: 2rpx solid #EEE;
+    color: #7C4DFF;
+    border: 2rpx solid #E8DEF8;
   }
 }
 

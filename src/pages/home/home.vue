@@ -18,7 +18,7 @@ const projectCards = [
     desc: '使用最新的Vue3 Composition API和TypeScript',
     icon: 'thumb-up',
     url: '/pages/home/uview-intro',
-    style: 'background: linear-gradient(135deg, #2979ff, #19be6b);',
+    style: 'background: linear-gradient(135deg, #7C4DFF, #19be6b);',
   },
   {
     title: 'uView Pro组件库',
@@ -253,7 +253,7 @@ function goToUrl(url: string) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #2979ff 0%, #19be6b 50%, #ff9900 100%);
+    background: linear-gradient(135deg, #7C4DFF 0%, #19be6b 50%, #ff9900 100%);
     opacity: 0.95;
   }
 
@@ -581,7 +581,7 @@ function goToUrl(url: string) {
 
   .quick-start-text {
     font-weight: 700;
-    background: linear-gradient(135deg, #2979ff, #19be6b);
+    background: linear-gradient(135deg, #7C4DFF, #19be6b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

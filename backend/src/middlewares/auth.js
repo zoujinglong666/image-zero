@@ -3,6 +3,10 @@
  */
 import jwt from 'jsonwebtoken'
 import config from '../config/index.js'
+import {
+  UnauthorizedError,
+  InternalError,
+} from './responseHandler.js'
 
 /**
  * 验证 JWT Token
@@ -15,15 +19,12 @@ export function authMiddleware(req, res, next) {
   }
 
   if (!config.jwt.secret) {
-    return res.status(500).json({ error: '认证服务未配置' })
+    return next(new InternalError('认证服务未配置', 'AUTH_NOT_CONFIGURED'))
   }
 
   const authHeader = req.headers.authorization
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: '未提供认证令牌',
-      code: 'NO_TOKEN',
-    })
+    return next(new UnauthorizedError('未提供认证令牌', 'NO_TOKEN'))
   }
 
   const token = authHeader.substring(7)
@@ -33,9 +34,9 @@ export function authMiddleware(req, res, next) {
     next()
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: '认证令牌已过期', code: 'TOKEN_EXPIRED' })
+      return next(new UnauthorizedError('认证令牌已过期', 'TOKEN_EXPIRED'))
     }
-    return res.status(401).json({ error: '认证令牌无效', code: 'INVALID_TOKEN' })
+    return next(new UnauthorizedError('认证令牌无效', 'INVALID_TOKEN'))
   }
 }
 

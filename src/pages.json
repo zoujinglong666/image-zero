@@ -41,7 +41,7 @@
     "backgroundColorBottom": "@bgColorBottom",
     "backgroundColorTop": "@bgColorTop",
     "backgroundTextStyle": "@bgTxtStyle",
-    "navigationBarBackgroundColor": "#6366f1",
+    "navigationBarBackgroundColor": "#7C4DFF",
     "navigationBarTextStyle": "@navTxtStyle",
     "navigationBarTitleText": "图灵绘境",
     "navigationStyle": "custom"

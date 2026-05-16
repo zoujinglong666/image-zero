@@ -118,7 +118,7 @@
                 <image class="thumb-img" :src="item.imageUrl" mode="aspectFill" />
                 <!-- #endif -->
                 <view v-if="item.favorite" class="fav-badge">
-                  <u-icon name="star-fill" size="12" color="#D4A017" />
+                  <u-icon name="star-fill" size="12" color="#7C4DFF" />
                 </view>
               </view>
 
@@ -134,7 +134,7 @@
                     <u-icon
                       :name="item.favorite ? 'star-fill' : 'star'"
                       size="18"
-                      :color="item.favorite ? '#D4A017' : '#CCCCCC'"
+                      :color="item.favorite ? '#7C4DFF' : '#CCCCCC'"
                       @tap.stop="toggleFavorite(item)"
                     />
                     <u-icon
@@ -489,7 +489,7 @@ const goHome = () => {
   width: 28rpx;
   height: 28rpx;
   border: 3rpx solid #DDD;
-  border-top-color: #D4A017;
+  border-top-color: #7C4DFF;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

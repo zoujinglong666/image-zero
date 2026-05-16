@@ -2,6 +2,8 @@
  * IP 速率限制中间件
  * 基于内存的滑动窗口限流
  */
+import { RateLimitError } from './responseHandler.js'
+
 export class RateLimiter {
   constructor() {
     this.windows = new Map()
@@ -29,12 +31,11 @@ export class RateLimiter {
 
       if (entry.count > rule.max) {
         const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
-        return res.status(429).json({
-          error: '操作过于频繁，请稍后再试',
+        return next(new RateLimitError('操作过于频繁，请稍后再试', 'RATE_LIMITED', {
           retryAfter,
           limit: rule.max,
           windowSec: rule.windowMs / 1000,
-        })
+        }))
       }
 
       res.setHeader('X-RateLimit-Limit', rule.max)

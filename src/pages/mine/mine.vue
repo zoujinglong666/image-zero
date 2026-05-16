@@ -19,7 +19,7 @@
             size="96"
             :text="userStore.userDisplayName.charAt(0)"
             fontSize="36"
-            :bg-color="userStore.isLoggedIn ? '#2979ff' : '#D4A017'"
+            :bg-color="userStore.isLoggedIn ? '#7C4DFF' : '#B388FF'"
           />
         </view>
         <view class="user-info">
@@ -53,12 +53,12 @@
       <!-- 统计网格 -->
       <view class="stats-grid">
         <view class="grid-item" @tap="goToHistory">
-          <u-icon name="clock-fill" size="28" color="#2979ff" />
+          <u-icon name="clock-fill" size="28" color="#7C4DFF" />
           <text class="grid-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="grid-label">解析记录</text>
         </view>
         <view class="grid-item">
-          <u-icon name="star-fill" size="28" color="#D4A017" />
+          <u-icon name="star-fill" size="28" color="#7C4DFF" />
           <text class="grid-num">{{ favoriteCount }}</text>
           <text class="grid-label">我的收藏</text>
         </view>
@@ -68,7 +68,7 @@
           <text class="grid-label">保存提示词</text>
         </view>
         <view class="grid-item">
-          <u-icon name="photo-fill" size="28" color="#9c27b0" />
+          <u-icon name="photo-fill" size="28" color="#6200EA" />
           <text class="grid-num">{{ generatedCount }}</text>
           <text class="grid-label">生成图片</text>
         </view>
@@ -218,7 +218,7 @@
                 <u-radio
                   :name="qi"
                   :checked="currentQuality === qi"
-                  activeColor="#D4A017"
+                  activeColor="#7C4DFF"
                 />
               </template>
             </u-cell-item>
@@ -252,7 +252,7 @@
                 <u-radio
                   :name="si"
                   :checked="currentSize === si"
-                  activeColor="#D4A017"
+                  activeColor="#7C4DFF"
                 />
               </template>
             </u-cell-item>
@@ -415,7 +415,7 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   padding: 40rpx 32rpx;
-  background: linear-gradient(135deg, #1C1C1C 0%, #333333 100%);
+  background: linear-gradient(135deg, #6200EA 0%, #7C4DFF 100%);
   gap: 24rpx;
 }
 
@@ -514,7 +514,7 @@ const handleLogout = () => {
   gap: 12rpx;
   width: 100%;
   height: 88rpx;
-  background: #07C160;
+  background: #7C4DFF;
   color: #FFFFFF;
   font-size: 30rpx;
   font-weight: 600;
@@ -533,7 +533,7 @@ const handleLogout = () => {
   gap: 12rpx;
   width: 100%;
   height: 88rpx;
-  background: #2979ff;
+  background: #7C4DFF;
   color: #FFFFFF;
   font-size: 30rpx;
   font-weight: 600;

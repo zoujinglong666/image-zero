@@ -10,3 +10,16 @@
     border-radius: 8rpx;
     margin: 16rpx 0;
 }
+
+/* 导航栏左右 padding 统一 */
+.u-navbar-inner {
+    .u-back-wrap {
+        padding: 14rpx 16rpx !important;
+    }
+    .u-slot-right {
+        padding-right: 16rpx !important;
+    }
+    .u-slot-left {
+        padding-left: 16rpx !important;
+    }
+}

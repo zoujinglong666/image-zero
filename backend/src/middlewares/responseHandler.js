@@ -7,7 +7,8 @@
  *  { success: false, error: '错误描述', code: 'ERROR_CODE', detail: null }
  *
  *  使用方式:
- *  - Controller 中 throw new AppError('错误', 400, 'ERROR_CODE')
+ *  - Controller 中 throw new XxxError('错误', 'ERROR_CODE', detail?)
+ *  - 中间件中 next(new XxxError('错误', 'ERROR_CODE', detail?))
  *  - 成功直接 return res.success(data, '操作成功')
  *  - 分页 return res.successPage(list, pagination)
  * ══════════════════════════════════════════
@@ -30,38 +31,56 @@ export class AppError extends Error {
 
 // 预定义常用错误（快捷创建）
 export class BadRequestError extends AppError {
-  constructor(message = '请求参数有误', code = 'BAD_REQUEST') {
-    super(message, 400, code)
+  constructor(message = '请求参数有误', code = 'BAD_REQUEST', detail = null) {
+    super(message, 400, code, detail)
   }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = '身份验证已过期，请重新登录', code = 'UNAUTHORIZED') {
-    super(message, 401, code)
+  constructor(message = '身份验证已过期，请重新登录', code = 'UNAUTHORIZED', detail = null) {
+    super(message, 401, code, detail)
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = '没有操作权限', code = 'FORBIDDEN') {
-    super(message, 403, code)
+  constructor(message = '没有操作权限', code = 'FORBIDDEN', detail = null) {
+    super(message, 403, code, detail)
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = '资源不存在', code = 'NOT_FOUND') {
-    super(message, 404, code)
+  constructor(message = '资源不存在', code = 'NOT_FOUND', detail = null) {
+    super(message, 404, code, detail)
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message = '资源冲突', code = 'CONFLICT', detail = null) {
+    super(message, 409, code, detail)
   }
 }
 
 export class RateLimitError extends AppError {
-  constructor(message = '操作过于频繁，请稍后再试', code = 'RATE_LIMITED') {
-    super(message, 429, code)
+  constructor(message = '操作过于频繁，请稍后再试', code = 'RATE_LIMITED', detail = null) {
+    super(message, 429, code, detail)
+  }
+}
+
+export class InternalError extends AppError {
+  constructor(message = '服务器内部错误', code = 'INTERNAL_ERROR', detail = null) {
+    super(message, 500, code, detail)
   }
 }
 
 export class ServiceUnavailableError extends AppError {
-  constructor(message = '服务暂时不可用', code = 'SERVICE_UNAVAILABLE') {
-    super(message, 503, code)
+  constructor(message = '服务暂时不可用', code = 'SERVICE_UNAVAILABLE', detail = null) {
+    super(message, 503, code, detail)
+  }
+}
+
+export class GatewayTimeoutError extends AppError {
+  constructor(message = '请求处理超时', code = 'GATEWAY_TIMEOUT', detail = null) {
+    super(message, 504, code, detail)
   }
 }
 

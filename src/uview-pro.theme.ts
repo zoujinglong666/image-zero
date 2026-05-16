@@ -1,18 +1,18 @@
 import { defineConfig } from 'uview-plus'
 
 export default defineConfig({
-  // 主题配置
+  // 主题配置 - 灵动紫
   theme: {
-    // 主色调 - 焦墨色
-    primary: '#1C1C1C',
-    // 辅助色 - 琥珀黄
-    warning: '#D4A017',
+    // 主色调 - 灵动紫
+    primary: '#7C4DFF',
+    // 辅助色 - 深紫
+    warning: '#FF9100',
     // 成功色
-    success: '#22C55E',
+    success: '#00C853',
     // 错误色
-    error: '#EF4444',
+    error: '#FF5252',
     // 信息色
-    info: '#6B7280',
+    info: '#78909C',
   },
   
   // 组件默认配置
@@ -55,12 +55,15 @@ export default defineConfig({
     }
   },
   
-  // 颜色变量 - 文档风格
+  // 颜色变量 - 灵动紫风格
   colors: {
     // 主色
+    primary: '#7C4DFF',
+    primaryDark: '#6200EA',
+    primaryLight: '#B388FF',
+    primaryBg: '#EDE7F6',
+    // 文字
     ink: '#1C1C1C',
-    // 琥珀
-    amber: '#D4A017',
     // 背景
     bg: '#FFFFFF',
     // 卡片背景

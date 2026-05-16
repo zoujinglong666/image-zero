@@ -7,7 +7,8 @@ import { analyze, generate, edit } from '../controllers/imageController.js'
 import { adaptPrompt, enhancePrompt } from '../services/promptAdapter.js'
 import { RateLimiter } from '../middlewares/rateLimiter.js'
 import { createTimeoutMiddleware } from '../middlewares/timeout.js'
-import { authMiddleware, optionalAuth } from '../middlewares/auth.js'
+import { optionalAuth } from '../middlewares/auth.js'
+import { BadRequestError } from '../middlewares/responseHandler.js'
 import { sanitizeFilename } from '../utils/validator.js'
 import config from '../config/index.js'
 
@@ -77,26 +78,34 @@ router.post('/edit',
 // POST /api/prompt/adapt — 多模型提示词适配
 router.post('/prompt/adapt',
   rateLimiter.middleware('/api/prompt/adapt'),
-  (req, res) => {
-    const { analysis, model = 'general', lang = 'en' } = req.body
-    if (!analysis) {
-      return res.status(400).json({ success: false, error: '缺少 analysis 参数', code: 'BAD_REQUEST' })
+  (req, res, next) => {
+    try {
+      const { analysis, model = 'general', lang = 'en' } = req.body
+      if (!analysis) {
+        throw new BadRequestError('缺少 analysis 参数', 'MISSING_ANALYSIS')
+      }
+      const result = adaptPrompt(analysis, model, lang)
+      res.success(result, `${model} 提示词适配完成`)
+    } catch (err) {
+      next(err)
     }
-    const result = adaptPrompt(analysis, model, lang)
-    res.success(result, `${model} 提示词适配完成`)
   }
 )
 
 // POST /api/prompt/enhance — 提示词增强
 router.post('/prompt/enhance',
   rateLimiter.middleware('/api/prompt/enhance'),
-  (req, res) => {
-    const { prompt, style, quality = 'high', model = 'general' } = req.body
-    if (!prompt) {
-      return res.status(400).json({ success: false, error: '缺少 prompt 参数', code: 'BAD_REQUEST' })
+  (req, res, next) => {
+    try {
+      const { prompt, style, quality = 'high', model = 'general' } = req.body
+      if (!prompt) {
+        throw new BadRequestError('缺少 prompt 参数', 'MISSING_PROMPT')
+      }
+      const enhanced = enhancePrompt(prompt, { style, quality, model })
+      res.success({ original: prompt, enhanced }, '提示词增强完成')
+    } catch (err) {
+      next(err)
     }
-    const enhanced = enhancePrompt(prompt, { style, quality, model })
-    res.success({ original: prompt, enhanced }, '提示词增强完成')
   }
 )
 
