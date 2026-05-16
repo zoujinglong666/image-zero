@@ -208,53 +208,80 @@
       </view>
 
       <!-- ====== AI 生成结果（在 scroll-view 内部！）====== -->
-      <view v-if="showResult && generatedImage" id="gen-result" class="gen-card">
-        <view class="gen-head">
-          <u-icon name="checkmark-circle-fill" size="40" color="#19be6b" />
-          <text class="gen-title">AI 生成结果</text>
-          <u-tag text="NEW" type="success" size="mini" />
-        </view>
-        <!-- 图片加载状态 -->
-        <view v-if="genImageLoading" class="gen-image-loading">
-          <u-icon name="hourglass" size="40" color="#999" />
-          <text>图片加载中...</text>
-        </view>
-        <!-- #ifdef H5 -->
-        <img
-          v-show="!genImageLoading"
-          class="gen-image"
-          :src="generatedImage"
-          @load="genImageLoading = false"
-          @error="genImageLoading = false; genImageError = true"
-          @click="previewGenImage"
-        />\n        <!-- #endif -->
-        <!-- #ifndef H5 -->
-        <image
-          v-show="!genImageLoading"
-          class="gen-image"
-          :src="generatedImage"
-          mode="widthFix"
-          @load="genImageLoading = false"
-          @error="genImageLoading = false; genImageError = true"
-          @click="previewGenImage"
-        />
-        <!-- #endif -->
-        <!-- 图片加载失败提示 -->
-        <view v-if="genImageError" class="gen-image-error">
-          <u-icon name="warning" size="40" color="#f56c6c" />
-          <text>图片加载失败</text>
-          <text class="gen-retry" @tap="retryLoadGenImage">点击重试</text>
-        </view>
-        <view class="gen-actions">
-          <button class="gen-btn primary" @click="downloadImage">
-            <u-icon name="download" size="40" color="#FFF" />
-            <text>保存到相册</text>
-          </button>
-          <button class="gen-btn outline" :disabled="generating" @click="generateImage">
-            <u-icon name="reload" size="40" color="#7C4DFF" />
-            <text>{{ generating ? '生成中...' : '重新生成' }}</text>
-          </button>
-        </view>
+      <view v-if="generating || (showResult && generatedImage)" id="gen-result" class="gen-card">
+        <!-- 骨架屏：生成中状态 -->
+        <template v-if="generating">
+          <view class="gen-head">
+            <view class="skeleton-circle skeleton-shimmer" />
+            <view class="skeleton-bar skeleton-shimmer" style="width: 180rpx; height: 32rpx;" />
+            <view class="skeleton-bar skeleton-shimmer" style="width: 64rpx; height: 32rpx; margin-left: auto;" />
+          </view>
+          <view class="skeleton-image skeleton-shimmer">
+            <view class="skeleton-inner-pulse" />
+            <view class="skeleton-gen-text">
+              <view class="skeleton-gen-spinner" />
+              <text>AI 绘画生成中</text>
+            </view>
+          </view>
+          <view class="gen-actions">
+            <view class="skeleton-btn skeleton-shimmer" />
+            <view class="skeleton-btn skeleton-shimmer" />
+          </view>
+        </template>
+
+        <!-- 真实结果：生成完成 -->
+        <template v-else>
+          <view class="gen-head">
+            <u-icon name="checkmark-circle-fill" size="40" color="#19be6b" />
+            <text class="gen-title">AI 生成结果</text>
+            <u-tag text="NEW" type="success" size="mini" />
+          </view>
+          <!-- 图片加载骨架屏 -->
+          <view v-if="genImageLoading" class="skeleton-image skeleton-shimmer">
+            <view class="skeleton-inner-pulse" />
+            <view class="skeleton-gen-text">
+              <view class="skeleton-gen-spinner" />
+              <text>图片加载中...</text>
+            </view>
+          </view>
+          <!-- #ifdef H5 -->
+          <img
+            v-show="!genImageLoading"
+            class="gen-image"
+            :src="generatedImage"
+            @load="genImageLoading = false"
+            @error="genImageLoading = false; genImageError = true"
+            @click="previewGenImage"
+          />
+          <!-- #endif -->
+          <!-- #ifndef H5 -->
+          <image
+            v-show="!genImageLoading"
+            class="gen-image"
+            :src="generatedImage"
+            mode="widthFix"
+            @load="genImageLoading = false"
+            @error="genImageLoading = false; genImageError = true"
+            @click="previewGenImage"
+          />
+          <!-- #endif -->
+          <!-- 图片加载失败提示 -->
+          <view v-if="genImageError" class="gen-image-error">
+            <u-icon name="warning" size="40" color="#f56c6c" />
+            <text>图片加载失败</text>
+            <text class="gen-retry" @tap="retryLoadGenImage">点击重试</text>
+          </view>
+          <view class="gen-actions">
+            <button class="gen-btn primary" @click="downloadImage">
+              <u-icon name="download" size="40" color="#FFF" />
+              <text>保存到相册</text>
+            </button>
+            <button class="gen-btn outline" :disabled="generating" @click="generateImage">
+              <u-icon name="reload" size="40" color="#7C4DFF" />
+              <text>重新生成</text>
+            </button>
+          </view>
+        </template>
       </view>
 
       <!-- 历史记录入口 -->
@@ -482,7 +509,13 @@ const generateImage = async () => {
 
   const prompt = analysisResult.value?.prompt?.english
   generating.value = true
-  uni.showLoading({ title: 'AI 绘画中...', mask: true })
+
+  // 提前展示骨架屏卡片并滚动到视图
+  await nextTick()
+  setTimeout(() => {
+    scrollIntoView.value = 'gen-result'
+    setTimeout(() => { scrollIntoView.value = '' }, 500)
+  }, 100)
 
   try {
     const imageUrl = await apiGenerate({ prompt, width: 1024, height: 1024, model: 'flux' })
@@ -504,7 +537,6 @@ const generateImage = async () => {
     uni.showToast({ title: getFriendlyError(err), icon: 'none', duration: 3000 })
   } finally {
     generating.value = false
-    uni.hideLoading()
   }
 }
 
@@ -1056,17 +1088,76 @@ const goToSettings = () => {
   background: #f5f5f5;
 }
 
-.gen-image-loading {
+/* ====== 骨架屏 ====== */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-circle {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-bar {
+  border-radius: 8rpx;
+}
+
+.skeleton-image {
+  position: relative;
+  width: 100%;
+  min-height: 500rpx;
+  border-radius: 14rpx;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skeleton-inner-pulse {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(124, 77, 255, 0.06) 0%, transparent 70%);
+  animation: skeletonPulse 2s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.skeleton-gen-text {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 300rpx;
-  gap: 12rpx;
-  color: #999;
+  gap: 20rpx;
+  z-index: 1;
+  color: #BBB;
   font-size: 28rpx;
-  background: #fafafa;
-  border-radius: 14rpx;
+  font-weight: 500;
+}
+
+.skeleton-gen-spinner {
+  width: 56rpx;
+  height: 56rpx;
+  border: 4rpx solid #E8DEF8;
+  border-top-color: #7C4DFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.skeleton-btn {
+  flex: 1;
+  height: 76rpx;
+  border-radius: 12rpx;
 }
 
 .gen-image-error {
