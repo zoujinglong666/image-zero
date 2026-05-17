@@ -50,6 +50,7 @@ export {
   savePreferences,
   fetchProfile,
   updateProfile,
+  uploadAvatar,
 } from './data'
 
 export type { HistoryPageResult, HistoryItem, UserProfile } from './data'

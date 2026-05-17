@@ -81,5 +81,32 @@
   "easycom": {
     "autoscan": true
   },
-  "subPackages": []
+  "subPackages": [
+    {
+      "root": "pages/about",
+      "pages": [
+        {
+          "path": "settings",
+          "style": {
+            "navigationBarTitleText": "设置",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "faq",
+          "style": {
+            "navigationBarTitleText": "常见问题",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "guide",
+          "style": {
+            "navigationBarTitleText": "使用指南",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    }
+  ]
 }

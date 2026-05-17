@@ -256,4 +256,6 @@ export interface UserInfo {
   type: 'wechat' | 'anonymous' | 'guest'
   token: string
   loginAt: number
+  avatarUrl: string
+  nickname: string
 }

@@ -112,3 +112,37 @@ export function fetchProfile(): Promise<UserProfile> {
 export function updateProfile(fields: { nickname?: string; avatarUrl?: string }): Promise<void> {
   return http.put<void>('/data/profile', fields)
 }
+
+/** 上传头像图片，返回永久 URL */
+export function uploadAvatar(tempFilePath: string): Promise<{ url: string }> {
+  return new Promise((resolve, reject) => {
+    const token = uni.getStorageSync('token') || ''
+    uni.uploadFile({
+      url: (import.meta.env.VITE_API_BASE_URL || '') + '/data/avatar',
+      filePath: tempFilePath,
+      name: 'avatar',
+      header: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            const data = JSON.parse(res.data)
+            if (data.code === 0 && data.data) {
+              resolve({ url: data.data.url })
+            } else {
+              reject(new Error(data.message || '上传失败'))
+            }
+          } catch {
+            reject(new Error('响应解析失败'))
+          }
+        } else {
+          reject(new Error(`上传失败 (${res.statusCode})`))
+        }
+      },
+      fail: (err) => {
+        reject(new Error(err.errMsg || '网络错误'))
+      },
+    })
+  })
+}

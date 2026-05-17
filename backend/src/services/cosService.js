@@ -66,12 +66,12 @@ function getExt(mimeType) {
   return map[mimeType] || 'jpg'
 }
 
-/** 生成唯一文件路径: community/YYYY/MM/DD/{random32}.{ext} */
-function generateKey(ext) {
+/** 生成唯一文件路径: {prefix}/YYYY/MM/DD/{random32}.{ext} */
+function generateKey(ext, prefix = 'community') {
   const now = new Date()
   const datePart = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
   const random = crypto.randomBytes(16).toString('hex')
-  return `community/${datePart}/${random}.${ext}`
+  return `${prefix}/${datePart}/${random}.${ext}`
 }
 
 /** 计算图片指纹 (SHA256 前 32 位) */
@@ -125,9 +125,10 @@ export function validateImage(buffer, mimeType) {
  *
  * @param {Buffer} fileBuffer - 图片二进制数据
  * @param {string} mimeType - MIME 类型
+ * @param {string} [prefix='community'] - 存储路径前缀
  * @returns {Promise<{ url: string, key: string, hash: string }>}
  */
-export async function uploadToCos(fileBuffer, mimeType) {
+export async function uploadToCos(fileBuffer, mimeType, prefix = 'community') {
   // 1. 校验
   const validation = validateImage(fileBuffer, mimeType)
   if (!validation.valid) {
@@ -137,12 +138,12 @@ export async function uploadToCos(fileBuffer, mimeType) {
   // 2. 计算指纹 + 生成路径
   const imageHash = computeImageHash(fileBuffer)
   const ext = getExt(mimeType)
-  const cosKey = generateKey(ext)
+  const cosKey = generateKey(ext, prefix)
 
   // 3. 检查 COS 配置 → 未配置则回退本地
   if (!isCosConfigured()) {
     logger.warn('[COS] 未配置 COS 凭证，回退到本地存储')
-    return uploadToLocal(fileBuffer, ext, imageHash)
+    return uploadToLocal(fileBuffer, ext, imageHash, prefix)
   }
 
   // 4. 创建 COS 实例（临时密钥模式 — 服务端直传用永久密钥即可）
@@ -188,7 +189,7 @@ export async function uploadToCos(fileBuffer, mimeType) {
     logger.error(`[COS] ❌ SDK 上传失败: ${err.message} (${err.code || err.statusCode})`)
     // 自动回退到本地存储
     logger.warn('[COS] 自动回退到本地存储')
-    return uploadToLocal(fileBuffer, ext, imageHash)
+    return uploadToLocal(fileBuffer, ext, imageHash, prefix)
   }
 }
 
@@ -199,8 +200,8 @@ export async function uploadToCos(fileBuffer, mimeType) {
 /**
  * 回退到本地文件系统存储
  */
-function uploadToLocal(fileBuffer, ext, imageHash) {
-  const uploadDir = path.resolve(process.cwd(), 'uploads', 'community')
+function uploadToLocal(fileBuffer, ext, imageHash, prefix = 'community') {
+  const uploadDir = path.resolve(process.cwd(), 'uploads', prefix)
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true })
   }
@@ -209,7 +210,7 @@ function uploadToLocal(fileBuffer, ext, imageHash) {
   const filePath = path.join(uploadDir, fileName)
   fs.writeFileSync(filePath, fileBuffer)
 
-  const url = `/uploads/community/${fileName}`
+  const url = `/uploads/${prefix}/${fileName}`
   logger.info(`[Local] 本地存储回退: ${url}`)
   return { url, key: fileName, hash: imageHash }
 }

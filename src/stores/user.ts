@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { useLocale, useTheme } from 'uview-pro'
 import { ref, computed } from 'vue'
 import { wechatLogin as apiWechatLogin, anonymousLogin as apiAnonymousLogin, verifyToken as apiVerifyToken, getAuthStatus } from '@/api/auth'
+import { fetchProfile, updateProfile, uploadAvatar } from '@/api/data'
 import { useHistoryStore } from './history'
 
 export const useUserStore = defineStore('user', () => {
@@ -24,12 +25,17 @@ export const useUserStore = defineStore('user', () => {
   const authStatus = ref<AuthStatusResult | null>(null)
   const isLoggingIn = ref(false)
 
+  // 用户资料
+  const avatarUrl = ref('')
+  const nickname = ref('')
+
   // 计算属性
   const isWechatUser = computed(() => userInfo.value?.type === 'wechat')
   const isAnonymousUser = computed(() => userInfo.value?.type === 'anonymous')
   const isGuest = computed(() => !isLoggedIn.value)
   const userDisplayName = computed(() => {
     if (!isLoggedIn.value) return '未登录'
+    if (nickname.value) return nickname.value
     if (userInfo.value?.type === 'wechat') return `微信用户 ${userInfo.value.uid.slice(0, 6)}`
     if (userInfo.value?.type === 'anonymous') return '访客'
     return '未登录'
@@ -55,6 +61,67 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // ══════════════════════════════════════════
+  //  用户资料
+  // ══════════════════════════════════════════
+
+  /** 从后端拉取用户完整资料（头像/昵称等） */
+  async function loadProfile(): Promise<void> {
+    try {
+      const profile = await fetchProfile()
+      if (profile) {
+        avatarUrl.value = profile.avatarUrl || ''
+        nickname.value = profile.nickname || ''
+
+        // 同步到 userInfo
+        if (userInfo.value) {
+          userInfo.value.avatarUrl = profile.avatarUrl || ''
+          userInfo.value.nickname = profile.nickname || ''
+        }
+      }
+    } catch (e) {
+      console.warn('[Auth] 拉取用户资料失败（不影响登录）:', e)
+    }
+  }
+
+  /** 更新昵称并同步到后端 */
+  async function updateNickname(newNickname: string): Promise<boolean> {
+    if (!newNickname.trim()) return false
+    try {
+      await updateProfile({ nickname: newNickname })
+      nickname.value = newNickname
+      if (userInfo.value) {
+        userInfo.value.nickname = newNickname
+      }
+      return true
+    } catch (e: any) {
+      console.error('[Profile] 更新昵称失败:', e.message)
+      uni.showToast({ title: '昵称更新失败', icon: 'none' })
+      return false
+    }
+  }
+
+  /** 上传头像并同步到后端 */
+  async function updateAvatar(tempFilePath: string): Promise<boolean> {
+    try {
+      const result = await uploadAvatar(tempFilePath)
+      const url = result?.url || ''
+      if (url) {
+        await updateProfile({ avatarUrl: url })
+        avatarUrl.value = url
+        if (userInfo.value) {
+          userInfo.value.avatarUrl = url
+        }
+        return true
+      }
+      return false
+    } catch (e: any) {
+      console.error('[Profile] 上传头像失败:', e.message)
+      uni.showToast({ title: '头像更新失败', icon: 'none' })
+      return false
+    }
+  }
+
+  // ══════════════════════════════════════════
   //  微信登录
   // ══════════════════════════════════════════
 
@@ -74,10 +141,15 @@ export const useUserStore = defineStore('user', () => {
           type: 'wechat',
           token: result.token,
           loginAt: Date.now(),
+          avatarUrl: '',
+          nickname: '',
         }
 
         userName.value = `微信用户 ${result.user.uid.slice(0, 6)}`
         isLoggedIn.value = true
+
+        // 登录成功后拉取完整用户资料
+        await loadProfile()
 
         // 登录成功后同步本地历史到后端
         try {
@@ -125,10 +197,15 @@ export const useUserStore = defineStore('user', () => {
           type: 'anonymous',
           token: result.token,
           loginAt: Date.now(),
+          avatarUrl: '',
+          nickname: '',
         }
 
         userName.value = '访客'
         isLoggedIn.value = true
+
+        // 拉取资料
+        await loadProfile()
 
         console.log('✅ [Auth] 匿名登录成功')
         return true
@@ -163,8 +240,14 @@ export const useUserStore = defineStore('user', () => {
           type: result.user.type,
           token: token.value,
           loginAt: userInfo.value?.loginAt || Date.now(),
+          avatarUrl: avatarUrl.value,
+          nickname: nickname.value,
         }
         isLoggedIn.value = true
+
+        // Token 有效时拉取最新资料
+        await loadProfile()
+
         return true
       }
 
@@ -214,6 +297,8 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn.value = false
     userName.value = ''
     userInfo.value = null
+    avatarUrl.value = ''
+    nickname.value = ''
   }
 
   // ══════════════════════════════════════════
@@ -248,6 +333,8 @@ export const useUserStore = defineStore('user', () => {
     userName.value = ''
     isLoggedIn.value = false
     userInfo.value = null
+    avatarUrl.value = ''
+    nickname.value = ''
     preferences.value = {
       theme: 'light',
       language: 'zh-CN',
@@ -273,6 +360,9 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     authStatus,
     isLoggingIn,
+    // 用户资料
+    avatarUrl,
+    nickname,
     // 计算属性
     isWechatUser,
     isAnonymousUser,
@@ -285,6 +375,10 @@ export const useUserStore = defineStore('user', () => {
     anonymousLogin: anonymousLoginAction,
     checkToken,
     autoLogin,
+    // 用户资料方法
+    loadProfile,
+    updateNickname,
+    updateAvatar,
     // 偏好设置
     updateTheme,
     setLanguage,

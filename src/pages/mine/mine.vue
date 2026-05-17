@@ -15,9 +15,9 @@
       <view class="user-card" @tap="onUserCardTap">
         <view class="user-avatar">
           <u-avatar
-            :src="userInfo.avatar"
+            :src="userStore.avatarUrl"
             size="96"
-            :text="userStore.userDisplayName.charAt(0)"
+            :text="avatarText"
             fontSize="36"
             :bg-color="userStore.isLoggedIn ? '#7C4DFF' : '#B388FF'"
           />
@@ -77,7 +77,6 @@
       <!-- 功能菜单组 -->
       <view class="menu-section">
         <u-cell-group :border="false">
-          
           <!-- 历史记录 -->
           <u-cell-item
             title="历史记录"
@@ -85,7 +84,6 @@
             icon="clock"
             @tap="goToHistory"
           />
-
           <!-- 我的收藏 -->
           <u-cell-item
             title="我的收藏"
@@ -93,7 +91,6 @@
             icon="star"
             @tap="showFavorites"
           />
-
           <!-- 保存的提示词 -->
           <u-cell-item
             title="保存的提示词"
@@ -111,9 +108,17 @@
           :line="true"
           :arrow="false"
         />
-        
         <u-cell-group :border="false">
-          
+          <!-- 主题设置 -->
+          <u-cell-item
+            title="主题设置"
+            icon="palette"
+            @tap="goToSettings"
+          >
+            <template #value>
+              <u-tag :text="currentThemeLabel" type="primary" size="mini" plain />
+            </template>
+          </u-cell-item>
           <!-- 生成质量 -->
           <u-cell-item
             title="生成质量"
@@ -121,7 +126,6 @@
             icon="setting"
             @tap="showQualityPicker"
           />
-
           <!-- 默认尺寸 -->
           <u-cell-item
             title="默认尺寸"
@@ -129,7 +133,6 @@
             icon="grid"
             @tap="showSizePicker"
           />
-
           <!-- 清除缓存 -->
           <u-cell-item
             title="清除缓存"
@@ -146,14 +149,12 @@
       <!-- 帮助菜单组 -->
       <view class="menu-section">
         <u-cell-group :border="false">
-          
           <!-- 使用帮助 -->
           <u-cell-item
             title="使用帮助"
             icon="question-circle"
             @tap="showHelp"
           />
-
           <!-- 关于 -->
           <u-cell-item
             title="关于图灵绘境"
@@ -161,14 +162,12 @@
             icon="info-circle"
             @tap="showAbout"
           />
-
           <!-- 反馈建议 -->
           <u-cell-item
             title="反馈建议"
             icon="edit-pen"
             @tap="showFeedback"
           />
-
           <!-- 退出登录（仅已登录时显示） -->
           <u-cell-item
             v-if="userStore.isLoggedIn"
@@ -193,11 +192,93 @@
 
     </scroll-view>
 
+    <!-- 资料编辑弹窗 -->
+    <u-popup
+      v-model="showProfilePopup"
+      mode="bottom"
+      border-radius="20"
+      @close="showProfilePopup = false"
+    >
+      <view class="profile-popup">
+        <view class="picker-header">
+          <text class="picker-title">编辑资料</text>
+          <u-icon name="close" size="40" color="#999" @click="showProfilePopup = false" />
+        </view>
+
+        <!-- 头像选择 -->
+        <view class="profile-row">
+          <text class="profile-label">头像</text>
+          <view class="profile-avatar-wrap">
+            <!-- #ifdef MP-WEIXIN -->
+            <button class="avatar-choose-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
+              <u-avatar
+                :src="userStore.avatarUrl"
+                size="80"
+                :text="avatarText"
+                fontSize="30"
+                bg-color="#7C4DFF"
+              />
+              <view class="avatar-edit-badge">
+                <u-icon name="camera" size="20" color="#FFFFFF" />
+              </view>
+            </button>
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <view @tap="onChooseAvatarFallback">
+              <u-avatar
+                :src="userStore.avatarUrl"
+                size="80"
+                :text="avatarText"
+                fontSize="30"
+                bg-color="#7C4DFF"
+              />
+              <view class="avatar-edit-badge">
+                <u-icon name="camera" size="20" color="#FFFFFF" />
+              </view>
+            </view>
+            <!-- #endif -->
+          </view>
+        </view>
+
+        <!-- 昵称输入 -->
+        <view class="profile-row">
+          <text class="profile-label">昵称</text>
+          <view class="profile-input-wrap">
+            <!-- #ifdef MP-WEIXIN -->
+            <input
+              type="nickname"
+              class="profile-nickname-input"
+              :value="userStore.nickname"
+              placeholder="点击获取微信昵称"
+              @blur="onNicknameBlur"
+              @change="onNicknameChange"
+            />
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <input
+              class="profile-nickname-input"
+              :value="userStore.nickname"
+              placeholder="请输入昵称"
+              @blur="onNicknameBlur"
+            />
+            <!-- #endif -->
+          </view>
+        </view>
+
+        <!-- 保存按钮 -->
+        <button class="profile-save-btn" @tap="onSaveProfile" :loading="isSavingProfile">
+          保存
+        </button>
+
+        <view class="profile-safe-bottom" />
+      </view>
+    </u-popup>
+
     <!-- 质量选择弹窗 -->
     <u-popup
-      :show="showQualityPopup"
+      v-model="showQualityPopup"
       mode="bottom"
-      :round="20"
+      border-radius="20"
       @close="showQualityPopup = false"
     >
       <view class="picker-popup">
@@ -229,9 +310,9 @@
 
     <!-- 尺寸选择弹窗 -->
     <u-popup
-      :show="showSizePopup"
+      v-model="showSizePopup"
       mode="bottom"
-      :round="20"
+      border-radius="20"
       @close="showSizePopup = false"
     >
       <view class="picker-popup">
@@ -267,15 +348,20 @@
 import { ref, computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
+import { useTheme } from 'uview-pro'
 
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
+const { currentTheme } = useTheme()
 
-// 用户信息（UI展示用）
-const userInfo = ref({
-  name: '设计师',
-  avatar: '',
-  desc: 'AI 驱动的图像提示词工具'
+// 当前主题标签
+const currentThemeLabel = computed(() => currentTheme.value?.label || '灵动紫')
+
+// 头像文字（无头像时显示首字母）
+const avatarText = computed(() => {
+  if (userStore.nickname) return userStore.nickname.charAt(0)
+  if (userStore.userDisplayName) return userStore.userDisplayName.charAt(0)
+  return '?'
 })
 
 // 登录描述
@@ -303,10 +389,19 @@ const currentSize = ref(0)
 // 弹窗状态
 const showQualityPopup = ref(false)
 const showSizePopup = ref(false)
+const showProfilePopup = ref(false)
+const isSavingProfile = ref(false)
+
+// 临时存储的昵称（用于编辑时暂存）
+const pendingNickname = ref('')
 
 // ====== 操作 ======
 const goToHistory = () => {
   uni.switchTab({ url: '/pages/history/history' })
+}
+
+const goToSettings = () => {
+  uni.navigateTo({ url: '/pages/about/settings' })
 }
 
 const showFavorites = () => {
@@ -362,7 +457,12 @@ const showFeedback = () => {
 
 // ====== 登录操作 ======
 const onUserCardTap = () => {
-  if (userStore.isLoggedIn) return
+  if (userStore.isLoggedIn) {
+    // 已登录 → 打开资料编辑弹窗
+    pendingNickname.value = userStore.nickname
+    showProfilePopup.value = true
+    return
+  }
   // 未登录时点击用户卡片 → 触发登录
   // #ifdef MP-WEIXIN
   handleWechatLogin()
@@ -376,6 +476,11 @@ const handleWechatLogin = async () => {
   const success = await userStore.wechatLogin()
   if (success) {
     uni.showToast({ title: '登录成功', icon: 'success' })
+    // 首次登录且没有设置过头像/昵称 → 弹出资料编辑弹窗
+    if (!userStore.avatarUrl && !userStore.nickname) {
+      pendingNickname.value = ''
+      showProfilePopup.value = true
+    }
   }
 }
 
@@ -397,6 +502,77 @@ const handleLogout = () => {
       }
     }
   })
+}
+
+// ====== 资料编辑 ======
+
+/** 微信 chooseAvatar 回调 */
+const onChooseAvatar = async (e: any) => {
+  const tempUrl = e.detail?.avatarUrl
+  if (!tempUrl) return
+
+  uni.showLoading({ title: '上传头像中...', mask: true })
+  const success = await userStore.updateAvatar(tempUrl)
+  uni.hideLoading()
+
+  if (success) {
+    uni.showToast({ title: '头像已更新', icon: 'success' })
+  }
+}
+
+/** 非微信环境的头像选择降级方案 */
+const onChooseAvatarFallback = () => {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const tempUrl = res.tempFilePaths[0]
+      if (!tempUrl) return
+
+      uni.showLoading({ title: '上传头像中...', mask: true })
+      const success = await userStore.updateAvatar(tempUrl)
+      uni.hideLoading()
+
+      if (success) {
+        uni.showToast({ title: '头像已更新', icon: 'success' })
+      }
+    },
+  })
+}
+
+/** 昵称输入 blur 事件 */
+const onNicknameBlur = async (e: any) => {
+  const newNickname = e.detail?.value?.trim()
+  if (newNickname && newNickname !== userStore.nickname) {
+    pendingNickname.value = newNickname
+  }
+}
+
+/** 昵称输入 change 事件（微信 nickname 类型键盘确认） */
+const onNicknameChange = async (e: any) => {
+  const newNickname = e.detail?.value?.trim()
+  if (newNickname && newNickname !== userStore.nickname) {
+    pendingNickname.value = newNickname
+  }
+}
+
+/** 保存资料 */
+const onSaveProfile = async () => {
+  if (isSavingProfile.value) return
+  isSavingProfile.value = true
+
+  try {
+    if (pendingNickname.value && pendingNickname.value !== userStore.nickname) {
+      await userStore.updateNickname(pendingNickname.value)
+    }
+    uni.showToast({ title: '资料已保存', icon: 'success' })
+    showProfilePopup.value = false
+  } catch {
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    isSavingProfile.value = false
+  }
 }
 </script>
 
@@ -550,7 +726,7 @@ const handleLogout = () => {
   color: #999999;
 }
 
-/* 弹窗 */
+/* 弹窗通用 */
 .picker-popup {
   padding: 32rpx;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
@@ -567,5 +743,96 @@ const handleLogout = () => {
   font-size: 32rpx;
   font-weight: 600;
   color: #1C1C1C;
+}
+
+/* 资料编辑弹窗 */
+.profile-popup {
+  padding: 32rpx;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.profile-label {
+  font-size: 28rpx;
+  color: #666666;
+  width: 120rpx;
+  flex-shrink: 0;
+}
+
+.profile-avatar-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.avatar-choose-btn {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+
+  &::after {
+    display: none;
+  }
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36rpx;
+  height: 36rpx;
+  background: #7C4DFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #FFFFFF;
+}
+
+.profile-input-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.profile-nickname-input {
+  font-size: 28rpx;
+  color: #1C1C1C;
+  text-align: right;
+  flex: 1;
+  padding: 8rpx 0;
+  background: transparent;
+}
+
+.profile-save-btn {
+  margin-top: 40rpx;
+  width: 100%;
+  height: 88rpx;
+  background: #7C4DFF;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.profile-safe-bottom {
+  height: env(safe-area-inset-bottom);
 }
 </style>

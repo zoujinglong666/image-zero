@@ -10,9 +10,12 @@ declare module 'vue' {
     AppPage: typeof import('./src/components/app-page/app-page.vue')['default']
     AppTabbar: typeof import('./src/components/app-tabbar/app-tabbar.vue')['default']
     UAvatar: typeof import('uview-pro/components/u-avatar/u-avatar.vue')['default']
+    UBadge: typeof import('uview-pro/components/u-badge/u-badge.vue')['default']
     UButton: typeof import('uview-pro/components/u-button/u-button.vue')['default']
     UCellGroup: typeof import('uview-pro/components/u-cell-group/u-cell-group.vue')['default']
     UCellItem: typeof import('uview-pro/components/u-cell-item/u-cell-item.vue')['default']
+    UCollapse: typeof import('uview-pro/components/u-collapse/u-collapse.vue')['default']
+    UCollapseItem: typeof import('uview-pro/components/u-collapse-item/u-collapse-item.vue')['default']
     UConfigProvider: typeof import('uview-pro/components/u-config-provider/u-config-provider.vue')['default']
     UEmpty: typeof import('uview-pro/components/u-empty/u-empty.vue')['default']
     UGap: typeof import('uview-pro/components/u-gap/u-gap.vue')['default']
@@ -27,7 +30,10 @@ declare module 'vue' {
     URadioGroup: typeof import('uview-pro/components/u-radio-group/u-radio-group.vue')['default']
     USearch: typeof import('uview-pro/components/u-search/u-search.vue')['default']
     USection: typeof import('uview-pro/components/u-section/u-section.vue')['default']
+    USwitch: typeof import('uview-pro/components/u-switch/u-switch.vue')['default']
+    UTabbar: typeof import('uview-pro/components/u-tabbar/u-tabbar.vue')['default']
     UTag: typeof import('uview-pro/components/u-tag/u-tag.vue')['default']
     UToast: typeof import('uview-pro/components/u-toast/u-toast.vue')['default']
+    UTransition: typeof import('uview-pro/components/u-transition/u-transition.vue')['default']
   }
 }

@@ -7,6 +7,7 @@
  * 读操作允许未认证访问，通过 resolveUser 静默降级为 guest
  */
 import jwt from 'jsonwebtoken'
+import fs from 'fs'
 import config from '../config/index.js'
 import {
   UnauthorizedError,
@@ -26,6 +27,7 @@ import {
   checkVipStatus,
   getDailyQuota,
 } from '../services/dbService.js'
+import { uploadToCos } from '../services/cosService.js'
 import logger from '../utils/logger.js'
 
 /**
@@ -170,4 +172,31 @@ export function updateProfile(req, res) {
 
   const updated = updateUser(user.uid, req.body)
   res.success({ uid: updated.uid, nickname: updated.nickname, avatarUrl: updated.avatar_url }, '信息已更新')
+}
+
+/**
+ * POST /api/data/avatar — 上传用户头像
+ * 接收 multipart 文件，上传到 COS/本地，返回 URL
+ */
+export async function uploadAvatar(req, res, next) {
+  try {
+    if (!req.file) {
+      throw new BadRequestError('请选择头像图片')
+    }
+
+    const user = getAuthenticatedUser(req)
+
+    // 读取文件并上传到 COS（自动回退本地），使用 avatar/ 前缀
+    const fileBuffer = fs.readFileSync(req.file.path)
+    const { url } = await uploadToCos(fileBuffer, req.file.mimetype, 'avatar')
+
+    // 清理临时文件
+    try { fs.unlinkSync(req.file.path) } catch {}
+
+    // 更新用户头像 URL
+    const updated = updateUser(user.uid, { avatar_url: url })
+    res.success({ url: updated.avatar_url }, '头像上传成功')
+  } catch (err) {
+    next(err)
+  }
 }
