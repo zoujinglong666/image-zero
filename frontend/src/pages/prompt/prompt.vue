@@ -216,7 +216,7 @@
       <view class="empty-state" v-else-if="!loading">
         <u-icon :name="isCommunityMode ? 'color-fill' : 'edit-pen'" size="40" color="#ccc" />
         <text class="empty-text">{{ isCommunityMode ? '还没有人分享，来发第一条吧！' : '暂无提示词' }}</text>
-        <view class="empty-action" v-if="isCommunityMode && isLoggedIn" @click="openPublishPopup">
+        <view class="empty-action" v-if="isCommunityMode && isLoggedIn" @click="goPublish">
           <u-icon name="plus" size="40" color="#fff" />
           <text class="empty-btn-text">我要分享</text>
         </view>
@@ -235,7 +235,7 @@
     <!-- ══════════════════════════════════
          悬浮发布按钮
          ══════════════════════════════════ -->
-    <view class="float-publish-tab" @click="openPublishPopup">
+    <view class="float-publish-tab" @click="goPublish">
       <u-icon name="plus" size="40" color="#fff" />
       <text class="float-publish-text">发布</text>
     </view>
@@ -243,7 +243,7 @@
     <!-- ══════════════════════════════════
          官方提示词详情弹窗
          ══════════════════════════════════ -->
-    <u-popup :show="showDetail" mode="bottom" round="16" @close="showDetail = false">
+    <u-popup v-model="showDetail" mode="bottom" round="16" @close="showDetail = false">
       <view class="detail-popup" v-if="detailData">
         <view class="detail-header">
           <text class="detail-title">{{ detailData.title }}</text>
@@ -283,7 +283,7 @@
     <!-- ══════════════════════════════════
          社区帖子详情弹窗
          ══════════════════════════════════ -->
-    <u-popup :show="showCommunityDetail" mode="bottom" round="16" @close="showCommunityDetail = false">
+    <u-popup v-model="showCommunityDetail" mode="bottom" round="16" @close="showCommunityDetail = false">
       <view class="community-detail-popup" v-if="communityDetailData">
         <!-- 帖子图片 -->
         <view class="cd-image-wrap" v-if="communityDetailData.image_url">
@@ -347,108 +347,10 @@
     </u-popup>
 
     <!-- ══════════════════════════════════
-         发布新分享弹窗
-         ══════════════════════════════════ -->
-    <u-popup :show="showPublish" mode="bottom" round="20" @close="closePublishPopup">
-      <view class="publish-popup">
-        <view class="publish-header">
-          <text class="publish-title">分享到社区</text>
-          <view class="publish-close" @click="closePublishPopup">
-            <u-icon name="close" size="40" color="#999" />
-          </view>
-        </view>
-
-        <scroll-view scroll-y class="publish-body">
-          <!-- 图片上传区域 -->
-          <view class="upload-area" @click="chooseImage">
-            <view v-if="!publishForm.image_url" class="upload-placeholder">
-              <u-icon name="photo" size="40" color="#999" />
-              <text class="upload-hint">点击上传示例图片</text>
-              <text class="upload-sub">支持 JPG/PNG/WebP，最大 5MB</text>
-            </view>
-            <view v-else class="upload-preview">
-              <!-- #ifdef H5 -->
-              <img class="preview-img" :src="publishForm.image_url" mode="aspectFill" />
-              <!-- #endif -->
-              <!-- #ifndef H5 -->
-              <image class="preview-img" :src="publishForm.image_url" mode="aspectFill" />
-              <!-- #endif -->
-              <view class="preview-remove" @click.stop="removePublishImage">
-                <u-icon name="close" size="40" color="#fff" />
-              </view>
-            </view>
-          </view>
-
-          <!-- 标题输入 -->
-          <view class="form-item">
-            <text class="form-label">标题 *</text>
-            <input
-              class="form-input"
-              v-model="publishForm.title"
-              placeholder="给作品起个名字吧"
-              maxlength="50"
-              :cursor-spacing="20"
-            />
-          </view>
-
-          <!-- 提示词内容 -->
-          <view class="form-item">
-            <text class="form-label">提示词 *</text>
-            <textarea
-              class="form-textarea"
-              v-model="publishForm.prompt_text"
-              placeholder="粘贴或输入你的 AI 绘画提示词..."
-              maxlength="5000"
-              :auto-height="true"
-              :cursor-spacing="20"
-            />
-            <text class="char-count">{{ publishForm.prompt_text.length }}/5000</text>
-          </view>
-
-          <!-- 分类选择 -->
-          <view class="form-item">
-            <text class="form-label">分类</text>
-            <scroll-view scroll-x class="category-picker">
-              <view
-                class="pick-tag"
-                :class="{ active: publishForm.category_id === 0 }"
-                @click="publishForm.category_id = 0"
-              >
-                <text>不选</text>
-              </view>
-              <view
-                v-for="cat in categories"
-                :key="cat.id"
-                class="pick-tag"
-                :class="{ active: publishForm.category_id === cat.id }"
-                @click="publishForm.category_id = cat.id"
-              >
-                <text>{{ cat.name }}</text>
-              </view>
-            </scroll-view>
-          </view>
-        </scroll-view>
-
-        <!-- 发布按钮 -->
-        <view class="publish-footer">
-          <view
-            class="submit-btn"
-            :class="{ disabled: !canSubmit || publishing }"
-            @click="submitPublish"
-          >
-            <text v-if="publishing">发布中...</text>
-            <text v-else>发布到社区</text>
-          </view>
-          <text class="publish-tip">发布后所有人可见 · 请遵守社区规范</text>
-        </view>
-      </view>
-    </u-popup>
-
-    <!-- ══════════════════════════════════
          举报弹窗
          ══════════════════════════════════ -->
     <u-modal
-      :show="showReport"
+      v-model="showReport"
       title="举报内容"
       content="请选择举报原因"
       :showCancelButton="true"
@@ -473,6 +375,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import {
   getCategories,
   getPromptList,
@@ -481,8 +384,6 @@ import {
   interactPrompt,
   togglePromptFavorite as toggleFavorite,
   // 社区 API
-  uploadCommunityImage,
-  createCommunityPost,
   getCommunityPosts,
   getCommunityPostDetail,
   toggleCommunityLike,
@@ -521,18 +422,6 @@ const detailData = ref<PromptItem | null>(null)
 const showCommunityDetail = ref(false)
 const communityDetailData = ref<CommunityPost | null>(null)
 
-// 发布弹窗
-const showPublish = ref(false)
-const publishing = ref(false)
-const publishForm = ref({
-  title: '',
-  prompt_text: '',
-  category_id: 0,
-  image_url: '',
-  image_hash: '',
-  tempFilePath: '', // 临时文件路径（上传前）
-})
-
 // 举报弹窗
 const showReport = ref(false)
 const reportTarget = ref<CommunityPost | null>(null)
@@ -565,15 +454,17 @@ const currentListLength = computed(() =>
   isCommunityMode.value ? communityPosts.value.length : prompts.value.length
 )
 
-const canSubmit = computed(() => {
-  const f = publishForm.value
-  return f.title.trim().length > 0 && f.prompt_text.trim().length > 0
-})
-
 // ── 初始化 ──
 onMounted(async () => {
   await loadCategories()
   await loadPrompts()
+})
+
+// ── 页面重新显示时刷新社区列表（发布后返回） ──
+onShow(() => {
+  if (isCommunityMode.value && communityPosts.value.length > 0) {
+    loadCommunityPosts(true)
+  }
 })
 
 // ── 加载分类 ──
@@ -796,109 +687,12 @@ async function toggleLike(post: CommunityPost) {
 //  发布功能
 // ══════════════════════════════════════════
 
-function openPublishPopup() {
+function goPublish() {
   if (!isLoggedIn.value) {
     uni.showToast({ title: '请先登录后再分享', icon: 'none' })
     return
   }
-  // 重置表单
-  publishForm.value = {
-    title: '',
-    prompt_text: '',
-    category_id: 0,
-    image_url: '',
-    image_hash: '',
-    tempFilePath: '',
-  }
-  showPublish.value = true
-}
-
-function closePublishPopup() {
-  showPublish.value = false
-}
-
-function chooseImage() {
-  // #ifdef H5
-  // H5 用原生 input
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = 'image/jpeg,image/png,image/webp,image/gif'
-  input.onchange = async (e: any) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      uni.showToast({ title: '图片不能超过 5MB', icon: 'none' })
-      return
-    }
-    // 先预览本地
-    publishForm.value.tempFilePath = URL.createObjectURL(file)
-    publishForm.value.image_url = URL.createObjectURL(file)
-  }
-  input.click()
-  // #endif
-
-  // #ifndef H5
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success(res) {
-      const tempPath = res.tempFilePaths[0]
-      publishForm.value.tempFilePath = tempPath
-      publishForm.value.image_url = tempPath
-    },
-  })
-  // #endif
-}
-
-function removePublishImage() {
-  publishForm.value.image_url = ''
-  publishForm.value.image_hash = ''
-  publishForm.value.tempFilePath = ''
-}
-
-async function submitPublish() {
-  if (!canSubmit.value || publishing.value) return
-
-  publishing.value = true
-  try {
-    let imageUrl = publishForm.value.image_url
-    let imageHash = ''
-
-    // 如果有临时文件，先上传
-    if (publishForm.value.tempFilePath && !publishForm.value.image_url.startsWith('http')) {
-      uni.showLoading({ title: '正在上传图片...' })
-      const uploadResult = await uploadCommunityImage(publishForm.value.tempFilePath)
-      imageUrl = uploadResult.url
-      imageHash = uploadResult.hash
-      uni.hideLoading()
-    }
-
-    // 创建社区帖子
-    uni.showLoading({ title: '发布中...' })
-    await createCommunityPost({
-      title: publishForm.value.title,
-      prompt_text: publishForm.value.prompt_text,
-      category_id: publishForm.value.category_id || undefined,
-      image_url: imageUrl,
-      image_hash: imageHash || undefined,
-    })
-
-    uni.hideLoading()
-    uni.showToast({ title: '发布成功！🎉', icon: 'success' })
-
-    closePublishPopup()
-
-    // 刷新社区列表
-    if (isCommunityMode.value) {
-      loadCommunityPosts(true)
-    }
-  } catch (e: any) {
-    uni.hideLoading()
-    uni.showToast({ title: e.message || '发布失败', icon: 'none' })
-  } finally {
-    publishing.value = false
-  }
+  uni.navigateTo({ url: '/pages/publish/publish' })
 }
 
 // ══════════════════════════════════════════
@@ -1013,21 +807,25 @@ function langLabel(lang: string) {
   background: #fff;
 }
 
-/* ── 分类标签 ── */
 .category-scroll {
-  white-space: nowrap;
   background: #fff;
   border-bottom: 1rpx solid #F0F0F0;
 }
 
 .category-list {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   padding: 16rpx 24rpx;
   gap: 16rpx;
 }
 
 .category-tag {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 8rpx 24rpx;
   border-radius: 32rpx;
   background: #F5F5F5;
@@ -1588,211 +1386,6 @@ function langLabel(lang: string) {
     background: #F5F5F5;
     color: #999;
   }
-}
-
-/* ── 发布弹窗 ── */
-.publish-popup {
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.publish-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-
-.publish-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1C1C1C;
-}
-
-.publish-close {
-  width: 52rpx;
-  height: 52rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  color: #999;
-  background: #F5F5F5;
-  border-radius: 50%;
-}
-
-.publish-body {
-  flex: 1;
-  padding: 24rpx 32rpx;
-}
-
-.upload-area {
-  width: 100%;
-  height: 280rpx;
-  border: 2rpx dashed #ddd;
-  border-radius: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24rpx;
-  overflow: hidden;
-  background: #fafafa;
-
-  &:active {
-    border-color: #7C4DFF;
-    background: #EDE7F6;
-  }
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.upload-hint {
-  font-size: 28rpx;
-  color: #666;
-  font-weight: 500;
-}
-
-.upload-sub {
-  font-size: 22rpx;
-  color: #bbb;
-}
-
-.upload-preview {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.preview-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.preview-remove {
-  position: absolute;
-  top: 12rpx;
-  right: 12rpx;
-  width: 48rpx;
-  height: 48rpx;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 24rpx;
-}
-
-.form-item {
-  margin-bottom: 24rpx;
-}
-
-.form-label {
-  font-size: 26rpx;
-  color: #1C1C1C;
-  font-weight: 500;
-  margin-bottom: 12rpx;
-  display: block;
-}
-
-.form-input {
-  width: 100%;
-  height: 80rpx;
-  padding: 0 20rpx;
-  border: 2rpx solid #eee;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #1C1C1C;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #7C4DFF;
-  }
-}
-
-.form-textarea {
-  width: 100%;
-  min-height: 160rpx;
-  padding: 20rpx;
-  border: 2rpx solid #eee;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #1C1C1C;
-  line-height: 1.6;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #7C4DFF;
-  }
-}
-
-.char-count {
-  font-size: 22rpx;
-  color: #bbb;
-  text-align: right;
-  display: block;
-  margin-top: 8rpx;
-}
-
-.category-picker {
-  white-space: nowrap;
-}
-
-.pick-tag {
-  display: inline-block;
-  padding: 8rpx 20rpx;
-  border-radius: 24rpx;
-  background: #F5F5F5;
-  font-size: 24rpx;
-  color: #666;
-  margin-right: 12rpx;
-
-  &.active {
-    background: #7C4DFF;
-    color: #fff;
-  }
-}
-
-.publish-footer {
-  padding: 20rpx 32rpx 32rpx;
-  border-top: 1rpx solid #F0F0F0;
-}
-
-.submit-btn {
-  width: 100%;
-  height: 92rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #6200EA, #7C4DFF);
-  border-radius: 16rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
-
-  &.disabled {
-    opacity: 0.4;
-  }
-
-  &:active:not(.disabled) {
-    opacity: 0.85;
-  }
-}
-
-.publish-tip {
-  font-size: 22rpx;
-  color: #bbb;
-  text-align: center;
-  display: block;
-  margin-top: 12rpx;
 }
 
 /* ── 举报选项 ── */

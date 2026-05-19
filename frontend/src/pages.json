@@ -38,6 +38,13 @@
         "navigationBarTitleText": "我的",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/publish/publish",
+      "style": {
+        "navigationBarTitleText": "分享到社区",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {
