@@ -1,188 +1,311 @@
-// 工具函数集合
-
-/**
- * 生成唯一ID
+ * 图灵绘境 - 工具函数集合
+ * 提供常用工具函数，支持微信小程序和H5环境
  */
-export function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+
+import { config, configUtils } from '@/config'
+import { platformUtils, wechatUtils, h5Utils, storageUtils } from '@/utils/platform'
+
+// 防抖函数
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number,
+  immediate: boolean = false
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
+  
+  return function(this: any, ...args: Parameters<T>) {
+    const later = () => {
+      timeout = null
+      if (!immediate) func.apply(this, args)
+    }
+    
+    const callNow = immediate && !timeout
+    
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+    
+    timeout = setTimeout(later, wait)
+    
+    if (callNow) {
+      func.apply(this, args)
+    }
+  }
 }
 
-/**
- * 格式化时间戳为可读字符串
- */
-export function formatTime(timestamp: number): string {
+// 节流函数
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean
+  
+  return function(this: any, ...args: Parameters<T>) {
+    if (!inThrottle) {
+      func.apply(this, args)
+      inThrottle = true
+      setTimeout(() => (inThrottle = false), limit)
+    }
+  }
+}
+
+// 格式化文件大小
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// 格式化时间
+export function formatTime(timestamp: number | string, format: string = 'YYYY-MM-DD HH:mm:ss'): string {
   const date = new Date(timestamp)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`
-
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  const h = String(date.getHours()).padStart(2, '0')
-  const min = String(date.getMinutes()).padStart(2, '0')
-  return `${y}-${m}-${d} ${h}:${min}`
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  const second = String(date.getSeconds()).padStart(2, '0')
+  
+  return format
+    .replace('YYYY', year.toString())
+    .replace('MM', month)
+    .replace('DD', day)
+    .replace('HH', hour)
+    .replace('mm', minute)
+    .replace('ss', second)
 }
 
-/**
- * 复制文本到剪贴板
- */
-export async function copyToClipboard(text: string): Promise<boolean> {
+// 深拷贝
+export function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj
+  if (obj instanceof Date) return new Date(obj) as any
+  if (obj instanceof Array) return obj.map(item => deepClone(item)) as any
+  if (typeof obj === 'object') {
+    const clonedObj = {} as any
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        clonedObj[key] = deepClone(obj[key])
+      }
+    }
+    return clonedObj
+  }
+  return obj
+}
+
+// 数组去重
+export function uniqueArray<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
+}
+
+// 对象合并
+export function mergeObjects<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+  const result = { ...target }
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
+        result[key] = mergeObjects(result[key] || {}, source[key] as any)
+      } else {
+        result[key] = source[key] as any
+      }
+    }
+  }
+  return result
+}
+
+// 获取UUID
+export function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+// 验证邮箱格式
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+// 验证手机号格式
+export function isValidPhone(phone: string): boolean {
+  const phoneRegex = /^1[3-9]\d{9}$/
+  return phoneRegex.test(phone)
+}
+
+// 验证URL格式
+export function isValidUrl(url: string): boolean {
   try {
-    await uni.setClipboardData({
-      data: text,
-      showToast: true
-    })
+    new URL(url)
     return true
-  } catch (e) {
-    console.error('复制失败:', e)
+  } catch {
     return false
   }
 }
 
-/**
- * 保存图片到相册
- */
-export async function saveToAlbum(imagePath: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    uni.saveImageToPhotosAlbum({
-      filePath: imagePath,
-      success: () => {
-        uni.showToast({ title: '已保存到相册', icon: 'success' })
-        resolve(true)
+// 获取图片尺寸
+export function getImageSize(url: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    // #ifdef MP-WEIXIN
+    uni.getImageInfo({
+      src: url,
+      success: (res) => {
+        resolve({
+          width: res.width,
+          height: res.height
+        })
       },
-      fail: (err) => {
-        console.error('保存失败:', err)
-        if (err.errMsg?.includes('auth deny')) {
-          uni.showModal({
-            title: '需要相册权限',
-            content: '请在设置中允许访问相册权限',
-            showCancel: false
-          })
-        }
-        resolve(false)
-      }
+      fail: reject
     })
+    // #endif
+    
+    // #ifdef H5
+    const img = new Image()
+    img.onload = () => {
+      resolve({
+        width: img.width,
+        height: img.height
+      })
+    }
+    img.onerror = reject
+    img.src = url
+    // #endif
+    
+    // #ifndef MP-WEIXIN
+    // #ifndef H5
+    reject(new Error('不支持的平台'))
+    // #endif
+    // #endif
   })
 }
 
-/**
- * 选择图片（支持拍照或相册）
- */
-export function chooseImage(options?: {
-  count?: number
-  sizeType?: ('compressed' | 'original')[]
-  sourceType?: ('album' | 'camera')[]
-}): Promise<string[]> {
+// 压缩图片
+export function compressImage(filePath: string, quality: number = 0.8): Promise<string> {
   return new Promise((resolve, reject) => {
-    uni.chooseImage({
-      count: options?.count || 9,
-      sizeType: options?.sizeType || ['compressed'],
-      sourceType: options?.sourceType || ['album', 'camera'],
-      success: (res) => resolve(res.tempFilePaths),
-      fail: (err) => reject(err)
-    })
-  })
-}
-
-/**
- * 压缩图片
- */
-export function compressImage(src: string, quality?: number): Promise<string> {
-  return new Promise((resolve, reject) => {
+    // #ifdef MP-WEIXIN
     uni.compressImage({
-      src,
-      quality: quality || 80,
+      src: filePath,
+      quality: Math.round(quality * 100),
       success: (res) => resolve(res.tempFilePath),
       fail: reject
     })
+    // #endif
+    
+    // #ifdef H5
+    // H5环境使用Canvas压缩
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        reject(new Error('无法创建Canvas上下文'))
+        return
+      }
+      
+      // 计算压缩后的尺寸
+      const maxSize = 1920
+      let { width, height } = img
+      
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width)
+          width = maxSize
+        } else {
+          width = Math.round((width * maxSize) / height)
+          height = maxSize
+        }
+      }
+      
+      canvas.width = width
+      canvas.height = height
+      
+      ctx.drawImage(img, 0, 0, width, height)
+      
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+      resolve(compressedDataUrl)
+    }
+    img.onerror = reject
+    img.src = filePath
+    // #endif
+    
+    // #ifndef MP-WEIXIN
+    // #ifndef H5
+    reject(new Error('不支持的平台'))
+    // #endif
+    // #endif
   })
 }
 
-/**
- * 获取图片信息
- */
-export function getImageInfo(src: string): Promise<UniApp.GetImageInfoSuccessData> {
+// 下载文件
+export function downloadFile(url: string, fileName?: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    uni.getImageInfo({
-      src,
-      success: resolve,
+    // #ifdef MP-WEIXIN
+    uni.downloadFile({
+      url,
+      success: (res) => {
+        if (res.statusCode === 200) {
+          uni.saveImageToPhotosAlbum({
+            filePath: res.tempFilePath,
+            success: resolve,
+            fail: reject
+          })
+        } else {
+          reject(new Error('下载失败'))
+        }
+      },
       fail: reject
     })
+    // #endif
+    
+    // #ifdef H5
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName || url.split('/').pop() || 'download'
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    resolve()
+    // #endif
+    
+    // #ifndef MP-WEIXIN
+    // #ifndef H5
+    reject(new Error('不支持的平台'))
+    // #endif
+    // #endif
   })
 }
 
-/**
- * 显示加载中
- */
-export function showLoading(title: string = '处理中...') {
-  uni.showLoading({ title, mask: true })
+// 导出所有工具
+export {
+  platformUtils,
+  wechatUtils,
+  h5Utils,
+  storageUtils
 }
 
-/**
- * 隐藏加载中
- */
-export function hideLoading() {
-  uni.hideLoading()
-}
-
-/**
- * 防抖函数
- */
-export function debounce<T extends (...args: any[]) => any>(
-  fn: T,
-  delay: number = 300
-): (...args: Parameters<T>) => void {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  return (...args: Parameters<T>) => {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => fn(...args), delay)
-  }
-}
-
-/**
- * 将关键词权重格式化为提示词字符串
- */
-export function formatKeywordsWithWeight(keywords: { keyword: string; weight: number }[]): string {
-  return keywords
-    .map(k => {
-      if (k.weight === 1) return k.keyword
-      return `(${k.keyword}:${k.weight.toFixed(1)})`
-    })
-    .join(', ')
-}
-
-/**
- * 解析颜色名称
- */
-export function getColorName(hex: string): string {
-  const colors: Record<string, string> = {
-    '#ff0000': '红色', '#00ff00': '绿色', '#0000ff': '蓝色',
-    '#ffff00': '黄色', '#ff00ff': '品红', '#00ffff': '青色',
-    '#ffffff': '白色', '#000000': '黑色', '#808080': '灰色',
-    '#ff6b6b': '珊瑚红', '#4ecdc4': '青碧色', '#45b7d1': '天空蓝',
-    '#96ceb4': '薄荷绿', '#ffeaa7': '淡金黄', '#dfe6e9': '云雾灰',
-    '#6366f1': '靛蓝紫', '#8b5cf6': '紫罗兰', '#ec4899': '玫红',
-    '#f59e0b': '琥珀橙', '#10b981': '翡翠绿', '#ef4444': '警戒红'
-  }
-  const lower = hex.toLowerCase()
-  return colors[lower] || hex
-}
-
-/**
- * 计算图片宽高比描述
- */
-export function getAspectRatioDesc(width: number, height: number): string {
-  const ratio = width / height
-  if (Math.abs(ratio - 1) < 0.1) return '1:1 正方形'
-  if (Math.abs(ratio - 16/9) < 0.2) return '16:9 宽屏'
-  if (Math.abs(ratio - 4/3) < 0.15) return '4:3 标准屏'
-  if (Math.abs(ratio - 9/16) < 0.15) return '9:16 竖屏'
-  if (Math.abs(ratio - 3/4) < 0.15) return '3:4 竖版'
-  if (ratio > 1) return `${Math.round(ratio)}:1 横向`
-  return `1:${Math.round(1/ratio)} 纵向`
+export default {
+  debounce,
+  throttle,
+  formatFileSize,
+  formatTime,
+  deepClone,
+  uniqueArray,
+  mergeObjects,
+  generateUUID,
+  isValidEmail,
+  isValidPhone,
+  isValidUrl,
+  getImageSize,
+  compressImage,
+  downloadFile,
+  platformUtils,
+  wechatUtils,
+  h5Utils,
+  storageUtils
 }

@@ -4,6 +4,7 @@ import type { RequestConfig, RequestInterceptor, RequestMeta, RequestOptions } f
  * ════════════════════════════════════════════════════
  *  图灵绘境 - 全局 HTTP 请求配置 & 拦截器
  *  基于 uView Pro http 模块 · 全平台统一
+ *  支持微信小程序和H5环境
  *
  *  约定：
  *  - VITE_API_BASE_URL 包含 /api，如 https://api.your-domain.com/api
@@ -64,9 +65,9 @@ const getToken = () => {
 }
 
 // ─── 后端地址 ──────────────────────────────────────
-// 生产环境必须通过 VITE_API_BASE_URL 配置域名，不再提供硬编码 fallback
-const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-
+// 使用配置中心的API地址，支持微信小程序和H5环境自动适配
+import { config } from '@/config'
+const baseUrl = config.api.baseUrl
 // ─── 全局配置 ──────────────────────────────────────
 const httpRequestConfig: RequestConfig = {
   baseUrl,

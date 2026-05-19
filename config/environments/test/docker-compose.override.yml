@@ -1,0 +1,30 @@
+# 图灵绘境 - Docker Compose 测试环境覆盖配置
+# 生成时间: 2026-05-19 10:30:00
+
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+    volumes:
+      - ./config/environments/test/.env:/app/.env:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

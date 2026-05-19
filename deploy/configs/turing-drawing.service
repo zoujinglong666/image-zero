@@ -1,0 +1,44 @@
+[Unit]
+Description=图灵绘境应用服务
+Documentation=https://github.com/your-org/turing-drawing
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=spring
+Group=spring
+WorkingDirectory=/opt/turing-drawing/backend
+EnvironmentFile=/opt/turing-drawing/config/.env
+ExecStart=/usr/bin/java -jar app.jar --spring.profiles.active=prod
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 日志配置
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=turing-drawing
+
+# 安全限制
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/turing-drawing
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryLimit=2G
+CPUQuota=50%
+
+# 健康检查
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
