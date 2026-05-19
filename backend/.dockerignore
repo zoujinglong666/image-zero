@@ -1,7 +1,8 @@
-node_modules
-uploads
-logs
-data
-.env
-.env.local
-npm-debug.log
+target/
+logs/
+*.log
+.git
+.gitignore
+.idea
+*.iml
+README.md

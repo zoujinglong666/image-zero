@@ -8,9 +8,10 @@ import type { RequestConfig, RequestInterceptor, RequestMeta, RequestOptions } f
  *  约定：
  *  - VITE_API_BASE_URL 包含 /api，如 https://api.your-domain.com/api
  *  - 请求路径不含 /api 前缀，如 /analyze, /auth/wechat
- *  - 后端统一响应格式: { code: number, data?: any, message: string }
- *    成功: { code: 0, data: {...}, message: '操作成功' }
- *    失败: { code: <HTTP状态码>, data: null, message: '错误描述' }
+ *  - 后端统一响应格式: { code: number, data?: any, message: string, success?: boolean }
+ *    成功: { code: 200, data: {...}, message: 'success', success: true }  (Spring Boot)
+ *    兼容: { code: 0, data: {...}, message: '操作成功' }                (Node.js)
+ *    失败: { code: <错误码>, data: null, message: '错误描述', success: false }
  * ════════════════════════════════════════════════════
  */
 
@@ -135,8 +136,8 @@ const httpInterceptor: RequestInterceptor = {
       }
     }
 
-    // ── 业务错误（code !== 0）──
-    if (rawData && rawData.code !== undefined && rawData.code !== 0) {
+    // ── 业务错误（code !== 0 且 code !== 200）──
+    if (rawData && rawData.code !== undefined && rawData.code !== 0 && rawData.code !== 200) {
       const bizCode = rawData.code
       const bizMsg = rawData.message || '操作失败'
       const tip = ERROR_MAP[bizCode] || bizMsg
@@ -150,8 +151,9 @@ const httpInterceptor: RequestInterceptor = {
     }
 
     // ── 成功：返回 data 字段 ──
-    // 统一格式 { code: 0, data, message } → 返回 data
-    if (rawData && rawData.code === 0) {
+    // Spring Boot: { code: 200, data, message, success: true } → 返回 data
+    // Node.js:     { code: 0, data, message } → 返回 data
+    if (rawData && (rawData.code === 0 || rawData.code === 200)) {
       return rawData.data !== undefined ? rawData.data : rawData
     }
 

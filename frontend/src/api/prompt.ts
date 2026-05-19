@@ -140,7 +140,7 @@ export function uploadCommunityImage(filePath: string): Promise<{
 }> {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: `${getApiBase()}/prompt/upload`,
+      url: `${getApiBase()}/api/prompt/upload`,
       filePath,
       name: 'image',
       header: getAuthHeader(),
@@ -148,7 +148,7 @@ export function uploadCommunityImage(filePath: string): Promise<{
         if (res.statusCode === 200) {
           try {
             const data = JSON.parse(res.data)
-            if (data.code === 0) resolve(data.data)
+            if (data.code === 0 || data.code === 200) resolve(data.data)
             else reject(new Error(data.message || '上传失败'))
           } catch { reject(new Error('解析响应失败')) }
         } else {
@@ -208,10 +208,10 @@ export function reportCommunityPost(id: number, params: {
 
 /** 删除自己的分享 */
 export function deleteCommunityPost(id: number): Promise<void> {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${API_BASE}/prompt/community/${id}`,
+      url: `${API_BASE}/api/prompt/community/${id}`,
       method: 'DELETE',
       header: getAuthHeader(),
       success(res) {
@@ -228,7 +228,7 @@ export function deleteCommunityPost(id: number): Promise<void> {
 // ══════════════════════════════════════════
 
 function getApiBase(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 }
 
 function getAuthHeader(): Record<string, string> {

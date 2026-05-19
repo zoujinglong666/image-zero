@@ -1,0 +1,10 @@
+# 开发环境配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    root: INFO
+    com.turing.drawing: DEBUG
+    com.turing.drawing.mapper: DEBUG

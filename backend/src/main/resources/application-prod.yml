@@ -1,0 +1,17 @@
+# 生产环境配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    banner: false
+
+logging:
+  level:
+    root: WARN
+    com.turing.drawing: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

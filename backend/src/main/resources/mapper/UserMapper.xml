@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.turing.drawing.mapper.UserMapper">
+    
+    <!-- 复杂查询示例：查询用户及其相关信息 -->
+    <select id="selectUserWithDetails" resultType="com.turing.drawing.entity.User">
+        SELECT u.*, 
+               COUNT(dt.id) as drawing_task_count,
+               COUNT(h.id) as history_count
+        FROM users u
+        LEFT JOIN drawing_tasks dt ON u.id = dt.user_id
+        LEFT JOIN history h ON u.id = h.user_id
+        WHERE u.id = #{userId}
+        GROUP BY u.id
+    </select>
+    
+    <!-- 动态条件查询示例 -->
+    <select id="selectUserListWithConditions" resultType="com.turing.drawing.entity.User">
+        SELECT * FROM users
+        <where>
+            <if test="vipLevel != null">
+                AND vip_level = #{vipLevel}
+            </if>
+            <if test="type != null and type != ''">
+                AND type = #{type}
+            </if>
+            <if test="startDate != null">
+                AND created_at >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND created_at <= #{endDate}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (nickname LIKE CONCAT('%', #{keyword}, '%') 
+                     OR email LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+    
+</mapper>
