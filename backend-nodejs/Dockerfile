@@ -8,7 +8,7 @@ WORKDIR /app
 # 安装 better-sqlite3 原生编译所需的构建工具
 RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --registry=https://registry.npmmirror.com && npm cache clean --force
 
 # 阶段2: 生产镜像
 FROM node:20-alpine AS production

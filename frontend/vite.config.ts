@@ -51,7 +51,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
   server: mode === 'development' ? {
     proxy: {
       '/api': {
-        target: env.VITE_DEV_PROXY_TARGET || 'http://localhost:3000',
+        target: env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080',
         changeOrigin: true,
       },
     },

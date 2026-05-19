@@ -4,7 +4,11 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "图灵绘境",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enableShareAppMessage": true,
+        "enableShareTimeline": true,
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
@@ -103,6 +107,18 @@
           "path": "guide",
           "style": {
             "navigationBarTitleText": "使用指南",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/notification",
+      "pages": [
+        {
+          "path": "notification",
+          "style": {
+            "navigationBarTitleText": "消息通知",
             "navigationStyle": "custom"
           }
         }

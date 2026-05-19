@@ -1,17 +1,54 @@
-# 生产环境配置
+# ════════════════════════════════════════════════════
+# 图灵绘境 - 生产环境配置 (application-prod.yml)
+# 通过 SPRING_PROFILES_ACTIVE=prod 或 --spring.profiles.active=prod 激活
+# ════════════════════════════════════════════════════
+
+spring:
+  datasource:
+    # Docker内网通信无需SSL；如后端与MySQL不在同一内网，改为 useSSL=true&requireSSL=true
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:turing_drawing}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4&allowPublicKeyRetrieval=true
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      # 连接泄漏检测
+      leak-detection-threshold: 60000
+
+# MyBatis Plus — 关闭 SQL 日志输出
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.NoLoggingImpl
+    cache-enabled: false
   global-config:
-    banner: false
+    db-config:
+      id-type: auto
 
-logging:
-  level:
-    root: WARN
-    com.turing.drawing: INFO
-
+# Actuator — 仅暴露 health，禁止 metrics
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+# 日志级别 — 生产只保留 INFO
+logging:
+  level:
+    root: INFO
+    com.turing.drawing: INFO
+    com.turing.drawing.mapper: WARN
+
+# CORS — 生产环境必须配置允许的域名
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://www.image-zero.art,https://image-zero.art}
+
+# SpringDoc — 生产环境禁用 Swagger
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

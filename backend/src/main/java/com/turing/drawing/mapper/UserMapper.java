@@ -64,6 +64,19 @@ public interface UserMapper extends BaseMapper<User> {
     void bindWechat(Long userId, String openid, String unionid, String nickname, String avatarUrl);
 
     /**
+     * 更新微信用户信息（H5网页授权获取到昵称/头像时更新）
+     * 仅更新非null字段，不修改type
+     */
+    @Update("<script>" +
+            "UPDATE users SET updated_at = NOW()" +
+            "<if test='nickname != null'>, wechat_nickname = #{nickname}, nickname = COALESCE(nickname, #{nickname})</if>" +
+            "<if test='avatarUrl != null'>, wechat_avatar_url = #{avatarUrl}, avatar_url = COALESCE(avatar_url, #{avatarUrl})</if>" +
+            "<if test='unionid != null'>, wechat_unionid = #{unionid}</if>" +
+            " WHERE id = #{userId}" +
+            "</script>")
+    void updateWechatInfo(Long userId, String nickname, String avatarUrl, String unionid);
+
+    /**
      * 复杂查询：查询用户及其相关信息
      */
     User selectUserWithDetails(Long userId);

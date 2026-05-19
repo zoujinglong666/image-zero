@@ -3,9 +3,18 @@ import type { UserInfo, AuthStatusResult } from '@/types'
 import { defineStore } from 'pinia'
 import { useLocale, useTheme } from 'uview-pro'
 import { ref, computed } from 'vue'
-import { wechatLogin as apiWechatLogin, anonymousLogin as apiAnonymousLogin, verifyToken as apiVerifyToken, getAuthStatus } from '@/api/auth'
+import {
+  wechatLogin as apiWechatLogin,
+  wechatH5Login as apiWechatH5Login,
+  getWechatH5AuthUrl,
+  guestLogin as apiGuestLogin,
+  anonymousLogin as apiAnonymousLogin,
+  verifyToken as apiVerifyToken,
+  getAuthStatus,
+} from '@/api/auth'
 import { fetchProfile, updateProfile, uploadAvatar } from '@/api/data'
 import { useHistoryStore } from './history'
+import { useNotificationStore } from './notification'
 
 export const useUserStore = defineStore('user', () => {
   // ══════════════════════════════════════════
@@ -33,6 +42,7 @@ export const useUserStore = defineStore('user', () => {
   const isWechatUser = computed(() => userInfo.value?.type === 'wechat')
   const isAnonymousUser = computed(() => userInfo.value?.type === 'anonymous')
   const isGuest = computed(() => !isLoggedIn.value)
+  const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
   const userDisplayName = computed(() => {
     if (!isLoggedIn.value) return '未登录'
     if (nickname.value) return nickname.value
@@ -139,6 +149,7 @@ export const useUserStore = defineStore('user', () => {
         userInfo.value = {
           uid: result.user.uid,
           type: 'wechat',
+          role: result.user.role || 'USER',
           token: result.token,
           loginAt: Date.now(),
           avatarUrl: '',
@@ -150,6 +161,14 @@ export const useUserStore = defineStore('user', () => {
 
         // 登录成功后拉取完整用户资料
         await loadProfile()
+
+        // 初始化通知轮询
+        try {
+          const notificationStore = useNotificationStore()
+          notificationStore.init()
+        } catch (e) {
+          console.warn('[Auth] 通知初始化失败（不影响登录）:', e)
+        }
 
         // 登录成功后同步本地历史到后端
         try {
@@ -178,50 +197,144 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // ══════════════════════════════════════════
-  //  匿名登录（开发环境）
+  //  H5微信网页授权登录
   // ══════════════════════════════════════════
 
-  /** 匿名登录 - 仅开发环境可用 */
-  async function anonymousLoginAction(): Promise<boolean> {
+  /**
+   * H5微信网页授权登录（在微信内浏览器中使用）
+   * 流程：获取授权URL → 重定向 → 微信回调带code → 用code换JWT
+   *
+   * @param redirectUri 授权后回调的前端页面URL
+   */
+  async function wechatH5Login(redirectUri?: string): Promise<boolean> {
     if (isLoggingIn.value) return false
     isLoggingIn.value = true
 
     try {
-      const result = await apiAnonymousLogin()
+      // 默认回调到当前页面
+      const callbackUri = redirectUri || window.location.href.split('?')[0]
+      const { url } = await getWechatH5AuthUrl(callbackUri, 'snsapi_userinfo')
+
+      // 重定向到微信授权页
+      window.location.href = url
+      return true // 重定向后不会执行到这里
+    } catch (err: any) {
+      console.error('[Auth] H5微信授权失败:', err.message)
+      uni.showToast({
+        title: err.message || '微信授权失败',
+        icon: 'none',
+        duration: 3000,
+      })
+      return false
+    } finally {
+      isLoggingIn.value = false
+    }
+  }
+
+  /**
+   * 处理H5微信网页授权回调
+   * 从URL参数中提取code，发送到后端换取JWT
+   */
+  async function handleWechatH5Callback(code: string): Promise<boolean> {
+    if (isLoggingIn.value) return false
+    isLoggingIn.value = true
+
+    try {
+      const result = await apiWechatH5Login(code)
 
       if (result.token) {
         saveToken(result.token)
 
         userInfo.value = {
-          uid: `anon_${Date.now()}`,
-          type: 'anonymous',
+          uid: result.user.uid,
+          type: 'wechat',
+          role: (result.user as any).role || 'USER',
           token: result.token,
           loginAt: Date.now(),
-          avatarUrl: '',
-          nickname: '',
+          avatarUrl: (result.user as any).avatarUrl || '',
+          nickname: (result.user as any).nickname || '',
         }
 
-        userName.value = '访客'
+        userName.value = (result.user as any).nickname || `微信用户 ${result.user.uid.slice(0, 6)}`
         isLoggedIn.value = true
 
-        // 拉取资料
         await loadProfile()
 
-        console.log('✅ [Auth] 匿名登录成功')
+        try {
+          const historyStore = useHistoryStore()
+          await historyStore.syncLocalToServer()
+        } catch (e) {
+          console.warn('[Auth] 历史同步失败（不影响登录）:', e)
+        }
+
+        console.log('[Auth] H5微信登录成功:', result.user.uid)
         return true
       }
 
       return false
     } catch (err: any) {
-      console.error('❌ [Auth] 匿名登录失败:', err.message)
+      console.error('[Auth] H5微信登录失败:', err.message)
       uni.showToast({
-        title: err.message || '匿名登录失败',
+        title: err.message || '微信登录失败',
+        icon: 'none',
+        duration: 3000,
+      })
+      return false
+    } finally {
+      isLoggingIn.value = false
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  游客登录（非微信环境）
+  // ══════════════════════════════════════════
+
+  /** 游客登录 — 非微信环境（普通浏览器/PC） */
+  async function guestLoginAction(): Promise<boolean> {
+    if (isLoggingIn.value) return false
+    isLoggingIn.value = true
+
+    try {
+      const result = await apiGuestLogin()
+
+      if (result.token) {
+        saveToken(result.token)
+
+        userInfo.value = {
+          uid: result.user?.uid || `guest_${Date.now()}`,
+          type: 'guest',
+          role: result.user?.role || 'USER',
+          token: result.token,
+          loginAt: Date.now(),
+          avatarUrl: '',
+          nickname: '游客',
+        }
+
+        userName.value = '游客'
+        isLoggedIn.value = true
+
+        await loadProfile()
+
+        console.log('[Auth] 游客登录成功')
+        return true
+      }
+
+      return false
+    } catch (err: any) {
+      console.error('[Auth] 游客登录失败:', err.message)
+      uni.showToast({
+        title: err.message || '游客登录失败',
         icon: 'none',
       })
       return false
     } finally {
       isLoggingIn.value = false
     }
+  }
+
+  /** 匿名登录 - 向后兼容，已废弃 */
+  async function anonymousLoginAction(): Promise<boolean> {
+    return guestLoginAction()
   }
 
   // ══════════════════════════════════════════
@@ -238,6 +351,7 @@ export const useUserStore = defineStore('user', () => {
         userInfo.value = {
           uid: result.user.uid || result.user.id || '',
           type: result.user.type,
+          role: result.user.role || 'USER',
           token: token.value,
           loginAt: userInfo.value?.loginAt || Date.now(),
           avatarUrl: avatarUrl.value,
@@ -266,25 +380,56 @@ export const useUserStore = defineStore('user', () => {
 
   /** 应用启动时自动登录 */
   async function autoLogin(): Promise<boolean> {
-    // 1. 检查本地 Token
+    // 1. H5环境：检查URL中是否有微信回调的code参数
+    // #ifdef H5
+    const urlParams = new URLSearchParams(window.location.search)
+    const wechatCode = urlParams.get('code')
+    const wechatState = urlParams.get('state')
+    if (wechatCode) {
+      // 清除URL中的code/state参数（防止刷新重复使用）
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, '', cleanUrl)
+
+      const success = await handleWechatH5Callback(wechatCode)
+      if (success) {
+        console.log('[Auth] H5微信授权自动登录成功')
+        return true
+      }
+    }
+    // #endif
+
+    // 2. 检查本地 Token
     const savedToken = uni.getStorageSync('token') || ''
     if (savedToken) {
       token.value = savedToken
       const valid = await checkToken()
       if (valid) {
-        console.log('✅ [Auth] 自动登录成功（Token 有效）')
+        console.log('[Auth] 自动登录成功（Token 有效）')
         return true
       }
     }
 
-    // 2. 查询认证服务状态
+    // 3. H5环境且无Token：尝试游客登录（H5不应让用户无法使用）
+    // #ifdef H5
+    try {
+      const success = await guestLoginAction()
+      if (success) {
+        console.log('[Auth] 自动游客登录成功')
+        return true
+      }
+    } catch {
+      // 游客登录也失败，保持未登录状态
+    }
+    // #endif
+
+    // 4. 查询认证服务状态
     try {
       authStatus.value = await getAuthStatus()
     } catch {
       // 后端不可用，保持游客状态
     }
 
-    console.log('ℹ️ [Auth] 未自动登录，保持游客状态')
+    console.log('[Auth] 未自动登录，保持游客状态')
     return false
   }
 
@@ -299,6 +444,13 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     avatarUrl.value = ''
     nickname.value = ''
+    // 重置通知
+    try {
+      const notificationStore = useNotificationStore()
+      notificationStore.reset()
+    } catch {
+      // ignore
+    }
   }
 
   // ══════════════════════════════════════════
@@ -368,10 +520,14 @@ export const useUserStore = defineStore('user', () => {
     isAnonymousUser,
     isGuest,
     userDisplayName,
+    isAdmin,
     // 认证方法
     login,
     logout,
     wechatLogin,
+    wechatH5Login,
+    handleWechatH5Callback,
+    guestLogin: guestLoginAction,
     anonymousLogin: anonymousLoginAction,
     checkToken,
     autoLogin,

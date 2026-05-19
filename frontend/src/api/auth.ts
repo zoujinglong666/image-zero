@@ -9,7 +9,7 @@ import type {
 /**
  * ════════════════════════════════════════════
  *  图灵绘境 - 认证 API 层
- *  微信登录 / 匿名登录 / Token 验证 / 状态查询
+ *  微信登录 / H5网页授权 / 游客登录 / Token 验证
  * ════════════════════════════════════════════
  */
 
@@ -46,7 +46,54 @@ export function wechatLoginWithCode(code: string): Promise<WechatLoginResult> {
   return http.post<WechatLoginResult>('/auth/wechat', { code })
 }
 
-/** 匿名登录 - 生产环境会被后端拒绝 */
+// ════════════════════════════════════════════
+//  微信公众号H5网页授权登录
+// ════════════════════════════════════════════
+
+/**
+ * 获取微信公众号H5网页授权URL
+ * 前端获取此URL后，在微信浏览器中重定向过去
+ * 用户同意后，微信回调到 redirectUri 并携带 code 和 state 参数
+ *
+ * @param redirectUri 授权后回调地址（前端页面URL）
+ * @param scope snsapi_base（静默）或 snsapi_userinfo（需确认）
+ * @param state 防CSRF参数（可选，自动生成）
+ */
+export async function getWechatH5AuthUrl(
+  redirectUri: string,
+  scope?: 'snsapi_base' | 'snsapi_userinfo',
+  state?: string,
+): Promise<{ url: string }> {
+  return http.get<{ url: string }>('/auth/wechat-h5/url', {
+    redirectUri,
+    ...(scope && { scope }),
+    ...(state && { state }),
+  })
+}
+
+/**
+ * 微信公众号H5网页授权登录
+ * 微信回调后前端拿到code，发送到此接口换取JWT
+ *
+ * @param code 微信OAuth2回调返回的授权code
+ */
+export function wechatH5Login(code: string): Promise<WechatLoginResult> {
+  return http.post<WechatLoginResult>('/auth/wechat-h5', { code })
+}
+
+// ════════════════════════════════════════════
+//  游客登录（非微信环境）
+// ════════════════════════════════════════════
+
+/**
+ * 游客登录 — 非微信环境（普通浏览器/PC）下使用
+ * 功能受限：不能VIP支付，每日额度更少
+ */
+export function guestLogin(): Promise<AnonymousLoginResult> {
+  return http.post<AnonymousLoginResult>('/auth/guest')
+}
+
+/** 匿名登录 - 向后兼容，已废弃，请使用 guestLogin */
 export function anonymousLogin(): Promise<AnonymousLoginResult> {
   return http.post<AnonymousLoginResult>('/auth/token')
 }

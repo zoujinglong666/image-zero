@@ -30,21 +30,21 @@ public class ApiResponse<T> {
      * 成功响应（无数据）
      */
     public static <T> ApiResponse<T> success() {
-        return new ApiResponse<>(200, "success", null, true);
+        return new ApiResponse<>(0, "success", null, true);
     }
 
     /**
      * 成功响应（带数据）
      */
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(200, "success", data, true);
+        return new ApiResponse<>(0, "success", data, true);
     }
 
     /**
      * 成功响应（带消息和数据）
      */
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(200, message, data, true);
+        return new ApiResponse<>(0, message, data, true);
     }
 
     /**

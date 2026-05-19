@@ -5,9 +5,11 @@ import com.turing.drawing.dto.response.PageResult;
 import com.turing.drawing.entity.History;
 import com.turing.drawing.security.UserPrincipal;
 import com.turing.drawing.service.DataService;
+import com.turing.drawing.service.CosService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -21,6 +23,7 @@ import java.util.Map;
 public class DataController {
 
     private final DataService dataService;
+    private final CosService cosService;
 
     // ── 历史记录 ──
 
@@ -50,6 +53,9 @@ public class DataController {
     public ApiResponse<Map<String, Object>> toggleFavorite(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         boolean fav = dataService.toggleFavorite(id, principal.getId());
         return ApiResponse.success(Map.of("id", id, "favorite", fav));
     }
@@ -58,6 +64,9 @@ public class DataController {
     public ApiResponse<Void> deleteHistory(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         dataService.deleteHistory(id, principal.getId());
         return ApiResponse.success();
     }
@@ -65,6 +74,9 @@ public class DataController {
     @DeleteMapping("/history")
     public ApiResponse<Map<String, Object>> clearAllHistory(
             @AuthenticationPrincipal UserPrincipal principal) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         int deleted = dataService.clearAllHistory(principal.getId());
         return ApiResponse.success(Map.of("deleted", deleted));
     }
@@ -83,6 +95,9 @@ public class DataController {
     public ApiResponse<Map<String, String>> updatePreferences(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody Map<String, String> prefs) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         dataService.updatePreferences(principal.getId(), prefs);
         return ApiResponse.success(prefs);
     }
@@ -101,7 +116,32 @@ public class DataController {
     public ApiResponse<Void> updateProfile(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody Map<String, String> fields) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         dataService.updateProfile(principal.getId(), fields.get("nickname"), fields.get("avatarUrl"));
         return ApiResponse.success();
+    }
+
+    /**
+     * 上传头像
+     * POST /api/data/avatar
+     */
+    @PostMapping("/avatar")
+    public ApiResponse<Map<String, Object>> uploadAvatar(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam("avatar") MultipartFile file) {
+        try {
+            CosService.UploadResult result = cosService.uploadImage(file, "avatars");
+            // 更新用户头像URL
+            if (principal != null) {
+                dataService.updateProfile(principal.getId(), null, result.url());
+            }
+            return ApiResponse.success(Map.of("url", result.url()));
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("头像上传失败: " + e.getMessage());
+        }
     }
 }

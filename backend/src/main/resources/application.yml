@@ -80,6 +80,18 @@ wechat:
   mini-program-app-id: ${WECHAT_MINI_PROGRAM_APP_ID:}
   mini-program-app-secret: ${WECHAT_MINI_PROGRAM_APP_SECRET:}
 
+# CORS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+# Rate Limiter
+rate-limiter:
+  ai-per-minute: ${RATE_LIMIT_AI:10}
+  auth-per-minute: ${RATE_LIMIT_AUTH:20}
+  community-per-minute: ${RATE_LIMIT_COMMUNITY:60}
+  upload-per-minute: ${RATE_LIMIT_UPLOAD:15}
+  window-seconds: 60
+
 # SpringDoc OpenAPI
 springdoc:
   api-docs:

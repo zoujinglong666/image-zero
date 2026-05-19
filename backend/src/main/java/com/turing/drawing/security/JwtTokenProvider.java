@@ -37,12 +37,14 @@ public class JwtTokenProvider {
      *
      * @param userId   用户ID
      * @param username 用户名
+     * @param role     用户角色 (ADMIN/USER)
      * @return JWT令牌字符串
      */
-    public String generateToken(Long userId, String username) {
+    public String generateToken(Long userId, String username, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
+        claims.put("role", role != null ? role : "USER");
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
@@ -54,6 +56,13 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    /**
+     * 生成JWT令牌（兼容旧调用，role默认USER）
+     */
+    public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, "USER");
     }
 
     /**
@@ -95,6 +104,14 @@ public class JwtTokenProvider {
     public String getUsernameFromToken(String token) {
         Claims claims = parseToken(token);
         return claims != null ? claims.getSubject() : null;
+    }
+
+    /**
+     * 从令牌中获取用户角色
+     */
+    public String getRoleFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims != null ? (String) claims.get("role") : null;
     }
 
     /**

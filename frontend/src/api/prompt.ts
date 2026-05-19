@@ -233,10 +233,9 @@ function getApiBase(): string {
 
 function getAuthHeader(): Record<string, string> {
   try {
-    const tokenStr = uni.getStorageSync('token') || ''
-    if (tokenStr) {
-      const { token } = JSON.parse(tokenStr)
-      if (token) return { Authorization: `Bearer ${token}` }
+    const token = uni.getStorageSync('token') || ''
+    if (token) {
+      return { Authorization: `Bearer ${token}` }
     }
   } catch { /* ignore */ }
   return {}

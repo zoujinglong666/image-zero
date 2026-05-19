@@ -17,8 +17,23 @@ public class UserPrincipal {
     /** 用户名 */
     private String username;
 
+    /** 用户角色: ADMIN / USER */
+    private String role;
+
     /** Controller层兼容方法 */
     public Long getId() {
         return userId;
+    }
+
+    /** 兼容旧调用（默认普通用户） */
+    public UserPrincipal(Long userId, String username) {
+        this.userId = userId;
+        this.username = username;
+        this.role = "USER";
+    }
+
+    /** 是否为管理员 */
+    public boolean isAdmin() {
+        return "ADMIN".equalsIgnoreCase(role);
     }
 }

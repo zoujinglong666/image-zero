@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.turing.drawing.enums.UserRole;
+
 import java.time.LocalDateTime;
 
 /**
@@ -27,6 +29,10 @@ public class User extends BaseEntity {
 
     /** 用户类型: guest/wechat/anonymous */
     private String type;
+
+    /** 用户角色: ADMIN-管理员 / USER-普通用户 */
+    @Builder.Default
+    private String role = UserRole.USER.getValue();
 
     /** 昵称 */
     private String nickname;

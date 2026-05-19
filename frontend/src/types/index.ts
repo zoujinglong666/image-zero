@@ -222,23 +222,32 @@ export interface WechatLoginResult {
   user: {
     type: 'wechat'
     uid: string
+    role: 'ADMIN' | 'USER'
+    nickname?: string
+    avatarUrl?: string
   }
 }
 
-/** 匿名登录响应 */
+/** 匿名登录响应（游客登录也使用此类型） */
 export interface AnonymousLoginResult {
   token: string
   expiresIn: string
+  user?: {
+    type: 'guest'
+    uid: string
+    role: 'ADMIN' | 'USER'
+  }
 }
 
 /** Token 验证响应 */
 export interface VerifyTokenResult {
   valid: boolean
   user?: {
-    type: 'wechat' | 'anonymous'
+    type: 'wechat' | 'anonymous' | 'guest'
     uid?: string
     openid?: string
     id?: string
+    role?: 'ADMIN' | 'USER'
   }
   error?: string
 }
@@ -254,6 +263,7 @@ export interface AuthStatusResult {
 export interface UserInfo {
   uid: string
   type: 'wechat' | 'anonymous' | 'guest'
+  role: 'ADMIN' | 'USER'
   token: string
   loginAt: number
   avatarUrl: string

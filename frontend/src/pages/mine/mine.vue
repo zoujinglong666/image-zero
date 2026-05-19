@@ -77,6 +77,17 @@
       <!-- 功能菜单组 -->
       <view class="menu-section">
         <u-cell-group :border="false">
+          <!-- 消息通知 -->
+          <u-cell-item
+            title="消息通知"
+            icon="bell"
+            @tap="goToNotifications"
+          >
+            <template #value>
+              <u-badge v-if="notificationStore.hasUnread" :count="notificationStore.unreadCount" :offset="[0, 0]" />
+              <text v-else class="cell-value-text">暂无新消息</text>
+            </template>
+          </u-cell-item>
           <!-- 历史记录 -->
           <u-cell-item
             title="历史记录"
@@ -348,10 +359,12 @@
 import { ref, computed } from 'vue'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
 import { useTheme } from 'uview-pro'
 
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 const { currentTheme } = useTheme()
 
 // 当前主题标签
@@ -398,6 +411,10 @@ const pendingNickname = ref('')
 // ====== 操作 ======
 const goToHistory = () => {
   uni.switchTab({ url: '/pages/history/history' })
+}
+
+const goToNotifications = () => {
+  uni.navigateTo({ url: '/pages/notification/notification' })
 }
 
 const goToSettings = () => {
@@ -654,6 +671,12 @@ const onSaveProfile = async () => {
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 通知小红点旁的辅助文字 */
+.cell-value-text {
+  font-size: 24rpx;
+  color: #BBB;
 }
 
 /* 版本信息 */

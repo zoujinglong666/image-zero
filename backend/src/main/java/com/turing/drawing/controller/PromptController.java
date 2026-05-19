@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -97,6 +98,9 @@ public class PromptController {
     public ApiResponse<Map<String, Object>> toggleFavorite(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录后再收藏");
+        }
         boolean isFav = promptService.toggleFavorite(id, principal.getId());
         return ApiResponse.success(Map.of("is_favorited", isFav));
     }
@@ -106,6 +110,9 @@ public class PromptController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int page_size) {
+        if (principal == null) {
+            return ApiResponse.success(new PageResult<>(Collections.emptyList(), new PageResult.Pagination(1, 20, 0, 0)));
+        }
         return ApiResponse.success(promptService.listFavorites(principal.getId(), page, page_size));
     }
 
@@ -115,6 +122,9 @@ public class PromptController {
     public ApiResponse<Map<String, Object>> createUserPrompt(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody UserPrompt userPrompt) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录后再创建提示词");
+        }
         userPrompt.setUserId(principal.getId());
         Long id = promptService.createUserPrompt(userPrompt);
         return ApiResponse.success(Map.of("id", id));
@@ -125,6 +135,9 @@ public class PromptController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @RequestBody UserPrompt userPrompt) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         userPrompt.setId(id);
         userPrompt.setUserId(principal.getId());
         promptService.updateUserPrompt(userPrompt);
@@ -135,6 +148,9 @@ public class PromptController {
     public ApiResponse<Void> deleteUserPrompt(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         promptService.deleteUserPrompt(id, principal.getId());
         return ApiResponse.success();
     }
@@ -144,6 +160,9 @@ public class PromptController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int page_size) {
+        if (principal == null) {
+            return ApiResponse.success(new PageResult<>(Collections.emptyList(), new PageResult.Pagination(1, 20, 0, 0)));
+        }
         return ApiResponse.success(promptService.listUserPrompts(principal.getId(), page, page_size));
     }
 
@@ -153,6 +172,9 @@ public class PromptController {
     public ApiResponse<Map<String, Object>> createCommunityPost(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody UserPrompt userPrompt) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录后再发布");
+        }
         userPrompt.setUserId(principal.getId());
         userPrompt.setIsPublic(true);
         userPrompt.setStatus("published");

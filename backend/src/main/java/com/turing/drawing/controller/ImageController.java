@@ -3,11 +3,11 @@ package com.turing.drawing.controller;
 import com.turing.drawing.dto.response.ApiResponse;
 import com.turing.drawing.entity.DrawingTask;
 import com.turing.drawing.entity.History;
-import com.turing.drawing.mapper.DrawingTaskMapper;
-import com.turing.drawing.mapper.HistoryMapper;
 import com.turing.drawing.security.UserPrincipal;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.turing.drawing.service.ImageService;
+import com.turing.drawing.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,16 +18,17 @@ import java.util.Map;
  * 图片AI控制器 - 分析/生成/编辑
  * 对齐前端路由: /api/analyze, /api/generate, /api/edit
  */
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ImageController {
 
-    private final DrawingTaskMapper drawingTaskMapper;
-    private final HistoryMapper historyMapper;
+    private final ImageService imageService;
+    private final PaymentService paymentService;
 
     /**
-     * 图片分析
+     * 图片分析 — 反推AI绘画提示词
      * POST /api/analyze
      * 前端期望: { elapsed, result: ImageAnalysisResult, cached }
      */
@@ -37,35 +38,30 @@ public class ImageController {
             @RequestBody Map<String, Object> request) {
         Long userId = principal != null ? principal.getId() : 0L;
 
-        // 创建绘图任务
-        DrawingTask task = new DrawingTask();
-        task.setUserId(userId);
-        task.setType("analyze");
-        task.setInputData(request.toString());
-        task.setStatus("processing");
-        drawingTaskMapper.insert(task);
+        // 额度检查（匿名用户也可试用，但受限制流）
+        if (userId > 0 && !paymentService.checkQuota(userId)) {
+            return ApiResponse.error(403, "今日免费额度已用完，升级VIP获取更多次数");
+        }
 
-        // TODO: 调用AI分析服务，返回分析结果
-        return ApiResponse.success(Map.of(
-                "task_id", task.getId(),
-                "elapsed", 0,
-                "result", Map.of(
-                        "style", "pending",
-                        "styleConfidence", 0,
-                        "styleDescription", "分析中...",
-                        "elements", List.of(),
-                        "layout", "unknown",
-                        "layoutDescription", "",
-                        "colorScheme", List.of(),
-                        "primaryColor", "",
-                        "prompt", Map.of("chinese", "", "english", "", "keywords", List.of())
-                ),
-                "cached", false
-        ));
+        String imageUrl = (String) request.get("imageUrl");
+        String provider = (String) request.get("provider");
+
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return ApiResponse.error("缺少 imageUrl 参数");
+        }
+
+        Map<String, Object> result = imageService.analyzeImage(userId, imageUrl, provider);
+
+        // 消耗额度
+        if (userId > 0) {
+            paymentService.consumeQuota(userId);
+        }
+
+        return ApiResponse.success(result);
     }
 
     /**
-     * 图片生成
+     * 图片生成 — 根据提示词生成图片
      * POST /api/generate
      * 前端期望: { images: [{ url, revised_prompt }] }
      */
@@ -75,25 +71,33 @@ public class ImageController {
             @RequestBody Map<String, Object> request) {
         Long userId = principal != null ? principal.getId() : 0L;
 
-        DrawingTask task = new DrawingTask();
-        task.setUserId(userId);
-        task.setType("generate");
-        task.setInputData(request.toString());
-        task.setStatus("processing");
-        drawingTaskMapper.insert(task);
+        // 额度检查（生成需要VIP）
+        if (userId > 0 && !paymentService.checkQuota(userId)) {
+            return ApiResponse.error(403, "今日免费额度已用完，升级VIP获取更多次数");
+        }
 
-        // TODO: 调用AI生成服务，返回生成结果
-        return ApiResponse.success(Map.of(
-                "task_id", task.getId(),
-                "images", List.of(Map.of(
-                        "url", "",
-                        "revised_prompt", ""
-                ))
-        ));
+        String prompt = (String) request.get("prompt");
+        Integer width = request.get("width") != null ? ((Number) request.get("width")).intValue() : null;
+        Integer height = request.get("height") != null ? ((Number) request.get("height")).intValue() : null;
+        String model = (String) request.get("model");
+        String provider = (String) request.get("provider");
+
+        if (prompt == null || prompt.isBlank()) {
+            return ApiResponse.error("缺少 prompt 参数");
+        }
+
+        Map<String, Object> result = imageService.generateImage(userId, prompt, width, height, model, provider);
+
+        // 消耗额度
+        if (userId > 0) {
+            paymentService.consumeQuota(userId);
+        }
+
+        return ApiResponse.success(result);
     }
 
     /**
-     * 图片编辑
+     * 图片编辑 — 基于原图+修改指令
      * POST /api/edit
      * 前端期望: { imageUrl, prompt }
      */
@@ -103,19 +107,30 @@ public class ImageController {
             @RequestBody Map<String, Object> request) {
         Long userId = principal != null ? principal.getId() : 0L;
 
-        DrawingTask task = new DrawingTask();
-        task.setUserId(userId);
-        task.setType("edit");
-        task.setInputData(request.toString());
-        task.setStatus("processing");
-        drawingTaskMapper.insert(task);
+        // 额度检查
+        if (userId > 0 && !paymentService.checkQuota(userId)) {
+            return ApiResponse.error(403, "今日免费额度已用完，升级VIP获取更多次数");
+        }
 
-        // TODO: 调用AI编辑服务，返回编辑结果
-        return ApiResponse.success(Map.of(
-                "task_id", task.getId(),
-                "imageUrl", "",
-                "prompt", ""
-        ));
+        String originalImage = (String) request.get("originalImage");
+        String originalPrompt = (String) request.get("originalPrompt");
+        String provider = (String) request.get("provider");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> modifications = (Map<String, Object>) request.get("modifications");
+
+        if (originalPrompt == null || originalPrompt.isBlank()) {
+            return ApiResponse.error("缺少 originalPrompt 参数");
+        }
+
+        Map<String, Object> result = imageService.editImage(userId, originalImage, originalPrompt, modifications, provider);
+
+        // 消耗额度
+        if (userId > 0) {
+            paymentService.consumeQuota(userId);
+        }
+
+        return ApiResponse.success(result);
     }
 
     /**
@@ -124,7 +139,7 @@ public class ImageController {
      */
     @GetMapping("/task/{id}")
     public ApiResponse<DrawingTask> getTaskStatus(@PathVariable Long id) {
-        DrawingTask task = drawingTaskMapper.selectById(id);
+        DrawingTask task = imageService.getTaskStatus(id);
         if (task == null) return ApiResponse.error("任务不存在");
         return ApiResponse.success(task);
     }
@@ -138,10 +153,6 @@ public class ImageController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(defaultValue = "20") int limit) {
         Long userId = principal != null ? principal.getId() : 0L;
-        LambdaQueryWrapper<History> wrapper = new LambdaQueryWrapper<History>()
-                .eq(History::getUserId, userId)
-                .orderByDesc(History::getCreatedAt)
-                .last("LIMIT " + limit);
-        return ApiResponse.success(historyMapper.selectList(wrapper));
+        return ApiResponse.success(imageService.listUserHistory(userId, limit));
     }
 }

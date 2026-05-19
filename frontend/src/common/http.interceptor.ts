@@ -9,8 +9,7 @@ import type { RequestConfig, RequestInterceptor, RequestMeta, RequestOptions } f
  *  - VITE_API_BASE_URL 包含 /api，如 https://api.your-domain.com/api
  *  - 请求路径不含 /api 前缀，如 /analyze, /auth/wechat
  *  - 后端统一响应格式: { code: number, data?: any, message: string, success?: boolean }
- *    成功: { code: 200, data: {...}, message: 'success', success: true }  (Spring Boot)
- *    兼容: { code: 0, data: {...}, message: '操作成功' }                (Node.js)
+ *    成功: { code: 0, data: {...}, message: 'success', success: true }
  *    失败: { code: <错误码>, data: null, message: '错误描述', success: false }
  * ════════════════════════════════════════════════════
  */
@@ -54,7 +53,15 @@ export function getFriendlyError(err: any): string {
 }
 
 // ─── Token ──────────────────────────────────────────
-const getToken = () => uni?.getStorageSync('token') || ''
+const getToken = () => {
+  try {
+    const raw = uni?.getStorageSync('token') || ''
+    // token 存储为纯字符串，不需要 JSON.parse
+    return raw
+  } catch {
+    return ''
+  }
+}
 
 // ─── 后端地址 ──────────────────────────────────────
 // 生产环境必须通过 VITE_API_BASE_URL 配置域名，不再提供硬编码 fallback
@@ -136,8 +143,8 @@ const httpInterceptor: RequestInterceptor = {
       }
     }
 
-    // ── 业务错误（code !== 0 且 code !== 200）──
-    if (rawData && rawData.code !== undefined && rawData.code !== 0 && rawData.code !== 200) {
+    // ── 业务错误（code !== 0）──
+    if (rawData && rawData.code !== undefined && rawData.code !== 0) {
       const bizCode = rawData.code
       const bizMsg = rawData.message || '操作失败'
       const tip = ERROR_MAP[bizCode] || bizMsg
@@ -151,9 +158,8 @@ const httpInterceptor: RequestInterceptor = {
     }
 
     // ── 成功：返回 data 字段 ──
-    // Spring Boot: { code: 200, data, message, success: true } → 返回 data
-    // Node.js:     { code: 0, data, message } → 返回 data
-    if (rawData && (rawData.code === 0 || rawData.code === 200)) {
+    // { code: 0, data, message, success: true } → 返回 data
+    if (rawData && rawData.code === 0) {
       return rawData.data !== undefined ? rawData.data : rawData
     }
 
