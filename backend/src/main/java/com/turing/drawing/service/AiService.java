@@ -74,7 +74,7 @@ public class AiService {
 
         try {
             String systemPrompt = buildAnalyzeSystemPrompt();
-            String userContent = buildAnalyzeUserContent(imageUrl);
+            Object userContent = buildAnalyzeUserContent(imageUrl);
 
             Map<String, Object> requestBody = Map.of(
                     "model", defaultAnalyzeModel,

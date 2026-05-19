@@ -21,8 +21,8 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- 默认管理员用户（密码: admin123，BCrypt加密）
 -- 注意：生产环境部署后请立即修改密码
-INSERT INTO users (uid, type, nickname, vip_level, daily_quota, password_hash, email, is_active, role)
+INSERT INTO users (uid, type, nickname, vip_level, daily_quota, password_hash, email, is_active)
 VALUES ('admin', 'guest', '管理员', 3, 999,
         '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-        'admin@turing-drawing.com', 1, 'ADMIN')
+        'admin@turing-drawing.com', 1)
 ON DUPLICATE KEY UPDATE uid = VALUES(uid);

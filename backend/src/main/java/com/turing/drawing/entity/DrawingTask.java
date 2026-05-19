@@ -45,6 +45,9 @@ public class DrawingTask extends BaseEntity {
     /** 错误信息 */
     private String errorMessage;
 
+    /** 任务类型: analyze/generate/edit */
+    private String type;
+
     /** AI服务商: OPENAI/GEMINI/STABILITY */
     private String provider;
 
