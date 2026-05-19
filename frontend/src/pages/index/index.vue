@@ -34,6 +34,15 @@
         <text class="search-placeholder">搜索提示词、风格、标签...</text>
       </view>
 
+      <!-- ====== 核心功能区：上传图片获取提示词 ====== -->
+      <view class="hero-upload" @tap="triggerUpload">
+        <view class="upload-area">
+          <u-icon name="plus" size="80" color="#7C4DFF" />
+          <text class="upload-title">上传图片，AI 反推提示词</text>
+          <text class="upload-desc">支持 JPG / PNG / WEBP，自动压缩后分析</text>
+        </view>
+      </view>
+
       <!-- ====== 快捷工具入口 ====== -->
       <view class="quick-tools">
         <view class="tool-item" @tap="goToCreate">
@@ -394,7 +403,7 @@ const goToSearch = () => {
 }
 
 const goToCreate = () => {
-  // 保留原有的上传功能，跳转到编辑页
+  // AI解析按钮也触发上传
   triggerUpload()
 }
 
@@ -921,5 +930,41 @@ defineExpose({
     font-size: 24rpx;
     color: #CCC;
   }
+}
+
+/* ====== 核心上传区域 ====== */
+.hero-upload {
+  margin: 20rpx 24rpx 0;
+  padding: 60rpx 40rpx;
+  background: linear-gradient(135deg, #F3E5F5, #EDE7F6);
+  border-radius: 24rpx;
+  border: 2rpx dashed #B39DDB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.hero-upload:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, #EDE7F6, #D1C4E9);
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.upload-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #6200EA;
+}
+
+.upload-desc {
+  font-size: 24rpx;
+  color: #9575CD;
 }
 </style>

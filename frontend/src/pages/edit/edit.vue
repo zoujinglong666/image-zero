@@ -257,7 +257,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { ImageAnalysisResult } from '@/types'
-import { editImage } from '@/api/image'
+import { analyzeImage, editImage } from '@/api/image'
 
 // 接收首页传来的数据
 const editData = ref<ImageAnalysisResult | null>(null)
@@ -271,15 +271,36 @@ onLoad((options) => {
     try {
       const parsed = JSON.parse(decodeURIComponent(options.data))
       editData.value = parsed
-      originalDataStr.value = options.data // 保存原始编码数据用于重置
+      originalDataStr.value = options.data
       console.log('[Edit] ✓ 数据解析成功 | 风格:', parsed?.style)
     } catch (e) {
       console.error('[Edit] ✗ 解析失败:', e)
     }
+  } else if (options?.imageUrl) {
+    // 从首页上传图片跳转过来，需要调用 AI 分析
+    const imageUrl = decodeURIComponent(options.imageUrl)
+    console.log('[Edit] 收到图片URL，开始AI分析...')
+    analyzeAndEdit(imageUrl)
   } else {
-    console.warn('[Edit] ⚠ 未收到 data 参数')
+    console.warn('[Edit] ⚠ 未收到 data/imageUrl 参数')
   }
 })
+
+// 分析图片并进入编辑
+async function analyzeAndEdit(imageUrl: string) {
+  uni.showLoading({ title: 'AI 正在分析图片...', mask: true })
+  try {
+    const result = await analyzeImage(imageUrl)
+    editData.value = result
+    originalDataStr.value = encodeURIComponent(JSON.stringify(result))
+    console.log('[Edit] ✓ AI分析完成 | 风格:', result.style)
+  } catch (err: any) {
+    console.error('[Edit] ✗ AI分析失败:', err)
+    uni.showToast({ title: err.message || '分析失败，请重试', icon: 'none', duration: 3000 })
+  } finally {
+    uni.hideLoading()
+  }
+}
 
 // ====== 常量 ======
 const presetColors = ['#7C4DFF', '#6200EA', '#B388FF', '#00C853', '#FF5252', '#FF9100', '#FF6B35']
