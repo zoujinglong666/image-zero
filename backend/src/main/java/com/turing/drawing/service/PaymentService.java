@@ -93,9 +93,23 @@ public class PaymentService {
      */
     @Transactional
     public Map<String, Object> createOrder(Long userId, String plan) {
+        // 参数验证
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("无效的用户ID");
+        }
+        if (plan == null || plan.isBlank()) {
+            throw new IllegalArgumentException("无效的VIP套餐");
+        }
+
         VipPlan vipPlan = VIP_PLANS.get(plan);
         if (vipPlan == null) {
             throw new IllegalArgumentException("无效的VIP套餐: " + plan);
+        }
+
+        // 检查用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
         }
 
         // 创建订阅记录
@@ -144,7 +158,25 @@ public class PaymentService {
      */
     @Transactional
     public void handlePaymentCallback(String orderId, String paymentNo) {
-        VipSubscription subscription = vipSubscriptionMapper.selectById(Long.valueOf(orderId));
+        // 参数验证
+        if (orderId == null || orderId.isBlank()) {
+            log.warn("[支付回调] 订单ID为空");
+            return;
+        }
+        if (paymentNo == null || paymentNo.isBlank()) {
+            log.warn("[支付回调] 支付单号为空");
+            return;
+        }
+        
+        Long orderIdLong;
+        try {
+            orderIdLong = Long.valueOf(orderId);
+        } catch (NumberFormatException e) {
+            log.warn("[支付回调] 无效的订单ID格式: {}", orderId);
+            return;
+        }
+        
+        VipSubscription subscription = vipSubscriptionMapper.selectById(orderIdLong);
         if (subscription == null) {
             log.warn("[支付回调] 订单不存在: {}", orderId);
             return;

@@ -72,6 +72,12 @@ public class JwtTokenProvider {
      * @return Claims对象，解析失败返回null
      */
     public Claims parseToken(String token) {
+        // 参数验证
+        if (token == null || token.isBlank()) {
+            log.warn("JWT令牌为空");
+            return null;
+        }
+        
         try {
             return Jwts.parser()
                     .verifyWith(getSigningKey())

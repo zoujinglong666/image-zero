@@ -57,7 +57,16 @@ public class AuthService {
      * 微信小程序登录
      */
     public Map<String, Object> wechatLogin(String code) {
+        // 参数验证
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("授权码不能为空");
+        }
+        
         String openid = resolveMiniProgramOpenid(code);
+        if (openid == null || openid.isBlank()) {
+            throw new RuntimeException("获取微信用户标识失败");
+        }
+        
         String openidHash = hashSha256(openid);
 
         Optional<User> userOpt = userMapper.findByOpenidHash(openidHash);
@@ -283,6 +292,12 @@ public class AuthService {
      */
     @SuppressWarnings("unchecked")
     private String resolveMiniProgramOpenid(String code) {
+        // 参数验证
+        if (code == null || code.isBlank()) {
+            log.warn("微信小程序登录code为空");
+            return null;
+        }
+        
         if (miniProgramAppId == null || miniProgramAppId.isBlank() || miniProgramAppSecret == null || miniProgramAppSecret.isBlank()) {
             log.warn("微信小程序 appid/secret 未配置，使用 code 临时替代 openid（仅开发环境）");
             return code;
@@ -295,7 +310,9 @@ public class AuthService {
             if (resp != null && resp.containsKey("openid")) {
                 return (String) resp.get("openid");
             }
-            log.error("微信 code2Session 失败: errcode={}, errmsg={}", resp.get("errcode"), resp.get("errmsg"));
+            if (resp != null) {
+                log.error("微信 code2Session 失败: errcode={}, errmsg={}", resp.get("errcode"), resp.get("errmsg"));
+            }
         } catch (Exception e) {
             log.error("调用微信 code2Session 异常", e);
         }
