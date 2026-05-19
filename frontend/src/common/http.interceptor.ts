@@ -33,24 +33,30 @@ const ERROR_MAP: Record<number, string> = {
 
 /** 解析错误信息 → 返回用户友好的中文提示 */
 export function getFriendlyError(err: any): string {
-  // 1. 匹配数字错误码（HTTP 状态码）
+  // 1. 优先使用后端返回的具体消息
+  const rawMsg = err.message || err.msg || ''
+  if (rawMsg) {
+    const trimmed = rawMsg.length > 50 ? rawMsg.slice(0, 50) + '...' : rawMsg
+    return trimmed
+  }
+
+  // 2. 匹配数字错误码（HTTP 状态码或业务码）
   if (typeof err.code === 'number' && ERROR_MAP[err.code]) {
     return ERROR_MAP[err.code]
   }
-  // 2. 匹配状态码
+  // 3. 匹配状态码
   if (err.status || err.statusCode) {
     const code = err.status || err.statusCode
     return ERROR_MAP[code] || `请求失败 (${code})`
   }
-  // 3. 匹配消息关键词
-  const msg = (err.message || err.msg || '').toLowerCase()
+  // 4. 匹配消息关键词
+  const msg = rawMsg.toLowerCase()
   if (msg.includes('timeout') || msg.includes('超时')) return ERROR_MAP[408]
   if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) return '网络连接失败，请检查网络后重试'
   if (msg.includes('429') || msg.includes('rate') || msg.includes('limit') || msg.includes('频繁')) return ERROR_MAP[429]
   if (msg.includes('busy') || msg.includes('繁忙')) return ERROR_MAP[503]
-  // 4. 原始消息（截断，避免暴露技术细节）
-  const raw = err.message || '操作失败，请重试'
-  return raw.length > 40 ? raw.slice(0, 40) + '...' : raw
+
+  return '操作失败，请重试'
 }
 
 // ─── Token ──────────────────────────────────────────
@@ -148,7 +154,8 @@ const httpInterceptor: RequestInterceptor = {
     if (rawData && rawData.code !== undefined && rawData.code !== 0) {
       const bizCode = rawData.code
       const bizMsg = rawData.message || '操作失败'
-      const tip = ERROR_MAP[bizCode] || bizMsg
+      // 优先使用后端返回的具体消息（如"今日免费额度已用完"），其次用固定映射
+      const tip = bizMsg || ERROR_MAP[bizCode] || `请求失败 (${bizCode})`
 
       meta.toast && showToast(tip, 'none')
       throw {

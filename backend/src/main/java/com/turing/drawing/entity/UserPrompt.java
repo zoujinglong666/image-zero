@@ -1,5 +1,6 @@
 package com.turing.drawing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -37,6 +38,7 @@ public class UserPrompt extends BaseEntity {
     private String tags;
 
     /** 0=私密 1=公开(社区可见) */
+    @TableField("is_public")
     @Builder.Default
     private Boolean isPublic = false;
 

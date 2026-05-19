@@ -151,7 +151,7 @@ function copyCommand(command: string) {
                 <u-text :text="step.title" size="28rpx" bold class="step-title" />
                 <view class="command-block">
                   <u-text :text="step.command" size="24rpx" />
-                  <u-icon name="copy" size="40" color="grey-5" @click="copyCommand(step.command)" />
+                  <u-icon name="copy" size="40" color="grey-5" @tap="copyCommand(step.command)" />
                 </view>
                 <u-text :text="step.desc" size="24rpx" />
               </view>
@@ -182,7 +182,7 @@ function copyCommand(command: string) {
             <view v-for="(cmd, index) in commands" :key="index" class="command-item">
               <view class="command-block">
                 <u-text :text="cmd.command" size="26rpx" color="primary" />
-                <u-icon name="copy" size="40" color="grey-5" @click="copyCommand(cmd.command)" />
+                <u-icon name="copy" size="40" color="grey-5" @tap="copyCommand(cmd.command)" />
               </view>
               <u-text :text="cmd.desc" size="24rpx" />
             </view>

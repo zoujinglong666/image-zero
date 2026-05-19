@@ -233,7 +233,7 @@ const configExamples = [
           <u-card v-for="(api, index) in apiExamples" :key="index" :title="api.title" :border-radius="0" margin="0">
             <u-text :text="api.desc" size="24rpx" />
             <u-gap />
-            <u-button type="primary" size="mini" :loading="loading" @click="api.action">
+            <u-button type="primary" size="mini" :loading="loading" @tap="api.action">
               {{ api.method }}{{ t('demo.http.getRequest') }}
             </u-button>
           </u-card>

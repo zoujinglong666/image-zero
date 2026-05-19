@@ -1,5 +1,6 @@
 package com.turing.drawing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -54,6 +55,7 @@ public class PromptLibrary extends BaseEntity {
     private String status = "published";
 
     /** 0=普通 1=含参数模板 */
+    @TableField("is_template")
     @Builder.Default
     private Boolean isTemplate = false;
 

@@ -194,7 +194,7 @@ public class CosService {
     /** 本地存储回退 */
     private UploadResult uploadToLocal(MultipartFile file, String ext, String imageHash, String prefix) {
         try {
-            Path uploadDir = Paths.get(localUploadDir, prefix);
+            Path uploadDir = Paths.get(localUploadDir, prefix).toAbsolutePath().normalize();
             Files.createDirectories(uploadDir);
 
             String fileName = imageHash + "_" + System.currentTimeMillis() + "." + ext;
@@ -202,7 +202,7 @@ public class CosService {
             file.transferTo(filePath.toFile());
 
             String url = "/uploads/" + prefix + "/" + fileName;
-            log.info("[Local] 本地存储回退: {}", url);
+            log.info("[Local] 本地存储回退: {} -> {}", url, filePath);
             return new UploadResult(url, fileName, imageHash);
         } catch (IOException e) {
             throw new RuntimeException("本地存储失败: " + e.getMessage(), e);

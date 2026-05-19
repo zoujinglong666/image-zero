@@ -178,7 +178,7 @@ function showToast(title: string) {
   <app-page :nav-title="t('about.title')" show-tabbar>
     <view class="about-page">
       <!-- 用户信息卡片 -->
-      <view class="hero-card" @click="navigateTo('/pages/about/about-me')">
+      <view class="hero-card" @tap="navigateTo('/pages/about/about-me')">
         <view class="hero-card__bg" />
         <view class="hero-card__content">
           <view class="hero-avatar">
@@ -226,7 +226,7 @@ function showToast(title: string) {
               v-for="(item, index) in menuList"
               :key="index"
               class="menu-item"
-              @click="navigateTo(item.path)"
+              @tap="navigateTo(item.path)"
             >
               <view class="menu-item__icon" :style="{ background: item.color }">
                 <u-icon :name="item.icon" size="40" color="#ffffff" />
@@ -251,7 +251,7 @@ function showToast(title: string) {
           </text>
         </view>
         <view class="section-card__body">
-          <view v-for="(item, index) in chatList" :key="index" class="info-item" @click="itemClick(item)">
+          <view v-for="(item, index) in chatList" :key="index" class="info-item" @tap="itemClick(item)">
             <view class="info-item__icon">
               <u-image
                 :src="getImageUrl(item.icon)"
@@ -286,7 +286,7 @@ function showToast(title: string) {
           </text>
         </view>
         <view class="section-card__body">
-          <view v-for="(item, index) in infoList" :key="index" class="info-item" @click="itemClick(item)">
+          <view v-for="(item, index) in infoList" :key="index" class="info-item" @tap="itemClick(item)">
             <view class="info-item__icon">
               <u-image
                 :src="getImageUrl(item.icon, true)"
@@ -346,7 +346,7 @@ function showToast(title: string) {
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, #7C4DFF 0%, #19be6b 50%, #ff9900 100%);
+      background: linear-gradient(135deg, #4A3AFF 0%, #19be6b 50%, #ff9900 100%);
       opacity: 0.95;
 
       &::before {
@@ -517,7 +517,7 @@ function showToast(title: string) {
 
   &__highlight {
       font-weight: 700;
-      background: linear-gradient(135deg, #7C4DFF, #19be6b);
+      background: linear-gradient(135deg, #4A3AFF, #19be6b);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;

@@ -6,6 +6,8 @@ server:
 spring:
   application:
     name: turing-drawing
+  config:
+    import: optional:dotenv[.env]
 
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:turing_drawing}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
@@ -45,9 +47,6 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
 # JWT Configuration
 jwt:
@@ -64,10 +63,15 @@ cos:
   domain: ${COS_DOMAIN:}
   upload-dir: ${COS_UPLOAD_DIR:./uploads}
 
-# OpenAI Configuration
+# OpenAI Configuration (OpenRouter 兼容)
 openai:
   api-key: ${OPENAI_API_KEY:}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+
+# AI 模型配置
+ai:
+  analyze-model: ${AI_ANALYZE_MODEL:nvidia/nemotron-nano-12b-v2-vl:free}
+  generate-model: ${AI_GENERATE_MODEL:nvidia/nemotron-nano-12b-v2-vl:free}
 
 # Google Gemini Configuration
 gemini:

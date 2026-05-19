@@ -1,5 +1,6 @@
 package com.turing.drawing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -47,6 +48,7 @@ public class History extends BaseEntity {
     private Boolean favorite = false;
 
     /** 0=私密 1=公开 */
+    @TableField("is_public")
     @Builder.Default
     private Boolean isPublic = false;
 

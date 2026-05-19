@@ -20,7 +20,7 @@
     <!-- 无数据空状态 -->
     <view v-if="!editData" class="empty-state">
       <view class="empty-icon-wrap">
-        <u-icon name="file-text" size="40" color="#DDD" />
+        <u-icon name="file-text" size="40" color="#E8E8E8" />
       </view>
       <text class="empty-title">暂无编辑数据</text>
       <text class="empty-desc">请先在首页上传并解析图片</text>
@@ -89,7 +89,7 @@
             <view v-for="(kw, idx) in editData.prompt.keywords" :key="idx" class="kw-item">
               <input class="kw-input" v-model="kw.keyword" placeholder="关键词" />
               <input class="kw-weight" v-model.number="kw.weight" type="digit" placeholder="权重" />
-              <u-icon name="close-circle-fill" size="40" color="#fa3534" @click="removeKeyword(idx)" />
+              <u-icon name="close-circle-fill" size="40" color="#FF2D55" @click="removeKeyword(idx)" />
             </view>
           </view>
         </view>
@@ -117,7 +117,7 @@
               class="color-dot"
               :class="{ active: editData.primaryColor === c }"
               :style="{ backgroundColor: c }"
-              @tap="editData.primaryColor = c"
+              @click="editData.primaryColor = c"
             >
               <u-icon v-if="editData.primaryColor === c" name="checkmark" size="40" color="#fff" />
             </view>
@@ -189,7 +189,7 @@
               :key="oi"
               class="layout-chip"
               :class="{ active: editData.layout === opt }"
-              @tap="editData.layout = opt"
+              @click="editData.layout = opt"
             >
               <text>{{ layoutLabels[opt] || opt }}</text>
             </view>
@@ -303,7 +303,7 @@ async function analyzeAndEdit(imageUrl: string) {
 }
 
 // ====== 常量 ======
-const presetColors = ['#7C4DFF', '#6200EA', '#B388FF', '#00C853', '#FF5252', '#FF9100', '#FF6B35']
+const presetColors = ['#7C4DFF', '#00C853', '#FF2D55', '#FF9100', '#FF6B35', '#2979ff', '#19be6b']
 
 const layoutOptions = ['flex-column', 'grid-3', 'grid-2', 'free-form']
 const layoutLabels: Record<string, string> = {
@@ -444,7 +444,7 @@ const goHome = () => {
   width: 140rpx;
   height: 140rpx;
   border-radius: 50%;
-  background: #F7F8FA;
+  background: #F5F6F7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,7 +469,7 @@ const goHome = () => {
   align-items: center;
   gap: 8rpx;
   padding: 20rpx 48rpx;
-  background: linear-gradient(135deg, #6200EA, #7C4DFF);
+  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
   color: #FFF;
   border-radius: 14rpx;
   font-size: 28rpx;
@@ -513,7 +513,7 @@ const goHome = () => {
   width: 52rpx;
   height: 52rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, #6200EA, #7C4DFF);
+  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
   color: #FFF;
   font-size: 26rpx;
   font-weight: 700;
@@ -536,7 +536,7 @@ const goHome = () => {
 
 .panel-sub {
   font-size: 22rpx;
-  color: #AAA;
+  color: #999999;
   margin-top: 4rpx;
 }
 
@@ -570,7 +570,7 @@ const goHome = () => {
 
   &.en { background: #7C4DFF; }
   &.cn { background: #666; }
-  &.kw { background: #6200EA; }
+  &.kw { background: #7C4DFF; }
   &.color { background: #E91E63; }
   &.scheme { background: #9c27b0; }
   &.layout { background: #FF6B35; }
@@ -619,14 +619,14 @@ const goHome = () => {
 .field-count {
   text-align: right;
   font-size: 22rpx;
-  color: #CCC;
+  color: #C7C7CC;
   margin-top: 8rpx;
 }
 
 .add-kw-btn {
   margin-left: auto;
   padding: 6rpx 20rpx;
-  background: linear-gradient(135deg, #6200EA, #7C4DFF);
+  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
   color: #FFF;
   border-radius: 8rpx;
   font-size: 22rpx;
@@ -638,13 +638,13 @@ const goHome = () => {
 /* ====== 关键词 ====== */
 .kw-empty {
   padding: 32rpx;
-  background: #F7F8FA;
+  background: #F5F6F7;
   border-radius: 12rpx;
   text-align: center;
 
   text {
     font-size: 26rpx;
-    color: #BBB;
+    color: #999999;
   }
 }
 
@@ -810,7 +810,7 @@ const goHome = () => {
   width: 100%;
   height: 60rpx;
   background: transparent;
-  color: #fa3534;
+  color: #FF2D55;
   border: 1rpx dashed #fa3534;
   border-radius: 10rpx;
   font-size: 24rpx;
@@ -891,11 +891,11 @@ const goHome = () => {
 
   &.reset {
     background: #F5F5F5;
-    color: #777;
+    color: #666666;
   }
 
   &.save {
-    background: linear-gradient(135deg, #6200EA, #7C4DFF);
+    background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
     color: #FFF;
     box-shadow: 0 4rpx 12rpx rgba(124, 77, 255, 0.3);
 

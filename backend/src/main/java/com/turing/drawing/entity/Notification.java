@@ -1,5 +1,6 @@
 package com.turing.drawing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,7 @@ public class Notification extends BaseEntity {
     private String content;
 
     /** 是否已读 */
+    @TableField("is_read")
     @Builder.Default
     private Boolean isRead = false;
 }

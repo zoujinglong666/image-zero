@@ -1,5 +1,6 @@
 package com.turing.drawing.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,6 +72,7 @@ public class User extends BaseEntity {
     private String email;
 
     /** 是否启用 */
+    @TableField("is_active")
     @Builder.Default
     private Boolean isActive = true;
 

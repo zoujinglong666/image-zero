@@ -31,7 +31,7 @@ const themes = computed(() => {
   return getAvailableThemes().map(theme => ({
     name: theme.name,
     label: theme.label || theme.name,
-    color: theme?.color?.primary || '#7C4DFF',
+    color: theme?.color?.primary || '#4A3AFF',
   }))
 })
 
@@ -114,7 +114,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             <view class="setting-item__label">
               {{ t('about.settingsPage.themeColor') }}
             </view>
-            <view class="setting-item__value" @click="showThemePicker = true">
+            <view class="setting-item__value" @tap="showThemePicker = true">
               {{ t(`theme.${currentThemeValue?.name}`) || currentThemeValue?.label || currentTheme }}
               <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
@@ -134,12 +134,12 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             <view class="setting-item__label">
               {{ t('about.settingsPage.language') }}
             </view>
-            <view class="setting-item__value" @click="showLocalePicker = true">
+            <view class="setting-item__value" @tap="showLocalePicker = true">
               {{ currentLocale.label }}
               <u-icon name="arrow-right" color="#c0c4cc" size="40" />
             </view>
           </view>
-          <view class="setting-item" @click="handleClearCache">
+          <view class="setting-item" @tap="handleClearCache">
             <view class="setting-item__label">
               {{ t('about.settingsPage.clearCache') }}
             </view>
@@ -156,7 +156,7 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
           </text>
         </view>
         <view class="section-card__body">
-          <view class="setting-item" @click="navigateTo('/pages/about/faq')">
+          <view class="setting-item" @tap="navigateTo('/pages/about/faq')">
             <view class="setting-item__label">
               {{ t('about.faq') }}
             </view>
@@ -172,12 +172,12 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             <text class="theme-picker__title">
               {{ t('about.settingsPage.selectTheme') }}
             </text>
-            <u-icon name="close" size="40" @click="showThemePicker = false" />
+            <u-icon name="close" size="40" @tap="showThemePicker = false" />
           </view>
           <view class="theme-picker__body">
             <view
               v-for="theme in themes" :key="theme.name" class="theme-item"
-              :class="{ 'theme-item--active': currentTheme === theme.name }" @click="selectTheme(theme.name)"
+              :class="{ 'theme-item--active': currentTheme === theme.name }" @tap="selectTheme(theme.name)"
             >
               <view class="theme-item__color" :style="{ background: theme.color }" />
               <view class="theme-item__name">
@@ -199,12 +199,12 @@ function showToast(title: string, type: 'success' | 'error' = 'success') {
             <text class="theme-picker__title">
               {{ t('about.settingsPage.selectLanguage') }}
             </text>
-            <u-icon name="close" size="40" @click="showLocalePicker = false" />
+            <u-icon name="close" size="40" @tap="showLocalePicker = false" />
           </view>
           <view class="theme-picker__body">
             <view
               v-for="locale in locales" :key="locale.name" class="theme-item"
-              :class="{ 'theme-item--active': currentLocale.name === locale.name }" @click="selectLocale(locale.name, locale.locale)"
+              :class="{ 'theme-item--active': currentLocale.name === locale.name }" @tap="selectLocale(locale.name, locale.locale)"
             >
               <view class="theme-item__name">
                 {{ locale.label }}

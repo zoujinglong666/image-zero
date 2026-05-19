@@ -161,7 +161,7 @@ function showToast(title: string) {
             v-for="(item, index) in resources"
             :key="index"
             class="resource-item"
-            @click="handleResourceClick(item)"
+            @tap="handleResourceClick(item)"
           >
             <view class="resource-item__icon" :style="{ background: item.color }">
               <u-icon :name="item.icon" size="40" color="#ffffff" />

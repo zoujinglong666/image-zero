@@ -18,7 +18,7 @@ const projectCards = [
     desc: '使用最新的Vue3 Composition API和TypeScript',
     icon: 'thumb-up',
     url: '/pages/home/uview-intro',
-    style: 'background: linear-gradient(135deg, #7C4DFF, #19be6b);',
+    style: 'background: linear-gradient(135deg, #4A3AFF, #19be6b);',
   },
   {
     title: 'uView Pro组件库',
@@ -148,7 +148,7 @@ function goToUrl(url: string) {
           <view class="project-cards">
             <view
               v-for="(card, idx) in projectCards" :key="idx" class="project-card"
-              @click="navigateToFeature(card.url || '/pages/home/uview-intro', card.title)"
+              @tap="navigateToFeature(card.url || '/pages/home/uview-intro', card.title)"
             >
               <u-card
                 :hover="false" :show-head="false" margin="0px" :show-foot="false" :border="false"
@@ -186,7 +186,7 @@ function goToUrl(url: string) {
             <u-cell-item
               v-for="(feature, index) in features" :key="index" :label="feature.desc" :icon="feature.icon"
               :icon-style="{ color: $u.getColor(feature.color) }" :title="feature.title"
-              @click="navigateToFeature(feature.url, feature.title)"
+              @tap="navigateToFeature(feature.url, feature.title)"
             />
           </u-cell-group>
         </view>
@@ -210,10 +210,10 @@ function goToUrl(url: string) {
             </view>
           </view>
           <view class="quick-start-actions">
-            <u-button type="primary" @click="goToUrl('http://uviewpro.cn')">
+            <u-button type="primary" @tap="goToUrl('http://uviewpro.cn')">
               {{ t('home.viewDocs') }}
             </u-button>
-            <u-button type="success" @click="goToUrl('http://h5.uviewpro.cn')">
+            <u-button type="success" @tap="goToUrl('http://h5.uviewpro.cn')">
               {{ t('home.viewComponents') }}
             </u-button>
           </view>
@@ -253,7 +253,7 @@ function goToUrl(url: string) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #7C4DFF 0%, #19be6b 50%, #ff9900 100%);
+    background: linear-gradient(135deg, #4A3AFF 0%, #19be6b 50%, #ff9900 100%);
     opacity: 0.95;
   }
 
@@ -581,7 +581,7 @@ function goToUrl(url: string) {
 
   .quick-start-text {
     font-weight: 700;
-    background: linear-gradient(135deg, #7C4DFF, #19be6b);
+    background: linear-gradient(135deg, #4A3AFF, #19be6b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

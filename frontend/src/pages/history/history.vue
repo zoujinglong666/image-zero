@@ -16,7 +16,7 @@
           text="清空"
           icon="trash"
           plain
-          @click="clearAllHistory"
+          @tap="clearAllHistory"
         />
       </template>
     </u-navbar>
@@ -52,7 +52,7 @@
           v-model="searchKeyword"
           placeholder="搜索提示词..."
           shape="round"
-          bg-color="#F7F8FA"
+          bg-color="#F5F6F7"
           :showAction="false"
           @search="onSearch"
           @custom="onSearch"
@@ -72,14 +72,14 @@
               type="primary"
               text="开始使用"
               icon="plus-circle-fill"
-              @click="goHome"
+              @tap="goHome"
             />
             <u-button
               v-else
               type="default"
               text="清除搜索"
               plain
-              @click="searchKeyword = ''"
+              @tap="searchKeyword = ''"
             />
           </template>
         </u-empty>
@@ -328,7 +328,7 @@ const goHome = () => {
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background-color: #F7F8FA;
+  background-color: #F5F6F7;
 }
 
 .main-scroll {
@@ -462,7 +462,7 @@ const goHome = () => {
 
   text {
     font-size: 22rpx;
-    color: #BBBBBB;
+    color: #999999BBB;
   }
 }
 
@@ -504,7 +504,7 @@ const goHome = () => {
 
   text {
     font-size: 24rpx;
-    color: #CCC;
+    color: #C7C7CC;
   }
 }
 </style>

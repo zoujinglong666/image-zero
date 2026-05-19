@@ -150,14 +150,14 @@ const tabList = [
           <view class="button-row">
             <u-button
               v-for="btn in buttonTypes" :key="btn.type" :type="btn.type" size="mini"
-              @click="handleButtonClick(btn.text)"
+              @tap="handleButtonClick(btn.text)"
             >
               {{ btn.text }}
             </u-button>
           </view>
 
           <view class="button-row">
-            <u-button type="primary" size="mini" :loading="buttonLoading" @click="handleButtonClick(t('demo.components.loading'))">
+            <u-button type="primary" size="mini" :loading="buttonLoading" @tap="handleButtonClick(t('demo.components.loading'))">
               {{ t('demo.components.loading') }}
             </u-button>
             <u-button type="primary" size="mini" disabled>
@@ -244,13 +244,13 @@ const tabList = [
         <u-text :text="t('demo.components.feedbackComponents')" size="28rpx" bold />
         <u-gap />
         <view class="feedback-buttons">
-          <u-button type="primary" size="mini" @click="showToast">
+          <u-button type="primary" size="mini" @tap="showToast">
             {{ t('demo.components.toast') }}
           </u-button>
-          <u-button type="success" size="mini" @click="showModal">
+          <u-button type="success" size="mini" @tap="showModal">
             {{ t('demo.components.modal') }}
           </u-button>
-          <u-button type="warning" size="mini" @click="showLoading">
+          <u-button type="warning" size="mini" @tap="showLoading">
             {{ t('demo.components.loading') }}
           </u-button>
         </view>

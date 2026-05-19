@@ -153,13 +153,13 @@ const piniaFeatures = [
           </view>
 
           <view class="counter-buttons">
-            <u-button type="warning" size="mini" :disabled="count <= 0" @click="decrement">
+            <u-button type="warning" size="mini" :disabled="count <= 0" @tap="decrement">
               {{ t('demo.pinia.decrease') }}
             </u-button>
-            <u-button type="primary" size="mini" @click="increment">
+            <u-button type="primary" size="mini" @tap="increment">
               {{ t('demo.pinia.increase') }}
             </u-button>
-            <u-button type="info" size="mini" @click="reset">
+            <u-button type="info" size="mini" @tap="reset">
               {{ t('demo.pinia.reset') }}
             </u-button>
           </view>
@@ -183,10 +183,10 @@ const piniaFeatures = [
           </view>
 
           <view class="user-buttons">
-            <u-button type="primary" size="mini" :disabled="isLoggedIn" @click="login">
+            <u-button type="primary" size="mini" :disabled="isLoggedIn" @tap="login">
               {{ t('demo.pinia.login') }}
             </u-button>
-            <u-button type="warning" size="mini" :disabled="!isLoggedIn" @click="logout">
+            <u-button type="warning" size="mini" :disabled="!isLoggedIn" @tap="logout">
               {{ t('demo.pinia.logout') }}
             </u-button>
           </view>
@@ -201,13 +201,13 @@ const piniaFeatures = [
             <view class="theme-buttons">
               <u-button
                 :type="preferences.theme === 'light' ? 'primary' : 'default'" size="mini"
-                @click="updateTheme('light')"
+                @tap="updateTheme('light')"
               >
                 {{ t('demo.pinia.light') }}
               </u-button>
               <u-button
                 :type="preferences.theme === 'dark' ? 'primary' : 'default'" size="mini"
-                @click="updateTheme('dark')"
+                @tap="updateTheme('dark')"
               >
                 {{ t('demo.pinia.dark') }}
               </u-button>
@@ -240,7 +240,7 @@ const piniaFeatures = [
             </view>
           </view>
           <view class="persistence-buttons">
-            <u-button type="warning" size="mini" @click="clearData">
+            <u-button type="warning" size="mini" @tap="clearData">
               {{ t('demo.pinia.clearData') }}
             </u-button>
           </view>

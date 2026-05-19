@@ -12,14 +12,14 @@
     <scroll-view scroll-y class="main-scroll">
 
       <!-- 用户信息卡片 -->
-      <view class="user-card" @tap="onUserCardTap">
+      <view class="user-card" @click="onUserCardTap">
         <view class="user-avatar">
           <u-avatar
             :src="userStore.avatarUrl"
             size="96"
             :text="avatarText"
             fontSize="36"
-            :bg-color="userStore.isLoggedIn ? '#7C4DFF' : '#B388FF'"
+            :bg-color="userStore.isLoggedIn ? '#7C4DFF' : '#7C4DFF'"
           />
         </view>
         <view class="user-info">
@@ -35,14 +35,14 @@
       <!-- 未登录：登录按钮区域 -->
       <view v-if="!userStore.isLoggedIn" class="login-section">
         <!-- #ifdef MP-WEIXIN -->
-        <button class="wechat-login-btn" @tap="handleWechatLogin" :loading="userStore.isLoggingIn">
+        <button class="wechat-login-btn" @click="handleWechatLogin" :loading="userStore.isLoggingIn">
           <u-icon name="weixin-fill" size="40" color="#FFFFFF" />
           <text>微信一键登录</text>
         </button>
         <!-- #endif -->
 
         <!-- #ifndef MP-WEIXIN -->
-        <button class="dev-login-btn" @tap="handleAnonymousLogin" :loading="userStore.isLoggingIn">
+        <button class="dev-login-btn" @click="handleAnonymousLogin" :loading="userStore.isLoggingIn">
           <text>访客登录（开发模式）</text>
         </button>
         <!-- #endif -->
@@ -52,7 +52,7 @@
 
       <!-- 统计网格 -->
       <view class="stats-grid">
-        <view class="grid-item" @tap="goToHistory">
+        <view class="grid-item" @click="goToHistory">
           <u-icon name="clock-fill" size="40" color="#7C4DFF" />
           <text class="grid-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="grid-label">解析记录</text>
@@ -68,7 +68,7 @@
           <text class="grid-label">保存提示词</text>
         </view>
         <view class="grid-item">
-          <u-icon name="photo-fill" size="40" color="#6200EA" />
+          <u-icon name="photo-fill" size="40" color="#7C4DFF" />
           <text class="grid-num">{{ generatedCount }}</text>
           <text class="grid-label">生成图片</text>
         </view>
@@ -81,7 +81,7 @@
           <u-cell-item
             title="消息通知"
             icon="bell"
-            @tap="goToNotifications"
+            @click="goToNotifications"
           >
             <template #value>
               <u-badge v-if="notificationStore.hasUnread" :count="notificationStore.unreadCount" :offset="[0, 0]" />
@@ -93,21 +93,21 @@
             title="历史记录"
             :value="(historyStore?.history || []).length + ' 条'"
             icon="clock"
-            @tap="goToHistory"
+            @click="goToHistory"
           />
           <!-- 我的收藏 -->
           <u-cell-item
             title="我的收藏"
             :value="favoriteCount + ' 条'"
             icon="star"
-            @tap="showFavorites"
+            @click="showFavorites"
           />
           <!-- 保存的提示词 -->
           <u-cell-item
             title="保存的提示词"
             :value="savedPrompts.length + ' 条'"
             icon="bookmark"
-            @tap="showSavedPrompts"
+            @click="showSavedPrompts"
           />
         </u-cell-group>
       </view>
@@ -124,7 +124,7 @@
           <u-cell-item
             title="主题设置"
             icon="palette"
-            @tap="goToSettings"
+            @click="goToSettings"
           >
             <template #value>
               <u-tag :text="currentThemeLabel" type="primary" size="mini" plain />
@@ -135,20 +135,20 @@
             title="生成质量"
             :value="qualityOptions[currentQuality]"
             icon="setting"
-            @tap="showQualityPicker"
+            @click="showQualityPicker"
           />
           <!-- 默认尺寸 -->
           <u-cell-item
             title="默认尺寸"
             :value="sizeOptions[currentSize]"
             icon="grid"
-            @tap="showSizePicker"
+            @click="showSizePicker"
           />
           <!-- 清除缓存 -->
           <u-cell-item
             title="清除缓存"
             icon="trash"
-            @tap="clearCache"
+            @click="clearCache"
           >
             <template #value>
               <u-tag text="32.5 MB" type="info" size="mini" plain />
@@ -164,27 +164,27 @@
           <u-cell-item
             title="使用帮助"
             icon="question-circle"
-            @tap="showHelp"
+            @click="showHelp"
           />
           <!-- 关于 -->
           <u-cell-item
             title="关于图灵绘境"
             :value="'v' + appVersion"
             icon="info-circle"
-            @tap="showAbout"
+            @click="showAbout"
           />
           <!-- 反馈建议 -->
           <u-cell-item
             title="反馈建议"
             icon="edit-pen"
-            @tap="showFeedback"
+            @click="showFeedback"
           />
           <!-- 退出登录（仅已登录时显示） -->
           <u-cell-item
             v-if="userStore.isLoggedIn"
             title="退出登录"
             icon="logout"
-            @tap="handleLogout"
+            @click="handleLogout"
           >
             <template #value>
               <u-tag text="退出" type="error" size="mini" plain />
@@ -235,7 +235,7 @@
             </button>
             <!-- #endif -->
             <!-- #ifndef MP-WEIXIN -->
-            <view @tap="onChooseAvatarFallback">
+            <view @click="onChooseAvatarFallback">
               <u-avatar
                 :src="userStore.avatarUrl"
                 size="80"
@@ -277,7 +277,7 @@
         </view>
 
         <!-- 保存按钮 -->
-        <button class="profile-save-btn" @tap="onSaveProfile" :loading="isSavingProfile">
+        <button class="profile-save-btn" @click="onSaveProfile" :loading="isSavingProfile">
           保存
         </button>
 
@@ -304,7 +304,7 @@
               :key="qi"
               :title="q"
               :arrow="false"
-              @tap="currentQuality = qi; showQualityPopup = false"
+              @click="currentQuality = qi; showQualityPopup = false"
             >
               <template #value>
                 <u-radio
@@ -338,7 +338,7 @@
               :key="si"
               :title="s"
               :arrow="false"
-              @tap="currentSize = si; showSizePopup = false"
+              @click="currentSize = si; showSizePopup = false"
             >
               <template #value>
                 <u-radio
@@ -596,7 +596,7 @@ const onSaveProfile = async () => {
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background-color: #F7F8FA;
+  background-color: #F5F6F7;
 }
 
 .main-scroll {
@@ -608,7 +608,7 @@ const onSaveProfile = async () => {
   display: flex;
   align-items: center;
   padding: 40rpx 32rpx;
-  background: linear-gradient(135deg, #6200EA 0%, #7C4DFF 100%);
+  background: linear-gradient(135deg, #7C4DFF 0%, #7C4DFF 100%);
   gap: 24rpx;
 }
 
@@ -676,7 +676,7 @@ const onSaveProfile = async () => {
 /* 通知小红点旁的辅助文字 */
 .cell-value-text {
   font-size: 24rpx;
-  color: #BBB;
+  color: #999999;
 }
 
 /* 版本信息 */
@@ -689,7 +689,7 @@ const onSaveProfile = async () => {
 
   text {
     font-size: 22rpx;
-    color: #CCCCCC;
+    color: #C7C7CCCCC;
   }
 }
 

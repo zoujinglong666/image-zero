@@ -190,7 +190,7 @@ function formatTime(dateStr: string): string {
 }
 .nav-right-text {
   font-size: 28rpx;
-  color: #7C4DFF;
+  color: #4A3AFF;
 }
 
 /* 空状态 */
@@ -209,7 +209,7 @@ function formatTime(dateStr: string): string {
 .empty-desc {
   margin-top: 12rpx;
   font-size: 26rpx;
-  color: #CCC;
+  color: #C7C7CC;
 }
 
 /* 通知列表 */
@@ -233,7 +233,7 @@ function formatTime(dateStr: string): string {
 
   &.unread {
     background: #F8F5FF;
-    border-left: 6rpx solid #7C4DFF;
+    border-left: 6rpx solid #4A3AFF;
   }
 }
 
@@ -248,7 +248,7 @@ function formatTime(dateStr: string): string {
   flex-shrink: 0;
   margin-right: 20rpx;
 
-  &.type-system { background: linear-gradient(135deg, #7C4DFF, #B388FF); }
+  &.type-system { background: linear-gradient(135deg, #4A3AFF, #4A3AFF); }
   &.type-ai_result { background: linear-gradient(135deg, #19be6b, #8CE99A); }
   &.type-challenge { background: linear-gradient(135deg, #FF9800, #FFD180); }
   &.type-vip { background: linear-gradient(135deg, #F44336, #FF8A80); }
@@ -293,7 +293,7 @@ function formatTime(dateStr: string): string {
 }
 .item-time {
   font-size: 22rpx;
-  color: #BBB;
+  color: #999999;
   margin-top: 8rpx;
 }
 
