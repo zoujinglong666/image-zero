@@ -3,13 +3,13 @@
     <!-- 导航栏 -->
     <u-navbar
       title="图灵绘境"
-      :titleStyle="{ color: '#111111', fontWeight: '600', fontSize: '17px' }"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '700', fontSize: '17px' }"
       :bgColor="'#FFFFFF'"
-      :borderBottom="true"
+      :borderBottom="false"
       :placeholder="true"
     >
       <template #right>
-        <u-icon name="setting" size="40" color="#7C4DFF" @click="goToSettings" />
+        <u-icon name="setting" size="40" color="#8B9DC8" @click="goToSettings" />
       </template>
     </u-navbar>
 
@@ -30,42 +30,45 @@
 
       <!-- ====== 搜索框 ====== -->
       <view class="search-bar" @click="goToSearch">
-        <u-icon name="search" size="36" color="#C7C7CC" />
+        <u-icon name="search" size="36" color="#9A9BAC" />
         <text class="search-placeholder">搜索提示词、风格、标签...</text>
       </view>
 
       <!-- ====== 核心功能区：上传图片获取提示词 ====== -->
       <view class="hero-upload" @click="triggerUpload">
         <view class="upload-area">
-          <u-icon name="plus" size="80" color="#7C4DFF" />
+          <view class="upload-icon-wrap">
+            <u-icon name="plus" size="72" color="#8B9DC8" />
+          </view>
           <text class="upload-title">上传图片，AI 反推提示词</text>
           <text class="upload-desc">支持 JPG / PNG / WEBP，自动压缩后分析</text>
         </view>
+        <view class="hero-glow" />
       </view>
 
       <!-- ====== 快捷工具入口 ====== -->
       <view class="quick-tools">
         <view class="tool-item" @click="goToCreate">
-          <view class="tool-icon" style="background: #F0EFFF;">
-            <u-icon name="photo" size="40" color="#7C4DFF" />
+          <view class="tool-icon">
+            <u-icon name="photo" size="40" color="#8B9DC8" />
           </view>
           <text class="tool-label">AI解析</text>
         </view>
         <view class="tool-item" @click="goToEditDirect">
-          <view class="tool-icon" style="background: #F0EFFF;">
-            <u-icon name="edit-pen" size="40" color="#7C4DFF" />
+          <view class="tool-icon">
+            <u-icon name="edit-pen" size="40" color="#A3B0CC" />
           </view>
           <text class="tool-label">编辑</text>
         </view>
         <view class="tool-item" @click="goToPromptLib">
-          <view class="tool-icon" style="background: #F0EFFF;">
-            <u-icon name="file-text" size="40" color="#7C4DFF" />
+          <view class="tool-icon">
+            <u-icon name="file-text" size="40" color="#8B9DC8" />
           </view>
           <text class="tool-label">词库</text>
         </view>
         <view class="tool-item" @click="goToHistory">
-          <view class="tool-icon" style="background: #F0EFFF;">
-            <u-icon name="clock" size="40" color="#7C4DFF" />
+          <view class="tool-icon">
+            <u-icon name="clock" size="40" color="#A3B0CC" />
           </view>
           <text class="tool-label">历史</text>
         </view>
@@ -75,7 +78,7 @@
       <view class="section">
         <view class="section-header">
           <view class="section-title-row">
-            <view class="section-dot" style="background: #7C4DFF;" />
+            <view class="section-dot" />
             <text class="section-title">每日精选</text>
           </view>
           <text class="section-more" @click="goToCommunity">更多 ›</text>
@@ -96,14 +99,14 @@
               <view class="pick-info">
                 <text class="pick-title">{{ item.title || 'AI作品' }}</text>
                 <view class="pick-meta">
-                  <u-icon name="heart-fill" size="24" color="#FF2D55" />
+                  <u-icon name="heart-fill" size="24" color="#E8947A" />
                   <text class="pick-likes">{{ item.like_count || 0 }}</text>
                 </view>
               </view>
             </view>
             <!-- 空状态占位 -->
             <view v-if="dailyPicks.length === 0" class="pick-empty">
-              <u-icon name="image" size="48" color="#C7C7CC" />
+              <u-icon name="image" size="48" color="#9A9BAC" />
               <text>暂无精选作品</text>
             </view>
           </view>
@@ -114,21 +117,21 @@
       <view v-if="activeChallenge" class="section">
         <view class="section-header">
           <view class="section-title-row">
-            <view class="section-dot" style="background: #7C4DFF;" />
+            <view class="section-dot" />
             <text class="section-title">本周挑战</text>
           </view>
         </view>
         <view class="challenge-card" @click="goToChallenge(activeChallenge)">
           <view class="challenge-content">
             <view class="challenge-badge">
-              <u-icon name="fire" size="32" color="#7C4DFF" />
+              <u-icon name="fire" size="32" color="#D4B896" />
               <text>进行中</text>
             </view>
             <text class="challenge-title">{{ activeChallenge.title }}</text>
             <text class="challenge-desc">{{ activeChallenge.description }}</text>
             <view class="challenge-footer">
               <view class="challenge-participants">
-                <u-icon name="man-add" size="28" color="#7C4DFF" />
+                <u-icon name="man-add" size="28" color="#8B9DC8" />
                 <text>{{ activeChallenge.participant_count || 0 }} 人参与</text>
               </view>
               <view class="challenge-tags" v-if="activeChallenge.theme_tags">
@@ -150,7 +153,7 @@
       <view class="section">
         <view class="section-header">
           <view class="section-title-row">
-            <view class="section-dot" style="background: #7C4DFF;" />
+            <view class="section-dot" />
             <text class="section-title">热门推荐</text>
           </view>
           <text class="section-more" @click="goToCommunity">更多 ›</text>
@@ -178,12 +181,12 @@
                     <u-icon
                       :name="item._liked ? 'heart-fill' : 'heart'"
                       size="24"
-                      :color="item._liked ? '#FF2D55' : '#C7C7CC'"
+                      :color="item._liked ? '#E8947A' : '#9A9BAC'"
                     />
                     <text>{{ item.like_count || 0 }}</text>
                   </view>
                   <view class="work-action" @click.stop="shareWork(item)">
-                    <u-icon name="share" size="24" color="#C7C7CC" />
+                    <u-icon name="share" size="24" color="#9A9BAC" />
                   </view>
                 </view>
               </view>
@@ -209,12 +212,12 @@
                     <u-icon
                       :name="item._liked ? 'heart-fill' : 'heart'"
                       size="24"
-                      :color="item._liked ? '#FF2D55' : '#C7C7CC'"
+                      :color="item._liked ? '#E8947A' : '#9A9BAC'"
                     />
                     <text>{{ item.like_count || 0 }}</text>
                   </view>
                   <view class="work-action" @click.stop="shareWork(item)">
-                    <u-icon name="share" size="24" color="#C7C7CC" />
+                    <u-icon name="share" size="24" color="#9A9BAC" />
                   </view>
                 </view>
               </view>
@@ -242,7 +245,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
-import { analyzeImage as apiAnalyze, generateImage as apiGenerate, checkNetwork, watchNetworkChange } from '@/api/image'
+import { analyzeImage as apiAnalyze, generateImage as apiGenerate, uploadImage as apiUpload, checkNetwork, watchNetworkChange } from '@/api/image'
 import { getHomeData, getLatestPosts, likeSubmission } from '@/api/community'
 import { toggleCommunityLike } from '@/api/prompt'
 import type { CommunityWork, Challenge, HomeData } from '@/api/community'
@@ -462,20 +465,25 @@ const triggerUpload = () => {
     if (!files || !files[0]) return
 
     const origSizeKB = Math.round(files[0].size / 1024)
-    const reader = new FileReader()
-    reader.onload = async (ev: any) => {
-      const dataUrl = ev.target.result as string
-      if (origSizeKB > 500) {
-        compressInfo.value = `${(origSizeKB / 1024).toFixed(1)}MB → 压缩中...`
-      }
-      uploadedImage.value = dataUrl
-
-      // 直接跳转到编辑页分析
-      uni.navigateTo({
-        url: `/pages/edit/edit?imageUrl=${encodeURIComponent(dataUrl.substring(0, 2000))}`
-      })
+    if (origSizeKB > 500) {
+      compressInfo.value = `${(origSizeKB / 1024).toFixed(1)}MB → 上传中...`
     }
-    reader.readAsDataURL(files[0])
+
+    try {
+      // 用 ObjectURL 作为临时路径上传到后端
+      const tempUrl = URL.createObjectURL(files[0])
+      uploadedImage.value = tempUrl
+
+      // 先上传拿 URL，再跳转分析（不再传 base64！）
+      const serverUrl = await apiUpload(tempUrl)
+      console.log(`✅ [首页] 上传成功，跳转编辑页...`)
+      uni.navigateTo({
+        url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}`
+      })
+    } catch (err: any) {
+      console.error('❌ [上传]', err)
+      uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+    }
     setTimeout(() => input.remove(), 100)
   }
 
@@ -488,11 +496,16 @@ const triggerUpload = () => {
     count: 1,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: (res) => {
+    success: async (res) => {
       uploadedImage.value = res.tempFilePaths[0]
-      uni.navigateTo({
-        url: `/pages/edit/edit?imageUrl=${encodeURIComponent(res.tempFilePaths[0])}`
-      })
+      try {
+        const serverUrl = await apiUpload(res.tempFilePaths[0])
+        uni.navigateTo({
+          url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}`
+        })
+      } catch (err: any) {
+        uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+      }
     }
   })
   // #endif
@@ -554,458 +567,217 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-/* ====== 全局 ====== */
+/* ══════════════════════════════════
+   Mist Canvas Design System
+   薄雾白 · 通透清新
+   ══════════════════════════════════ */
+
+// ── Palette ──
+$bg-page:    #F6F7FB;   // 页面背景（微冷雾蓝灰）
+$bg-card:    #FFFFFF;   // 卡片表面
+$bg-raised:  #F0F1F5;   // 微凸起表面
+$border:     rgba(0,0,0,0.05);  // 极淡边框
+$text-1:     #2C2E3A;   // 主文字（深海军）
+$text-2:     #6B6E7D;   // 次文字
+$text-3:     #9A9BAC;   // 弱文字
+$primary:     #8B9DC8;   // 主色（雾蓝）
+$primary-light: #A3B0CC;   // 浅主色
+$primary-grad: linear-gradient(135deg, #8B9DC8, #A3B0CC);
+$secondary:   #C4B5E0;   // 辅色（淡薰衣草）
+$accent:     #A3B8A5;   // 点缀（鼠尾草绿）
+$warning:     #E8C97A;   // 警告（柔金）
+$danger:     #E8947A;   // 危险（柔珊瑚）
+
+// ── Base ──
 .page {
   min-height: 100vh;
-  background: #F5F6F7;
+  background: $bg-page;
 }
 
-.main-scroll {
-  height: calc(100vh - 44px);
-}
+.main-scroll { height: calc(100vh - 44px); }
+.bottom-spacer { height: calc(env(safe-area-inset-bottom) + 120rpx); }
 
-.bottom-spacer {
-  height: calc(env(safe-area-inset-bottom) + 120rpx);
-}
-
-/* ====== 离线横幅 ====== */
+// ── Offline Banner ──
 .offline-banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
+  display: flex; align-items: center; justify-content: center; gap: 10rpx;
   padding: 12rpx 24rpx;
-  background: linear-gradient(135deg, #DC2626, #991B1B);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-
-  text {
-    font-size: 24rpx;
-    color: #FFF;
-    font-weight: 500;
-  }
+  background: linear-gradient(135deg, #E8947A, #D16B50);
+  position: sticky; top: 0; z-index: 10;
+  text { font-size: 24rpx; color: #FFF; font-weight: 500; }
 }
 
-/* ====== 搜索框 ====== */
+// ── Search Bar ──
 .search-bar {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
+  display: flex; align-items: center; gap: 16rpx;
   margin: 20rpx 24rpx 0;
   padding: 22rpx 32rpx;
-  background: #FFFFFF;
-  border-radius: 40rpx;
-  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  background: $bg-card;
+  border-radius: 999rpx;
+  border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
+.search-placeholder { font-size: 28rpx; color: $text-3; }
 
-.search-placeholder {
-  font-size: 28rpx;
-  color: #C7C7CC;
-}
-
-/* ====== 快捷工具入口 ====== */
-.quick-tools {
-  display: flex;
-  justify-content: space-between;
-  padding: 32rpx 24rpx 16rpx;
-  gap: 16rpx;
-}
-
-.tool-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx;
-  flex: 1;
-}
-
-.tool-icon {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #F0EFFF;
-  box-shadow: 0 4rpx 16rpx rgba(74, 58, 255, 0.08);
-}
-
-.tool-label {
-  font-size: 24rpx;
-  color: #1C1C1C;
-  font-weight: 600;
-}
-
-/* ====== 通用 section ====== */
-.section {
-  margin-top: 36rpx;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28rpx 20rpx;
-}
-
-.section-title-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.section-dot {
-  width: 8rpx;
-  height: 36rpx;
-  border-radius: 4rpx;
-}
-
-.section-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1C1C1C;
-  letter-spacing: 0.5rpx;
-}
-
-.section-more {
-  font-size: 26rpx;
-  color: #7C4DFF;
-  font-weight: 500;
-}
-
-/* ====== 每日精选（横向滑动）====== */
-.picks-scroll {
-  white-space: nowrap;
-  padding-left: 24rpx;
-}
-
-.picks-row {
-  display: inline-flex;
-  gap: 16rpx;
-  padding-right: 24rpx;
-}
-
-.pick-card {
-  display: inline-flex;
-  flex-direction: column;
-  width: 260rpx;
-  background: #FFFFFF;
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s;
-}
-
-.pick-card:active {
-  transform: scale(0.97);
-}
-
-.pick-img {
-  width: 260rpx;
-  height: 340rpx;
-  background: linear-gradient(135deg, #F0F0F0, #E8E8E8);
-}
-
-.pick-info {
-  padding: 16rpx 18rpx;
-}
-
-.pick-title {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: block;
-}
-
-.pick-meta {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  margin-top: 10rpx;
-}
-
-.pick-likes {
-  font-size: 22rpx;
-  color: #8E8E93;
-}
-
-.pick-empty {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 260rpx;
-  height: 340rpx;
-  background: #FFFFFF;
-  border-radius: 20rpx;
-  gap: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-
-  text {
-    font-size: 26rpx;
-    color: #C7C7CC;
-    font-weight: 500;
-  }
-}
-
-/* ====== 本周挑战 ====== */
-.challenge-card {
-  margin: 0 24rpx;
-  background: #FFFFFF;
-  border-radius: 20rpx;
-  padding: 28rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-  border: 1rpx solid #F0EFFF;
-}
-
-.challenge-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
-
-.challenge-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6rpx;
-  align-self: flex-start;
-  padding: 4rpx 16rpx;
-  background: #F0EFFF;
-  border-radius: 20rpx;
-
-  text {
-    font-size: 22rpx;
-    color: #7C4DFF;
-    font-weight: 600;
-  }
-}
-
-.challenge-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: #1C1C1C;
-}
-
-.challenge-desc {
-  font-size: 24rpx;
-  color: #8E8E93;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.challenge-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8rpx;
-}
-
-.challenge-participants {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-
-  text {
-    font-size: 22rpx;
-    color: #7C4DFF;
-    font-weight: 500;
-  }
-}
-
-.challenge-tags {
-  display: flex;
-  gap: 8rpx;
-}
-
-.challenge-tag {
-  font-size: 20rpx;
-  color: #7C4DFF;
-  background: #F0EFFF;
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
-}
-
-.challenge-action {
-  margin-top: 20rpx;
-  display: flex;
-  justify-content: flex-end;
-
-  text {
-    font-size: 26rpx;
-    color: #7C4DFF;
-    font-weight: 600;
-  }
-}
-
-/* ====== 热门推荐（瀑布流）====== */
-.waterfall {
-  display: flex;
-  gap: 16rpx;
-  padding: 0 24rpx;
-}
-
-.waterfall-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.work-card {
-  background: #FFFFFF;
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.07);
-  transition: transform 0.2s;
-}
-
-.work-card:active {
-  transform: scale(0.97);
-}
-
-.work-img {
-  width: 100%;
-  min-height: 200rpx;
-  background: linear-gradient(135deg, #F0F0F0, #E8E8E8);
-}
-
-.work-info {
-  padding: 16rpx 18rpx;
-}
-
-.work-title {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: block;
-}
-
-.work-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12rpx;
-}
-
-.work-likes {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-
-  text {
-    font-size: 22rpx;
-    color: #8E8E93;
-  }
-}
-
-.work-action {
-  padding: 8rpx;
-}
-
-/* ====== 加载更多 ====== */
-.loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  padding: 32rpx 0;
-
-  text {
-    font-size: 24rpx;
-    color: #8E8E93;
-  }
-}
-
-.loading-spinner-sm {
-  width: 28rpx;
-  height: 28rpx;
-  border: 3rpx solid #E5E5EA;
-  border-top-color: #7C4DFF;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.no-more {
-  text-align: center;
-  padding: 32rpx 0;
-
-  text {
-    font-size: 24rpx;
-    color: #C7C7CC;
-  }
-}
-
-/* ====== 核心上传区域 ====== */
+// ── Hero Upload ──
 .hero-upload {
   margin: 24rpx 24rpx 0;
-  padding: 0;
-  background: #1C1C1C;
   border-radius: 28rpx;
   overflow: hidden;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 12rpx 40rpx rgba(74, 58, 255, 0.15);
-}
+  background: $bg-card;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
 
-.hero-upload::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+  &:active { transform: scale(0.985); }
+}
+.hero-glow {
+  position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(123, 111, 255, 0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 80% 60%, rgba(74, 58, 255, 0.12) 0%, transparent 70%);
-  pointer-events: none;
+    radial-gradient(ellipse 60% 50% at 25% 40%, rgba(139,157,200,0.06), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 75% 60%, rgba(196,181,224,0.05), transparent 60%);
 }
-
-.hero-upload:active {
-  transform: scale(0.98);
-}
-
 .upload-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 20rpx;
   padding: 56rpx 40rpx;
-  position: relative;
-  z-index: 1;
+  position: relative; z-index: 1;
+}
+.upload-icon-wrap {
+  width: 100rpx; height: 100rpx; border-radius: 50%;
+  background: rgba(139,157,200,0.08);
+  display: flex; align-items: center; justify-content: center;
+  border: 1rpx solid rgba(139,157,200,0.18);
+}
+.upload-title { font-size: 34rpx; font-weight: 700; color: $text-1; }
+.upload-desc  { font-size: 24rpx; color: $text-3; }
+
+// ── Quick Tools ──
+.quick-tools {
+  display: flex; justify-content: space-between;
+  padding: 32rpx 24rpx 16rpx; gap: 16rpx;
+}
+.tool-item {
+  display: flex; flex-direction: column; align-items: center; gap: 12rpx; flex: 1;
+}
+.tool-icon {
+  width: 100rpx; height: 100rpx; border-radius: 24rpx;
+  display: flex; align-items: center; justify-content: center;
+  background: $bg-card;
+  border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+  transition: box-shadow 0.2s, transform 0.15s;
+  &:active { transform: scale(0.95); box-shadow: 0 1rpx 6rpx rgba(0,0,0,0.06); }
+}
+.tool-label { font-size: 24rpx; color: $text-2; font-weight: 500; }
+
+// ── Section ──
+.section { margin-top: 40rpx; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28rpx 20rpx;
+}
+.section-title-row { display: flex; align-items: center; gap: 14rpx; }
+.section-dot {
+  width: 6rpx; height: 28rpx; border-radius: 3rpx;
+  background: $primary-grad;
+}
+.section-title {
+  font-size: 34rpx; font-weight: 800; color: $text-1; letter-spacing: 0.5rpx;
+}
+.section-more { font-size: 26rpx; color: $primary; font-weight: 600; }
+
+// ── Daily Picks ──
+.picks-scroll { white-space: nowrap; padding-left: 24rpx; }
+.picks-row { display: inline-flex; gap: 16rpx; padding-right: 24rpx; }
+.pick-card {
+  display: inline-flex; flex-direction: column; width: 260rpx;
+  background: $bg-card; border-radius: 20rpx; overflow: hidden;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  &:active { transform: scale(0.97); }
+}
+.pick-img { width: 260rpx; height: 340rpx; background: $bg-raised; }
+.pick-info { padding: 16rpx 18rpx; }
+.pick-title {
+  font-size: 26rpx; font-weight: 600; color: $text-1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.pick-meta { display: flex; align-items: center; gap: 8rpx; margin-top: 10rpx; }
+.pick-likes { font-size: 22rpx; color: $text-3; }
+.pick-empty {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 260rpx; height: 340rpx; background: $bg-card; border-radius: 20rpx;
+  gap: 16rpx; border: 1rpx solid $border;
+  text { font-size: 26rpx; color: $text-3; font-weight: 500; }
 }
 
-.upload-area .u-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background: rgba(74, 58, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// ── Challenge ──
+.challenge-card {
+  margin: 0 24rpx; background: $bg-card; border-radius: 24rpx;
+  padding: 28rpx; border: 1rpx solid $border;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
+}
+.challenge-content { display: flex; flex-direction: column; gap: 12rpx; }
+.challenge-badge {
+  display: inline-flex; align-items: center; gap: 6rpx; align-self: flex-start;
+  padding: 6rpx 18rpx; background: rgba(139,157,200,0.1); border-radius: 999rpx;
+  text { font-size: 22rpx; color: $primary; font-weight: 700; }
+}
+.challenge-title { font-size: 34rpx; font-weight: 700; color: $text-1; }
+.challenge-desc {
+  font-size: 24rpx; color: $text-2; line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.challenge-footer {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 8rpx;
+}
+.challenge-participants {
+  display: flex; align-items: center; gap: 6rpx;
+  text { font-size: 22rpx; color: $primary; font-weight: 500; }
+}
+.challenge-tags { display: flex; gap: 8rpx; }
+.challenge-tag {
+  font-size: 20rpx; color: $primary;
+  background: rgba(139,157,200,0.08);
+  padding: 4rpx 12rpx; border-radius: 12rpx;
+}
+.challenge-action {
+  margin-top: 20rpx; display: flex; justify-content: flex-end;
+  text { font-size: 26rpx; color: $primary; font-weight: 700; }
 }
 
-.upload-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: #FFFFFF;
+// ── Waterfall ──
+.waterfall { display: flex; gap: 16rpx; padding: 0 24rpx; }
+.waterfall-col { flex: 1; display: flex; flex-direction: column; gap: 16rpx; }
+.work-card {
+  background: $bg-card; border-radius: 20rpx; overflow: hidden;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  &:active { transform: scale(0.97); }
 }
+.work-img { width: 100%; min-height: 200rpx; background: $bg-raised; }
+.work-info { padding: 16rpx 18rpx; }
+.work-title {
+  font-size: 26rpx; font-weight: 600; color: $text-1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.work-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; }
+.work-likes { display: flex; align-items: center; gap: 8rpx;
+  text { font-size: 22rpx; color: $text-3; }
+}
+.work-action { padding: 8rpx; }
 
-.upload-desc {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.55);
+// ── Load More ──
+.loading-more {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx; padding: 32rpx 0;
+  text { font-size: 24rpx; color: $text-3; }
+}
+.loading-spinner-sm {
+  width: 28rpx; height: 28rpx;
+  border: 3rpx solid $bg-raised; border-top-color: $primary; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.no-more { text-align: center; padding: 32rpx 0;
+  text { font-size: 24rpx; color: $text-3; }
 }
 </style>

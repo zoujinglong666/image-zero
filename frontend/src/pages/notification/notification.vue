@@ -204,7 +204,7 @@ function formatTime(dateStr: string): string {
 .empty-text {
   margin-top: 24rpx;
   font-size: 32rpx;
-  color: #999;
+  color: #9A9BAC;
 }
 .empty-desc {
   margin-top: 12rpx;
@@ -293,7 +293,7 @@ function formatTime(dateStr: string): string {
 }
 .item-time {
   font-size: 22rpx;
-  color: #999999;
+  color: #9A9BAC;
   margin-top: 8rpx;
 }
 
@@ -314,6 +314,6 @@ function formatTime(dateStr: string): string {
 .loading-text {
   margin-top: 16rpx;
   font-size: 26rpx;
-  color: #999;
+  color: #9A9BAC;
 }
 </style>

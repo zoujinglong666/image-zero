@@ -155,7 +155,10 @@ export interface ImageGenerationParams {
   width?: number
   height?: number
   model?: string
+  provider?: GenerationProvider
 }
+
+export type GenerationProvider = 'zhipu' | 'siliconflow' | 'openai' | 'gemini' | 'pollinations' | 'mimo'
 
 // ====== 图片编辑参数 ======
 export interface EditParams {
@@ -166,6 +169,8 @@ export interface EditParams {
   layout?: any
   text?: string
   style?: string
+  provider?: GenerationProvider
+  model?: string
 }
 
 // ====== 图片分析结果（页面直接使用） ======

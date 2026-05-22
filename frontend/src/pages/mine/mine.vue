@@ -4,8 +4,8 @@
     <u-navbar
       title="我的"
       :bgColor="'#FFFFFF'"
-      :titleStyle="{ color: '#1C1C1C', fontWeight: '600' }"
-      :borderBottom="true"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '700' }"
+      :borderBottom="false"
       :placeholder="true"
     />
 
@@ -19,7 +19,7 @@
             size="96"
             :text="avatarText"
             fontSize="36"
-            :bg-color="userStore.isLoggedIn ? '#7C4DFF' : '#7C4DFF'"
+            :bg-color="userStore.isLoggedIn ? '#8B9DC8' : '#9A9BAC'"
           />
         </view>
         <view class="user-info">
@@ -27,7 +27,7 @@
           <text class="user-desc">{{ userStore.isLoggedIn ? loginDesc : '点击登录，解锁更多功能' }}</text>
         </view>
         <!-- 未登录时显示登录箭头 -->
-        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="40" color="#CCCCCC" />
+        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="40" color="rgba(255,255,255,0.5)" />
         <!-- 已登录时显示微信标识 -->
         <u-tag v-else-if="userStore.isWechatUser" text="微信" type="success" size="mini" plain />
       </view>
@@ -53,22 +53,22 @@
       <!-- 统计网格 -->
       <view class="stats-grid">
         <view class="grid-item" @click="goToHistory">
-          <u-icon name="clock-fill" size="40" color="#7C4DFF" />
+          <u-icon name="clock-fill" size="40" color="#8B9DC8" />
           <text class="grid-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="grid-label">解析记录</text>
         </view>
         <view class="grid-item">
-          <u-icon name="star-fill" size="40" color="#7C4DFF" />
+          <u-icon name="star-fill" size="40" color="#8B9DC8" />
           <text class="grid-num">{{ favoriteCount }}</text>
           <text class="grid-label">我的收藏</text>
         </view>
         <view class="grid-item">
-          <u-icon name="bookmark-fill" size="40" color="#19be6b" />
+          <u-icon name="bookmark-fill" size="40" color="#A3B0CC" />
           <text class="grid-num">{{ savedPrompts.length }}</text>
           <text class="grid-label">保存提示词</text>
         </view>
         <view class="grid-item">
-          <u-icon name="photo-fill" size="40" color="#7C4DFF" />
+          <u-icon name="photo-fill" size="40" color="#C4B5E0" />
           <text class="grid-num">{{ generatedCount }}</text>
           <text class="grid-label">生成图片</text>
         </view>
@@ -213,7 +213,7 @@
       <view class="profile-popup">
         <view class="picker-header">
           <text class="picker-title">编辑资料</text>
-          <u-icon name="close" size="40" color="#999" @click="showProfilePopup = false" />
+          <u-icon name="close" size="40" color="#9A9BAC" @click="showProfilePopup = false" />
         </view>
 
         <!-- 头像选择 -->
@@ -227,7 +227,7 @@
                 size="80"
                 :text="avatarText"
                 fontSize="30"
-                bg-color="#7C4DFF"
+                bg-color="#8B9DC8"
               />
               <view class="avatar-edit-badge">
                 <u-icon name="camera" size="20" color="#FFFFFF" />
@@ -241,7 +241,7 @@
                 size="80"
                 :text="avatarText"
                 fontSize="30"
-                bg-color="#7C4DFF"
+                bg-color="#8B9DC8"
               />
               <view class="avatar-edit-badge">
                 <u-icon name="camera" size="20" color="#FFFFFF" />
@@ -295,7 +295,7 @@
       <view class="picker-popup">
         <view class="picker-header">
           <text class="picker-title">选择生成质量</text>
-          <u-icon name="close" size="40" color="#999" @click="showQualityPopup = false" />
+          <u-icon name="close" size="40" color="#9A9BAC" @click="showQualityPopup = false" />
         </view>
         <u-radio-group v-model="currentQuality" @change="(val: any) => { currentQuality = val; showQualityPopup = false }">
           <u-cell-group :border="false">
@@ -310,7 +310,7 @@
                 <u-radio
                   :name="qi"
                   :checked="currentQuality === qi"
-                  activeColor="#7C4DFF"
+                  activeColor="#8B9DC8"
                 />
               </template>
             </u-cell-item>
@@ -329,7 +329,7 @@
       <view class="picker-popup">
         <view class="picker-header">
           <text class="picker-title">选择默认尺寸</text>
-          <u-icon name="close" size="40" color="#999" @click="showSizePopup = false" />
+          <u-icon name="close" size="40" color="#9A9BAC" @click="showSizePopup = false" />
         </view>
         <u-radio-group v-model="currentSize" @change="(val: any) => { currentSize = val; showSizePopup = false }">
           <u-cell-group :border="false">
@@ -344,7 +344,7 @@
                 <u-radio
                   :name="si"
                   :checked="currentSize === si"
-                  activeColor="#7C4DFF"
+                  activeColor="#8B9DC8"
                 />
               </template>
             </u-cell-item>
@@ -594,268 +594,119 @@ const onSaveProfile = async () => {
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
-  background-color: #F5F6F7;
-}
+/* ════════════════════════════════
+   Mist Canvas Design System
+   薄雾白 · 通透清新
+   ════════════════════════════════ */
 
-.main-scroll {
-  height: calc(100vh - 44px);
-}
+// ── Palette ──
+$bg-page:    #F6F7FB;
+$bg-card:    #FFFFFF;
+$bg-raised:  #F0F1F5;
+$border:     rgba(0,0,0,0.05);
+$text-1:     #2C2E3A;
+$text-2:     #6B6E7D;
+$text-3:     #9A9BAC;
+$primary:     #8B9DC8;
+$primary-grad: linear-gradient(135deg, #8B9DC8, #A3B0CC);
+$secondary:   #C4B5E0;
+$accent:     #A3B8A5;
+$warning:     #E8C97A;
+$danger:     #E8947A;
 
-/* 用户卡片 */
+.page { min-height: 100vh; background: $bg-page; }
+.main-scroll { height: calc(100vh - 44px); }
+
+// ── User Card ──
 .user-card {
-  display: flex;
-  align-items: center;
-  padding: 40rpx 32rpx;
-  background: linear-gradient(135deg, #7C4DFF 0%, #7C4DFF 100%);
-  gap: 24rpx;
+  display: flex; align-items: center; padding: 40rpx 32rpx;
+  background: $bg-card;
+  gap: 24rpx; border-bottom: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
-
 .user-info {
   flex: 1;
-
-  .user-name {
-    font-size: 34rpx;
-    font-weight: 700;
-    color: #FFFFFF;
-    display: block;
-  }
-
-  .user-desc {
-    font-size: 24rpx;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 6rpx;
-    display: block;
-  }
+  .user-name { font-size: 34rpx; font-weight: 700; color: $text-1; display: block; }
+  .user-desc { font-size: 24rpx; color: $text-3; margin-top: 6rpx; display: block; }
 }
 
-/* 统计网格 */
+// ── Stats Grid ──
 .stats-grid {
-  display: flex;
-  margin: -20rpx 24rpx 0;
-  background: #FFFFFF;
-  border-radius: 16rpx;
-  padding: 32rpx 0;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  display: flex; margin: -20rpx 24rpx 0;
+  background: $bg-card; border-radius: 24rpx;
+  padding: 32rpx 0; border: 1rpx solid $border;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
 }
-
 .grid-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-
-  &:active {
-    opacity: 0.7;
-  }
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8rpx;
+  &:active { opacity: 0.7; }
 }
-
 .grid-num {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1C1C1C;
+  font-size: 36rpx; font-weight: 800; color: $text-1;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
 }
+.grid-label { font-size: 22rpx; color: $text-3; }
 
-.grid-label {
-  font-size: 22rpx;
-  color: #999999;
-}
-
-/* 菜单区域 */
+// ── Menu ──
 .menu-section {
-  margin: 20rpx 24rpx;
-  background: #FFFFFF;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  margin: 20rpx 24rpx; background: $bg-card; border-radius: 20rpx;
+  overflow: hidden; border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
+.cell-value-text { font-size: 24rpx; color: $text-3; }
 
-/* 通知小红点旁的辅助文字 */
-.cell-value-text {
-  font-size: 24rpx;
-  color: #999999;
-}
-
-/* 版本信息 */
+// ── Version ──
 .version-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-  padding: 32rpx 0;
-
-  text {
-    font-size: 22rpx;
-    color: #C7C7CCCCC;
-  }
+  display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 32rpx 0;
+  text { font-size: 22rpx; color: $text-3; }
 }
 
-/* 登录区域 */
+// ── Login Section ──
 .login-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-  padding: 32rpx 48rpx;
-  margin: 0 24rpx;
-  background: #FFFFFF;
-  border-radius: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  display: flex; flex-direction: column; align-items: center; gap: 16rpx;
+  padding: 32rpx 48rpx; margin: 20rpx 24rpx 0;
+  background: $bg-card; border-radius: 20rpx; border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
-
-.wechat-login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  width: 100%;
-  height: 88rpx;
-  background: #7C4DFF;
-  color: #FFFFFF;
-  font-size: 30rpx;
-  font-weight: 600;
-  border-radius: 12rpx;
-  border: none;
-
-  &:active {
-    opacity: 0.85;
-  }
+.wechat-login-btn, .dev-login-btn {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  width: 100%; height: 88rpx;
+  background: $primary-grad; color: #FFFFFF;
+  font-size: 30rpx; font-weight: 700; border-radius: 999rpx; border: none;
+  &:active { opacity: 0.85; }
 }
+.login-hint { font-size: 22rpx; color: $text-3; }
 
-.dev-login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  width: 100%;
-  height: 88rpx;
-  background: #7C4DFF;
-  color: #FFFFFF;
-  font-size: 30rpx;
-  font-weight: 600;
-  border-radius: 12rpx;
-  border: none;
-
-  &:active {
-    opacity: 0.85;
-  }
-}
-
-.login-hint {
-  font-size: 22rpx;
-  color: #999999;
-}
-
-/* 弹窗通用 */
+// ── Popups ──
 .picker-popup {
-  padding: 32rpx;
-  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  padding: 32rpx; padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  background: $bg-card;
 }
+.picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24rpx; }
+.picker-title { font-size: 32rpx; font-weight: 700; color: $text-1; }
 
-.picker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
+// ── Profile Popup ──
+.profile-popup { padding: 32rpx; background: $bg-card; }
+.profile-row { display: flex; align-items: center; padding: 24rpx 0; border-bottom: 1rpx solid $border; }
+.profile-label { font-size: 28rpx; color: $text-2; width: 120rpx; flex-shrink: 0; }
+.profile-avatar-wrap { flex: 1; display: flex; justify-content: flex-end; position: relative; }
+.avatar-choose-btn { position: relative; background: none; border: none; padding: 0; margin: 0; line-height: 1;
+  &::after { display: none; }
 }
-
-.picker-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-}
-
-/* 资料编辑弹窗 */
-.profile-popup {
-  padding: 32rpx;
-}
-
-.profile-row {
-  display: flex;
-  align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-
-.profile-label {
-  font-size: 28rpx;
-  color: #666666;
-  width: 120rpx;
-  flex-shrink: 0;
-}
-
-.profile-avatar-wrap {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  position: relative;
-}
-
-.avatar-choose-btn {
-  position: relative;
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-
-  &::after {
-    display: none;
-  }
-}
-
 .avatar-edit-badge {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 36rpx;
-  height: 36rpx;
-  background: #7C4DFF;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3rpx solid #FFFFFF;
+  position: absolute; bottom: 0; right: 0;
+  width: 36rpx; height: 36rpx; background: $primary-grad;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: 3rpx solid $bg-card;
 }
-
-.profile-input-wrap {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.profile-nickname-input {
-  font-size: 28rpx;
-  color: #1C1C1C;
-  text-align: right;
-  flex: 1;
-  padding: 8rpx 0;
-  background: transparent;
-}
-
+.profile-input-wrap { flex: 1; display: flex; justify-content: flex-end; }
+.profile-nickname-input { font-size: 28rpx; color: $text-1; text-align: right; flex: 1; padding: 8rpx 0; background: transparent; }
 .profile-save-btn {
-  margin-top: 40rpx;
-  width: 100%;
-  height: 88rpx;
-  background: #7C4DFF;
-  color: #FFFFFF;
-  font-size: 30rpx;
-  font-weight: 600;
-  border-radius: 12rpx;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:active {
-    opacity: 0.85;
-  }
+  margin-top: 40rpx; width: 100%; height: 88rpx;
+  background: $primary-grad; color: #FFFFFF;
+  font-size: 30rpx; font-weight: 700; border-radius: 999rpx; border: none;
+  display: flex; align-items: center; justify-content: center;
+  &:active { opacity: 0.85; }
 }
-
-.profile-safe-bottom {
-  height: env(safe-area-inset-bottom);
-}
+.profile-safe-bottom { height: env(safe-area-inset-bottom); }
 </style>

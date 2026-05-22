@@ -4,8 +4,8 @@
     <u-navbar
       title="历史记录"
       :bgColor="'#FFFFFF'"
-      :titleStyle="{ color: '#1C1C1C', fontWeight: '600' }"
-      :borderBottom="true"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '700' }"
+      :borderBottom="false"
       :placeholder="true"
     >
       <template #right>
@@ -34,12 +34,12 @@
           <text class="stat-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="stat-label">总记录</text>
         </view>
-        <u-line direction="col" color="#E8E8E8" :length="40" />
+        <u-line direction="col" color="rgba(255,255,255,0.06)" :length="40" />
         <view class="stat-item">
           <text class="stat-num">{{ favoriteCount }}</text>
           <text class="stat-label">已收藏</text>
         </view>
-        <u-line direction="col" color="#E8E8E8" :length="40" />
+        <u-line direction="col" color="rgba(255,255,255,0.06)" :length="40" />
         <view class="stat-item">
           <text class="stat-num">{{ todayCount }}</text>
           <text class="stat-label">今日</text>
@@ -52,7 +52,7 @@
           v-model="searchKeyword"
           placeholder="搜索提示词..."
           shape="round"
-          bg-color="#F5F6F7"
+          bg-color="#1A1A36"
           :showAction="false"
           @search="onSearch"
           @custom="onSearch"
@@ -118,7 +118,7 @@
                 <image class="thumb-img" :src="item.imageUrl" mode="aspectFill" />
                 <!-- #endif -->
                 <view v-if="item.favorite" class="fav-badge">
-                  <u-icon name="star-fill" size="40" color="#7C4DFF" />
+                  <u-icon name="star-fill" size="40" color="#8B9DC8" />
                 </view>
               </view>
 
@@ -127,20 +127,20 @@
                 <view class="card-prompt">{{ item.prompt }}</view>
                 <view class="card-meta">
                   <view class="meta-left">
-                    <u-icon name="clock" size="40" color="#BBBBBB" />
+                    <u-icon name="clock" size="40" color="#9A9BAC" />
                     <text>{{ formatTime(item.timestamp) }}</text>
                   </view>
                   <view class="meta-right">
                     <u-icon
                       :name="item.favorite ? 'star-fill' : 'star'"
                       size="40"
-                      :color="item.favorite ? '#7C4DFF' : '#CCCCCC'"
+                      :color="item.favorite ? '#8B9DC8' : '#9A9BAC'"
                       @tap.stop="toggleFavorite(item)"
                     />
                     <u-icon
                       name="trash-fill"
                       size="40"
-                      color="#CCCCCC"
+                      color="#9A9BAC"
                       style="margin-left: 16rpx;"
                       @tap.stop="deleteItem(item.id)"
                     />
@@ -326,185 +326,103 @@ const goHome = () => {
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
-  background-color: #F5F6F7;
-}
+/* ══════════════════════════════════
+   Mist Canvas Design System
+   薄雾白 · 通透清新
+   ══════════════════════════════════ */
 
-.main-scroll {
-  height: calc(vh - 44px);
-}
+// ── Palette ──
+$bg-page:    #F6F7FB;
+$bg-card:    #FFFFFF;
+$bg-raised:  #F0F1F5;
+$border:     rgba(0,0,0,0.05);
+$text-1:     #2C2E3A;
+$text-2:     #6B6E7D;
+$text-3:     #9A9BAC;
+$primary:     #8B9DC8;
+$primary-grad: linear-gradient(135deg, #8B9DC8, #A3B0CC);
+$secondary:   #C4B5E0;
+$accent:     #A3B8A5;
+$warning:     #E8C97A;
+$danger:     #E8947A;
 
-/* 统计栏 */
+.page { min-height: 100vh; background: $bg-page; }
+.main-scroll { height: calc(100vh - 44px); }
+
+// ── Stats Bar ──
 .stats-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 28rpx 32rpx;
-  background: #FFFFFF;
+  background: $bg-card;
+  border-bottom: 1rpx solid $border;
   gap: 48rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-}
-
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
 .stat-num {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #1C1C1C;
+  font-size: 40rpx; font-weight: 800; color: $primary;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
 }
+.stat-label { font-size: 22rpx; color: $text-3; }
 
-.stat-label {
-  font-size: 22rpx;
-  color: #999999;
+// ── Search ──
+.search-wrap { padding: 20rpx 24rpx; background: $bg-card;
+  border-bottom: 1rpx solid $border;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
 }
 
-/* 搜索 */
-.search-wrap {
-  padding: 20rpx 32rpx;
-  background: #FFFFFF;
-}
-
-/* 空状态 */
+// ── Empty ──
 .empty-area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  padding: 0 32rpx;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 50vh; padding: 0 32rpx;
 }
 
-/* 列表 */
-.history-list {
-  padding: 16rpx 24rpx;
-}
+// ── List ──
+.history-list { padding: 16rpx 24rpx; }
+.date-header { padding: 16rpx 12rpx 8rpx; }
+.card-list { display: flex; flex-direction: column; gap: 20rpx; }
 
-.date-header {
-  padding: 16rpx 12rpx 8rpx;
-}
-
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-}
-
-/* 卡片 */
+// ── Card ──
 .history-card {
-  background: #FFFFFF;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s;
-
-  &:active {
-    transform: scale(0.98);
-  }
+  background: $bg-card; border-radius: 20rpx; overflow: hidden;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  &:active { transform: scale(0.98); }
 }
-
-.card-thumb {
-  position: relative;
-  height: 240rpx;
-  overflow: hidden;
-}
-
-.thumb-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
+.card-thumb { position: relative; height: 240rpx; overflow: hidden; }
+.thumb-img { width: 100%; height: 100%; object-fit: cover; }
 .fav-badge {
-  position: absolute;
-  top: 12rpx;
-  right: 12rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; top: 12rpx; right: 12rpx;
+  width: 48rpx; height: 48rpx; border-radius: 50%;
+  background: rgba(255,255,255,0.92);
+  display: flex; align-items: center; justify-content: center;
+  border: 1rpx solid rgba(139,157,200,0.2);
 }
-
-.card-body {
-  padding: 20rpx 24rpx;
-}
-
+.card-body { padding: 20rpx 24rpx; }
 .card-prompt {
-  font-size: 26rpx;
-  color: #333333;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 26rpx; color: $text-1; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-
 .card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #F5F5F5;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16rpx; padding-top: 16rpx; border-top: 1rpx solid $border;
 }
-
-.meta-left {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-
-  text {
-    font-size: 22rpx;
-    color: #999999BBB;
-  }
+.meta-left { display: flex; align-items: center; gap: 6rpx;
+  text { font-size: 22rpx; color: $text-3; }
 }
+.meta-right { display: flex; align-items: center; }
 
-.meta-right {
-  display: flex;
-  align-items: center;
+// ── Load More ──
+.load-more { display: flex; align-items: center; justify-content: center; gap: 10rpx; padding: 28rpx 0;
+  text { font-size: 24rpx; color: $text-3; }
 }
-
-/* 加载更多 */
-.load-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
-  padding: 28rpx 0;
-
-  text {
-    font-size: 24rpx;
-    color: #999;
-  }
-}
-
 .load-spinner {
-  width: 28rpx;
-  height: 28rpx;
-  border: 3rpx solid #DDD;
-  border-top-color: #7C4DFF;
-  border-radius: 50%;
+  width: 28rpx; height: 28rpx;
+  border: 3rpx solid $bg-raised; border-top-color: $primary; border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.load-end {
-  text-align: center;
-  padding: 28rpx 0;
-
-  text {
-    font-size: 24rpx;
-    color: #C7C7CC;
-  }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-end { text-align: center; padding: 28rpx 0;
+  text { font-size: 24rpx; color: $text-3; }
 }
 </style>

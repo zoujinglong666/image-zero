@@ -55,6 +55,9 @@ public class AiService {
     @Value("${gemini.api-key:}")
     private String geminiApiKey;
 
+    @Value("${gemini.generate-model:gemini-3.1-flash-image-preview}")
+    private String geminiGenerateModel;
+
     /** 硅基流动 API Key（Qwen2-VL 等免费视觉模型） */
     @Value("${siliconflow.api-key:}")
     private String siliconflowApiKey;
@@ -64,6 +67,9 @@ public class AiService {
 
     @Value("${siliconflow.analyze-model:Qwen/Qwen2-VL-7B-Instruct}")
     private String siliconflowAnalyzeModel;
+
+    @Value("${siliconflow.generate-model:Kwai-Kolors/Kolors}")
+    private String siliconflowGenerateModel;
 
     /** 小米 MiMo API Key（多模态视觉模型，OpenAI兼容格式，认证用 api-key header） */
     @Value("${mimo.api-key:}")
@@ -82,6 +88,10 @@ public class AiService {
     /** 生成用的默认模型 */
     @Value("${ai.generate-model:dall-e-3}")
     private String defaultGenerateModel;
+
+    /** 智谱图片生成默认模型 */
+    @Value("${zhipu.generate-model:cogview-3-flash}")
+    private String zhipuGenerateModel;
 
     @Value("${cos.upload-dir:./uploads}")
     private String localUploadDir;
@@ -499,25 +509,36 @@ public class AiService {
      */
     public Map<String, Object> generateImage(String prompt, Integer width, Integer height,
                                               String model, String provider) {
-        String useModel = model != null ? model : defaultGenerateModel;
-        log.info("[AI生成] model={}, prompt长度={}, baseUrl={}", useModel, prompt.length(), openaiBaseUrl);
+        String generationProvider = resolveGenerationProvider(provider);
+        String useModel = resolveGenerationModel(generationProvider, model);
+        log.info("[AI生成] provider={}, model={}, prompt长度={}, baseUrl={}",
+                generationProvider, useModel, prompt.length(), openaiBaseUrl);
 
-        // OpenRouter 不支持 /images/generations，改用 Pollinations.ai 免费生成
+        return switch (generationProvider) {
+            case "zhipu" -> generateWithZhipu(prompt, width, height, useModel);
+            case "siliconflow" -> generateWithSiliconFlow(prompt, width, height, useModel);
+            case "gemini" -> generateWithGemini(prompt, useModel);
+            case "pollinations" -> generateWithPollinations(prompt, width, height);
+            default -> generateWithOpenAI(prompt, width, height, useModel);
+        };
+    }
+
+    private Map<String, Object> generateWithOpenAI(String prompt, Integer width, Integer height, String model) {
         if (openaiBaseUrl != null && openaiBaseUrl.contains("openrouter.ai")) {
+            log.warn("[AI生成] OpenRouter 不支持 /images/generations，改用 Pollinations");
             return generateWithPollinations(prompt, width, height);
         }
 
         if (openaiApiKey == null || openaiApiKey.isBlank()) {
-            log.warn("OpenAI API Key 未配置，无法生成图片");
-            throw new RuntimeException("AI服务未配置，无法生成图片");
+            log.warn("[AI生成] OpenAI API Key 未配置，改用 Pollinations");
+            return generateWithPollinations(prompt, width, height);
         }
 
         try {
-            // DALL-E 3 尺寸映射
             String size = mapSize(width, height);
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", useModel);
+            requestBody.put("model", model);
             requestBody.put("prompt", prompt);
             requestBody.put("n", 1);
             requestBody.put("size", size);
@@ -533,10 +554,126 @@ public class AiService {
 
             return parseGenerateResponse(response.getBody());
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            log.error("图片生成失败, 状态码={}, 响应体={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            log.error("[AI生成] OpenAI兼容接口失败, 状态码={}, 响应体={}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
             throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("图片生成失败", e);
+            log.error("[AI生成] OpenAI兼容接口异常", e);
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> generateWithZhipu(String prompt, Integer width, Integer height, String model) {
+        if (zhipuApiKey == null || zhipuApiKey.isBlank()) {
+            log.warn("[AI生成] 智谱 API Key 未配置，改用 Pollinations");
+            return generateWithPollinations(prompt, width, height);
+        }
+
+        try {
+            String size = mapSize(width, height);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", model);
+            requestBody.put("prompt", prompt);
+            requestBody.put("size", size);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(zhipuApiKey);
+
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(requestBody), headers);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "https://open.bigmodel.cn/api/paas/v4/images/generations",
+                    HttpMethod.POST,
+                    entity,
+                    String.class);
+
+            return parseGenerateResponse(response.getBody());
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            log.error("[AI生成] 智谱接口失败, 状态码={}, 响应体={}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
+
+            if (e.getStatusCode().is5xxServerError()) {
+                log.warn("[AI生成] 智谱上游 5xx，改用 Pollinations 兜底");
+                return generateWithPollinations(prompt, width, height);
+            }
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("[AI生成] 智谱接口异常", e);
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> generateWithSiliconFlow(String prompt, Integer width, Integer height, String model) {
+        if (siliconflowApiKey == null || siliconflowApiKey.isBlank()) {
+            log.warn("[AI生成] SiliconFlow API Key 未配置，改用 Pollinations");
+            return generateWithPollinations(prompt, width, height);
+        }
+
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", model);
+            requestBody.put("prompt", prompt);
+            requestBody.put("image_size", mapSize(width, height));
+            requestBody.put("batch_size", 1);
+            requestBody.put("num_inference_steps", 20);
+            requestBody.put("guidance_scale", 7.5);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(siliconflowApiKey);
+
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(requestBody), headers);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    siliconflowBaseUrl + "/images/generations",
+                    HttpMethod.POST,
+                    entity,
+                    String.class);
+
+            return parseGenerateResponse(response.getBody());
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            log.error("[AI生成] SiliconFlow接口失败, 状态码={}, 响应体={}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("[AI生成] SiliconFlow接口异常", e);
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> generateWithGemini(String prompt, String model) {
+        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+            log.warn("[AI生成] Gemini API Key 未配置，改用 Pollinations");
+            return generateWithPollinations(prompt, null, null);
+        }
+
+        try {
+            Map<String, Object> requestBody = Map.of(
+                    "contents", List.of(Map.of(
+                            "parts", List.of(Map.of("text", prompt))
+                    )),
+                    "generationConfig", Map.of(
+                            "responseModalities", List.of("TEXT", "IMAGE")
+                    )
+            );
+
+            String url = String.format(
+                    "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
+                    model,
+                    geminiApiKey);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(requestBody), headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            return parseGeminiGenerateResponse(response.getBody(), prompt);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            log.error("[AI生成] Gemini接口失败, 状态码={}, 响应体={}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("[AI生成] Gemini接口异常", e);
             throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
         }
     }
@@ -576,10 +713,6 @@ public class AiService {
                                           Map<String, Object> modifications, String provider) {
         String useProvider = resolveProvider(provider);
         log.info("[AI编辑] 使用 {} 服务", useProvider);
-
-        if (openaiApiKey == null || openaiApiKey.isBlank()) {
-            throw new RuntimeException("AI服务未配置，无法编辑图片");
-        }
 
         try {
             // 构建编辑指令描述
@@ -843,6 +976,42 @@ public class AiService {
         }
     }
 
+    private Map<String, Object> parseGeminiGenerateResponse(String responseBody, String prompt) {
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode parts = root.path("candidates").path(0).path("content").path("parts");
+            List<Map<String, Object>> images = new ArrayList<>();
+
+            for (JsonNode part : parts) {
+                JsonNode inlineData = part.path("inlineData");
+                if (inlineData.isMissingNode() || inlineData.isNull()) {
+                    inlineData = part.path("inline_data");
+                }
+                if (inlineData.isObject()) {
+                    String mimeType = inlineData.path("mimeType").asText("");
+                    if (mimeType.isBlank()) {
+                        mimeType = inlineData.path("mime_type").asText("image/png");
+                    }
+                    String base64 = inlineData.path("data").asText("");
+                    if (!base64.isBlank()) {
+                        images.add(Map.of(
+                                "url", "data:" + mimeType + ";base64," + base64,
+                                "revised_prompt", prompt
+                        ));
+                    }
+                }
+            }
+
+            if (images.isEmpty()) {
+                throw new RuntimeException("Gemini 未返回图片数据");
+            }
+            return Map.of("images", images);
+        } catch (Exception e) {
+            log.error("解析Gemini生成响应失败, 响应体={}", responseBody, e);
+            throw new RuntimeException("解析Gemini生成响应失败: " + e.getMessage(), e);
+        }
+    }
+
     // ══════════════════════════════════════════════════════
     //  工具方法
     // ══════════════════════════════════════════════════════
@@ -856,6 +1025,64 @@ public class AiService {
         if (openaiApiKey != null && !openaiApiKey.isBlank()) return "openai";
         if (geminiApiKey != null && !geminiApiKey.isBlank()) return "gemini";
         return "mimo"; // 默认小米，会在调用时检查 key 并降级
+    }
+
+    private String resolveGenerationProvider(String provider) {
+        if (provider != null && !provider.isBlank()) {
+            return switch (provider) {
+                case "zhipu", "openai", "pollinations", "siliconflow", "gemini" -> provider;
+                case "mimo" -> resolvePreferredRenderableProvider();
+                default -> resolvePreferredRenderableProvider();
+            };
+        }
+        return resolvePreferredRenderableProvider();
+    }
+
+    private String resolveGenerationModel(String provider, String model) {
+        if (model != null && !model.isBlank()) {
+            return model;
+        }
+        if ("zhipu".equals(provider)) {
+            if (defaultGenerateModel != null && defaultGenerateModel.startsWith("cogview")) {
+                return defaultGenerateModel;
+            }
+            return zhipuGenerateModel;
+        }
+        if ("siliconflow".equals(provider)) {
+            if (defaultGenerateModel != null && defaultGenerateModel.contains("/")) {
+                return defaultGenerateModel;
+            }
+            return siliconflowGenerateModel;
+        }
+        if ("gemini".equals(provider)) {
+            if (defaultGenerateModel != null && defaultGenerateModel.startsWith("gemini")) {
+                return defaultGenerateModel;
+            }
+            return geminiGenerateModel;
+        }
+        return defaultGenerateModel;
+    }
+
+    private String resolvePreferredRenderableProvider() {
+        if (openaiBaseUrl != null && openaiBaseUrl.contains("openrouter.ai")) {
+            return "pollinations";
+        }
+        if (openaiBaseUrl != null && openaiBaseUrl.contains("open.bigmodel.cn")) {
+            return "zhipu";
+        }
+        if (siliconflowApiKey != null && !siliconflowApiKey.isBlank()) {
+            return "siliconflow";
+        }
+        if (zhipuApiKey != null && !zhipuApiKey.isBlank()) {
+            return "zhipu";
+        }
+        if (openaiApiKey != null && !openaiApiKey.isBlank()) {
+            return "openai";
+        }
+        if (geminiApiKey != null && !geminiApiKey.isBlank()) {
+            return "gemini";
+        }
+        return "pollinations";
     }
 
     private String mapSize(Integer width, Integer height) {

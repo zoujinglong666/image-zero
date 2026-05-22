@@ -12,7 +12,7 @@
       <!-- 图片上传区域 -->
       <view class="upload-area" @click="chooseImage">
         <view v-if="!publishForm.image_url" class="upload-placeholder">
-          <u-icon name="photo" size="48" color="#999" />
+          <u-icon name="photo" size="48" color="#9A9BAC" />
           <text class="upload-hint">点击上传示例图片</text>
           <text class="upload-sub">支持 JPG/PNG/WebP，最大 5MB</text>
         </view>

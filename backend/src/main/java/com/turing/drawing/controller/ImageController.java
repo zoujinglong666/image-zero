@@ -4,6 +4,7 @@ import com.turing.drawing.dto.response.ApiResponse;
 import com.turing.drawing.entity.DrawingTask;
 import com.turing.drawing.entity.History;
 import com.turing.drawing.security.UserPrincipal;
+import com.turing.drawing.service.CosService;
 import com.turing.drawing.service.ImageService;
 import com.turing.drawing.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class ImageController {
 
     private final ImageService imageService;
+    private final CosService cosService;
     private final PaymentService paymentService;
 
     /**
@@ -58,6 +60,32 @@ public class ImageController {
         }
 
         return ApiResponse.success(result);
+    }
+
+    /**
+     * 图片上传 — 接收前端文件，存到本地/COS，返回可访问URL
+     * POST /api/upload (multipart/form-data)
+     * 返回: { url: "/uploads/analyze/xxx.jpg" }
+     */
+    @PostMapping("/upload")
+    public ApiResponse<Map<String, String>> upload(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        if (file.isEmpty()) {
+            return ApiResponse.error("上传文件为空");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ApiResponse.error("仅支持图片文件（jpg/png/webp）");
+        }
+
+        if (file.getSize() > 10 * 1024 * 1024) {
+            return ApiResponse.error("图片大小不能超过 10MB");
+        }
+
+        CosService.UploadResult result = cosService.uploadImage(file, "analyze");
+        log.info("[上传] 文件={}, URL={}", file.getOriginalFilename(), result.url());
+        return ApiResponse.success(Map.of("url", result.url()));
     }
 
     /**

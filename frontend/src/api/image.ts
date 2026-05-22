@@ -1,5 +1,6 @@
 import { http } from 'uview-pro'
-import type { ImageAnalysisResult, ImageGenerationParams, EditParams } from '@/types'
+import { config } from '@/config'
+import type { ImageAnalysisResult, ImageGenerationParams, EditParams, GenerationProvider } from '@/types'
 
 /**
  * ════════════════════════════════════════════
@@ -186,30 +187,80 @@ export function watchNetworkChange(callback: (online: boolean) => void): () => v
 // ══════════════════════════════════════════
 
 /**
- * 分析图片 - 调用后端 AI 服务
- * 自动压缩大图后再上传，支持重试
+ * 上传图片到后端 — 返回可访问的 URL
+ * 后端存到本地 uploads/ 目录或 COS，返回 /uploads/analyze/xxx.jpg
  */
-export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
+export async function uploadImage(filePath: string): Promise<string> {
+  const baseUrl = config.api.baseUrl
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: `${baseUrl}/upload`,
+      filePath: filePath,
+      name: 'file',
+      success: (res) => {
+        if (res.statusCode === 200) {
+          let data: any
+          try {
+            data = JSON.parse(res.data)
+          } catch {
+            reject(new Error('上传响应解析失败'))
+            return
+          }
+          if (data.success && data.data?.url) {
+            console.log(`✅ [上传] URL=${data.data.url}`)
+            const uploadedUrl = data.data.url.startsWith('http')
+              ? data.data.url
+              : `${baseUrl}${data.data.url}`
+            resolve(uploadedUrl)
+          } else {
+            reject(new Error(data.message || '上传失败'))
+          }
+        } else {
+          reject(new Error(`上传失败 HTTP ${res.statusCode}`))
+        }
+      },
+      fail: (err) => {
+        console.error('❌ [上传]', err)
+        reject(err)
+      }
+    })
+  })
+}
+
+/**
+ * 分析图片 - 调用后端 AI 服务
+ * 如果传入的是 URL（非 base64），跳过压缩直接发送
+ */
+export async function analyzeImage(imageUrl: string, provider?: GenerationProvider): Promise<ImageAnalysisResult> {
   // 网络预检
   const online = await checkNetwork()
   if (!online) {
     throw { code: 'NETWORK_ERROR', message: '网络连接失败，请检查网络后重试', status: 0 }
   }
 
-  // 自动压缩
+  // 自动压缩（仅对 base64 数据压缩，URL 直接发送）
   let processedUrl = imageUrl
-  try {
-    const compressed = await compressImage(imageUrl, { maxWidth: 1500, quality: 82 })
-    console.log(`📦 [压缩] ${compressed.originalSizeKB}KB → ${compressed.sizeKB}KB (${compressed.ratio}x)`)
-    processedUrl = compressed.dataUrl
-  } catch (e) {
-    console.warn('[压缩] 失败，使用原图:', e)
+  const isUrlMode = imageUrl.startsWith('http') || imageUrl.startsWith('/')
+  if (!isUrlMode) {
+    try {
+      const compressed = await compressImage(imageUrl, { maxWidth: 1500, quality: 82 })
+      console.log(`📦 [压缩] ${compressed.originalSizeKB}KB → ${compressed.sizeKB}KB (${compressed.ratio}x)`)
+      processedUrl = compressed.dataUrl
+    } catch (e) {
+      console.warn('[压缩] 失败，使用原图:', e)
+    }
+  } else {
+    console.log(`🔗 [URL模式] 跳过压缩，直接发送: ${imageUrl.substring(0, 80)}...`)
   }
 
   console.log(`🔍 [API] 开始分析图片...`)
 
   const response = await retryRequest<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>(
-    () => http.post<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>('/analyze', { imageUrl: processedUrl }, { timeout: 120_000 }),
+    () => http.post<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>(
+      '/analyze',
+      { imageUrl: processedUrl, provider },
+      { timeout: 120_000 } as any,
+    ),
     '/analyze',
   )
 
@@ -231,7 +282,8 @@ export async function generateImage(params: ImageGenerationParams): Promise<stri
       width: params.width || 1024,
       height: params.height || 1024,
       model: params.model || 'flux',
-    }, { timeout: 30_000 }),
+      provider: params.provider,
+    }, { timeout: 30_000 } as any),
     '/generate',
   )
 
@@ -250,6 +302,8 @@ export async function editImage(params: EditParams): Promise<{ imageUrl: string;
     () => http.post('/edit', {
       originalPrompt: params.originalPrompt,
       originalImage: params.originalImage,
+      provider: params.provider,
+      model: params.model,
       modifications: {
         colorScheme: params.colorScheme,
         elementStyle: params.elementStyle,
@@ -257,7 +311,7 @@ export async function editImage(params: EditParams): Promise<{ imageUrl: string;
         text: params.text,
         style: params.style,
       },
-    }, { timeout: 120_000 }),
+    }, { timeout: 120_000 } as any),
     '/edit',
   )
 

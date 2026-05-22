@@ -4,8 +4,8 @@
     <u-navbar
       title="提示词广场"
       :bgColor="'#FFFFFF'"
-      :titleStyle="{ color: '#1C1C1C', fontWeight: '600' }"
-      :borderBottom="true"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '700' }"
+      :borderBottom="false"
       :placeholder="true"
     >
       <!-- 右侧发布按钮 -->
@@ -25,7 +25,7 @@
           v-model="searchKeyword"
           placeholder="搜索提示词或社区作品..."
           shape="round"
-          bg-color="#F5F6F7"
+          bg-color="#1A1A36"
           :showAction="false"
           @search="onSearch"
           @custom="onSearch"
@@ -118,9 +118,9 @@
           <text class="card-text">{{ truncateText(item.prompt_text, 120) }}</text>
           <view class="card-footer">
             <view class="card-stats">
-              <view class="stat"><u-icon name="eye" size="40" color="#999" /><text>{{ formatCount(item.view_count) }}</text></view>
-              <view class="stat"><u-icon name="heart-fill" size="40" color="#FF2D55" /><text>{{ formatCount(item.like_count) }}</text></view>
-              <view class="stat"><u-icon name="file-text" size="40" color="#999" /><text>{{ formatCount(item.copy_count) }}</text></view>
+              <view class="stat"><u-icon name="eye" size="40" color="#9A9BAC" /><text>{{ formatCount(item.view_count) }}</text></view>
+              <view class="stat"><u-icon name="heart-fill" size="40" color="#E8947A" /><text>{{ formatCount(item.like_count) }}</text></view>
+              <view class="stat"><u-icon name="file-text" size="40" color="#9A9BAC" /><text>{{ formatCount(item.copy_count) }}</text></view>
             </view>
             <view class="card-actions">
               <view class="action-btn" @click.stop="copyPrompt(item)">
@@ -176,7 +176,7 @@
                   size="32"
                   :text="(post.nickname || '?').charAt(0)"
                   fontSize="14"
-                  bg-color="#7C4DFF"
+                  bg-color="#8B9DC8"
                 />
               </view>
               <text class="author-name">{{ post.nickname || '匿名用户' }}</text>
@@ -189,13 +189,13 @@
             <!-- 底部操作栏 -->
             <view class="post-footer">
               <view class="post-stats">
-                <view class="stat"><u-icon name="eye" size="40" color="#999" /><text>{{ formatCount(post.view_count) }}</text></view>
+                <view class="stat"><u-icon name="eye" size="40" color="#9A9BAC" /><text>{{ formatCount(post.view_count) }}</text></view>
                 <view
                   class="like-btn stat"
                   :class="{ liked: post.is_liked }"
                   @click.stop="toggleLike(post)"
                 >
-                  <u-icon :name="post.is_liked ? 'heart-fill' : 'heart'" size="40" :color="post.is_liked ? '#FF2D55' : '#999'" />
+                  <u-icon :name="post.is_liked ? 'heart-fill' : 'heart'" size="40" :color="post.is_liked ? '#E8947A' : '#9A9BAC'" />
                   <text>{{ formatCount(post.like_count) }}</text>
                 </view>
               </view>
@@ -248,7 +248,7 @@
         <view class="detail-header">
           <text class="detail-title">{{ detailData.title }}</text>
           <view class="detail-close" @click="showDetail = false">
-            <u-icon name="close" size="40" color="#999" />
+            <u-icon name="close" size="40" color="#9A9BAC" />
           </view>
         </view>
         <scroll-view scroll-y class="detail-body">
@@ -260,9 +260,9 @@
             <text class="detail-prompt-text" selectable>{{ detailData.prompt_text }}</text>
           </view>
           <view class="detail-stats">
-            <view class="detail-stat"><u-icon name="eye" size="40" color="#999" /><text>{{ detailData.view_count }} 浏览</text></view>
-            <view class="detail-stat"><u-icon name="heart-fill" size="40" color="#FF2D55" /><text>{{ detailData.like_count }} 点赞</text></view>
-            <view class="detail-stat"><u-icon name="file-text" size="40" color="#999" /><text>{{ detailData.copy_count }} 复制</text></view>
+            <view class="detail-stat"><u-icon name="eye" size="40" color="#9A9BAC" /><text>{{ detailData.view_count }} 浏览</text></view>
+            <view class="detail-stat"><u-icon name="heart-fill" size="40" color="#E8947A" /><text>{{ detailData.like_count }} 点赞</text></view>
+            <view class="detail-stat"><u-icon name="file-text" size="40" color="#9A9BAC" /><text>{{ detailData.copy_count }} 复制</text></view>
           </view>
         </scroll-view>
         <view class="detail-actions">
@@ -303,7 +303,7 @@
               size="40"
               :text="(communityDetailData.nickname || '?').charAt(0)"
               fontSize="18"
-              bg-color="#7C4DFF"
+              bg-color="#C4B5E0"
             />
             <view class="cd-author-info">
               <text class="cd-name">{{ communityDetailData.nickname || '匿名用户' }}</text>
@@ -319,8 +319,8 @@
 
           <!-- 统计 -->
           <view class="cd-stats">
-            <view class="detail-stat"><u-icon name="eye" size="40" color="#999" /><text>{{ communityDetailData.view_count }} 浏览</text></view>
-            <view class="detail-stat"><u-icon name="heart-fill" size="40" color="#FF2D55" /><text>{{ communityDetailData.like_count }} 点赞</text></view>
+            <view class="detail-stat"><u-icon name="eye" size="40" color="#9A9BAC" /><text>{{ communityDetailData.view_count }} 浏览</text></view>
+            <view class="detail-stat"><u-icon name="heart-fill" size="40" color="#E8947A" /><text>{{ communityDetailData.like_count }} 点赞</text></view>
           </view>
         </scroll-view>
 
@@ -769,642 +769,229 @@ function langLabel(lang: string) {
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
-  background: #F5F6F7;
-}
+/* ══════════════════════════════
+   Mist Canvas Design System
+   薄雾白 · 通透清新
+   ══════════════════════════════ */
 
-.main-scroll {
-  height: calc(100vh - 44px);
-}
+// ── Palette ──
+$bg-page:    #F6F7FB;
+$bg-card:    #FFFFFF;
+$bg-raised:  #F0F1F5;
+$border:     rgba(0,0,0,0.05);
+$text-1:     #2C2E3A;
+$text-2:     #6B6E7D;
+$text-3:     #9A9BAC;
+$primary:     #8B9DC8;
+$primary-grad: linear-gradient(135deg, #8B9DC8, #A3B0CC);
+$secondary:   #C4B5E0;
+$accent:     #A3B8A5;
+$warning:     #E8C97A;
+$danger:     #E8947A;
 
-/* ── 导航栏发布按钮（已移除） ── */
+.page { min-height: 100vh; background: $bg-page; }
+.main-scroll { height: calc(100vh - 44px); }
 
-/* ── 悬浮发布按钮 ── */
+// ── Float Publish ──
 .float-publish-tab {
-  position: fixed;
-  bottom: 120rpx;
-  right: 32rpx;
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 20rpx 32rpx;
-  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
-  border-radius: 40rpx;
-  box-shadow: 0 8rpx 32rpx rgba(74, 58, 255, 0.35);
-  z-index: 100;
+  position: fixed; bottom: 120rpx; right: 32rpx; z-index: 100;
+  display: flex; align-items: center; gap: 8rpx; padding: 20rpx 32rpx;
+  background: $primary-grad; border-radius: 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.18);
 }
+.float-publish-text { font-size: 28rpx; color: #FFFFFF; font-weight: 700; }
 
-.float-publish-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
+// ── Search ──
+.search-wrap { padding: 12rpx 24rpx; background: $bg-card;
+  border-bottom: 1rpx solid $border;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
 }
-
-/* ── 搜索栏 ── */
-.search-wrap {
-  padding: 12rpx 24rpx;
-  background: #fff;
-}
-
-.category-scroll {
-  background: #fff;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-
-.category-list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  padding: 16rpx 24rpx;
-  gap: 16rpx;
-}
-
+.category-scroll { background: $bg-card; border-bottom: 1rpx solid $border; }
+.category-list { display: flex; padding: 16rpx 24rpx; gap: 16rpx; }
 .category-tag {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding: 8rpx 24rpx;
-  border-radius: 32rpx;
-  background: #F5F5F5;
-  font-size: 26rpx;
-  color: #666;
-
-  &.active {
-    background: #7C4DFF;
-    color: #fff;
-  }
+  display: flex; align-items: center; flex-shrink: 0; white-space: nowrap;
+  padding: 8rpx 24rpx; border-radius: 32rpx; background: $bg-raised;
+  font-size: 26rpx; color: $text-2; border: 1rpx solid $border;
+  transition: all 0.15s;
+  &.active { background: $primary-grad; color: #FFFFFF; font-weight: 600; border-color: transparent; }
 }
 
-/* ── Tab 栏 ── */
-.tab-bar {
-  display: flex;
-  padding: 8rpx 24rpx;
-  gap: 24rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #F0F0F0;
+// ── Tab Bar ──
+.tab-bar { display: flex; padding: 8rpx 24rpx; gap: 24rpx; background: $bg-card;
+  border-bottom: 1rpx solid $border;
 }
-
 .tab-item {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 12rpx 28rpx;
-  border-radius: 32rpx;
-  font-size: 28rpx;
-  color: #666;
-  position: relative;
-
-  &.active {
-    background: #1C1C1C;
-    color: #fff;
-    font-weight: 600;
-  }
-
+  display: flex; align-items: center; gap: 8rpx; padding: 12rpx 28rpx;
+  border-radius: 32rpx; font-size: 28rpx; color: $text-2; position: relative;
+  background: $bg-raised; border: 1rpx solid $border;
+  transition: all 0.15s;
+  &.active { background: $bg-card; color: $primary; font-weight: 600; border-color: rgba(139,157,200,0.25); }
   &.community .tab-badge {
-    position: absolute;
-    top: -4rpx;
-    right: -8rpx;
-    background: #FF2D55;
-    color: #fff;
-    font-size: 18rpx;
-    padding: 2rpx 10rpx;
-    border-radius: 20rpx;
-    min-width: 28rpx;
-    text-align: center;
+    position: absolute; top: -4rpx; right: -8rpx; background: $danger;
+    color: #fff; font-size: 18rpx; padding: 2rpx 10rpx;
+    border-radius: 20rpx; min-width: 28rpx; text-align: center;
   }
 }
 
-/* ── 排序栏 ── */
-.sort-bar {
-  display: flex;
-  padding: 16rpx 24rpx;
-  gap: 24rpx;
-  background: #fff;
+// ── Sort ──
+.sort-bar { display: flex; padding: 16rpx 24rpx; gap: 24rpx; background: $bg-card; }
+.sort-item { font-size: 26rpx; color: $text-3;
+  padding: 6rpx 0;
+  &.active { color: $primary; font-weight: 700; border-bottom: 3rpx solid $primary; }
 }
 
-.sort-item {
-  font-size: 26rpx;
-  color: #999;
-
-  &.active {
-    color: #7C4DFF;
-    font-weight: 600;
-  }
-}
-
-/* ── 官方提示词卡片 ── */
-.prompt-list {
-  padding: 16rpx 24rpx;
-}
-
+// ── Prompt Cards ──
+.prompt-list { padding: 16rpx 24rpx; }
 .prompt-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  background: $bg-card; border-radius: 20rpx; padding: 24rpx;
+  margin-bottom: 16rpx; border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
+  transition: all 0.15s;
+  &:active { transform: scale(0.985); box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06); }
 }
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12rpx;
-}
-
+.card-header { display: flex; justify-content: space-between; margin-bottom: 12rpx; }
 .card-category {
-  font-size: 22rpx;
-  color: #7C4DFF;
-  background: #EDE7F6;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  font-size: 22rpx; color: $primary; background: rgba(139,157,200,0.08);
+  padding: 4rpx 12rpx; border-radius: 8rpx; font-weight: 500;
 }
-
-.card-source {
-  font-size: 22rpx;
-  color: #999;
-}
-
+.card-source { font-size: 22rpx; color: $text-3; }
 .card-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  margin-bottom: 8rpx;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 30rpx; font-weight: 700; color: $text-1; margin-bottom: 8rpx;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-
 .card-text {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 16rpx;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 26rpx; color: $text-2; line-height: 1.6; margin-bottom: 16rpx;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-stats {
-  display: flex;
-  gap: 16rpx;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  font-size: 22rpx;
-  color: #999;
-}
-
-.card-actions {
-  display: flex;
-  gap: 12rpx;
-}
-
+.card-footer { display: flex; justify-content: space-between; align-items: center; }
+.card-stats { display: flex; gap: 16rpx; }
+.stat { display: flex; align-items: center; gap: 4rpx; font-size: 22rpx; color: $text-3; }
+.card-actions { display: flex; gap: 12rpx; }
 .action-btn {
-  padding: 6rpx 20rpx;
-  border-radius: 24rpx;
-  font-size: 24rpx;
-  background: #F5F5F5;
-  color: #666;
-
-  &.fav {
-    background: #EDE7F6;
-    color: #7C4DFF;
-  }
-
-  &.favored {
-    background: #7C4DFF;
-    color: #fff;
-  }
+  padding: 6rpx 20rpx; border-radius: 24rpx; font-size: 24rpx;
+  background: $bg-raised; color: $text-2; border: 1rpx solid $border;
+  transition: all 0.15s;
+  &.fav { background: rgba(139,157,200,0.08); color: $primary; }
+  &.favored { background: $primary-grad; color: #FFFFFF; }
 }
 
-/* ── 社区卡片 ── */
-.community-list {
-  padding: 16rpx 24rpx;
-}
-
+// ── Community Cards ──
+.community-list { padding: 16rpx 24rpx; }
 .community-card {
-  background: #fff;
-  border-radius: 20rpx;
-  overflow: hidden;
-  margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  background: $bg-card; border-radius: 22rpx; overflow: hidden;
+  margin-bottom: 20rpx; border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
 }
-
-.post-image-wrap {
-  width: 100%;
-  height: 360rpx;
-  overflow: hidden;
-  background: #f0f0f0;
-}
-
-.post-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.post-content {
-  padding: 20rpx 24rpx;
-}
-
-.post-author {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
-
-.author-avatar {
-  flex-shrink: 0;
-}
-
-.author-name {
-  font-size: 24rpx;
-  color: #1C1C1C;
-  font-weight: 500;
-}
-
-.post-time {
-  font-size: 22rpx;
-  color: #bbb;
-  margin-left: auto;
-}
-
+.post-image-wrap { width: 100%; height: 360rpx; overflow: hidden; background: $bg-raised; }
+.post-image { width: 100%; height: 100%; object-fit: cover; }
+.post-content { padding: 20rpx 24rpx; }
+.post-author { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+.author-avatar { flex-shrink: 0; }
+.author-name { font-size: 24rpx; color: $text-1; font-weight: 500; }
+.post-time { font-size: 22rpx; color: $text-3; margin-left: auto; }
 .post-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  margin-bottom: 8rpx;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 30rpx; font-weight: 700; color: $text-1; margin-bottom: 8rpx;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
-
 .post-prompt-preview {
-  font-size: 25rpx;
-  color: #888;
-  line-height: 1.5;
-  margin-bottom: 16rpx;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 25rpx; color: $text-2; line-height: 1.5; margin-bottom: 16rpx;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-
-.post-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.post-footer { display: flex; justify-content: space-between; align-items: center; }
+.post-stats { display: flex; gap: 16rpx; align-items: center; }
+.like-btn { display: flex; align-items: center;
+  &.liked .stat { color: $danger; }
 }
-
-.post-stats {
-  display: flex;
-  gap: 16rpx;
-  align-items: center;
-}
-
-.like-btn {
-  display: flex;
-  align-items: center;
-
-  &.liked .stat {
-    color: #FF2D55;
-  }
-}
-
-.post-actions {
-  display: flex;
-  gap: 12rpx;
-}
-
+.post-actions { display: flex; gap: 12rpx; }
 .action-mini {
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  background: #F5F5F5;
-  color: #999;
-
-  &.report {
-    background: #FFEBEE;
-    color: #FF2D55;
-  }
+  padding: 4rpx 16rpx; border-radius: 20rpx; font-size: 22rpx;
+  background: $bg-raised; color: $text-2; border: 1rpx solid $border;
+  transition: all 0.15s;
+  &.report { background: rgba(232,148,122,0.08); color: $danger; }
 }
 
-/* ── 空状态 ── */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 0;
-  gap: 16rpx;
-}
-
-.empty-text {
-  font-size: 28rpx;
-  color: #999;
-  margin-bottom: 8rpx;
-}
-
+// ── Empty ──
+.empty-state { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0; gap: 16rpx; }
+.empty-text { font-size: 28rpx; color: $text-3; margin-bottom: 8rpx; }
 .empty-action {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 16rpx 40rpx;
-  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
-  border-radius: 40rpx;
+  display: flex; align-items: center; gap: 8rpx; padding: 16rpx 40rpx;
+  background: $primary-grad; border-radius: 40rpx; color: #FFFFFF; font-weight: 700;
+  box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.2);
 }
+.empty-btn-text { font-size: 28rpx; }
 
-.empty-btn-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 500;
-}
-
-/* ── 加载更多 ── */
-.load-more {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24rpx;
-  gap: 12rpx;
-}
-
+// ── Load More ──
+.load-more { display: flex; justify-content: center; align-items: center; padding: 24rpx; gap: 12rpx; }
 .loading-spinner {
-  width: 32rpx;
-  height: 32rpx;
-  border: 3rpx solid #ddd;
-  border-top-color: #7C4DFF;
-  border-radius: 50%;
+  width: 32rpx; height: 32rpx;
+  border: 3rpx solid $bg-raised; border-top-color: $primary; border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-text { font-size: 24rpx; color: $text-3; }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.load-text {
-  font-size: 24rpx;
-  color: #999;
-}
-
-/* ── 官方详情弹窗 ── */
-.detail-popup {
-  max-height: 80vh;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-
-.detail-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  flex: 1;
-}
-
-.detail-close {
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  color: #999;
-}
-
-.detail-body {
-  padding: 24rpx 32rpx;
-  max-height: 55vh;
-}
-
-.detail-meta {
-  display: flex;
-  gap: 12rpx;
-  margin-bottom: 20rpx;
-}
-
-.detail-cat {
-  font-size: 24rpx;
-  color: #7C4DFF;
-  background: #EDE7F6;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-}
-
-.detail-lang {
-  font-size: 24rpx;
-  color: #999;
-  background: #F5F5F5;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-}
-
-.detail-prompt-box {
-  background: #F5F6F7;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-}
-
-.detail-prompt-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.8;
-}
-
-.detail-stats {
-  display: flex;
-  gap: 24rpx;
-}
-
-.detail-stat {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  font-size: 24rpx;
-  color: #999;
-}
-
-.detail-actions {
-  display: flex;
-  gap: 16rpx;
-  padding: 20rpx 32rpx;
-  border-top: 1rpx solid #F0F0F0;
-}
-
+// ── Detail Popup (Official) ──
+.detail-popup { max-height: 80vh; background: $bg-card; }
+.detail-header { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid $border; }
+.detail-title { font-size: 34rpx; font-weight: 700; color: $text-1; flex: 1; }
+.detail-close { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center;
+  font-size: 32rpx; color: $text-2; }
+.detail-body { padding: 24rpx 32rpx; max-height: 55vh; }
+.detail-meta { display: flex; gap: 12rpx; margin-bottom: 20rpx; }
+.detail-cat { font-size: 24rpx; color: $primary; background: rgba(139,157,200,0.08);
+  padding: 4rpx 16rpx; border-radius: 8rpx; font-weight: 500; }
+.detail-lang { font-size: 24rpx; color: $text-3; background: $bg-raised;
+  padding: 4rpx 16rpx; border-radius: 8rpx; }
+.detail-prompt-box { background: $bg-raised; border-radius: 16rpx; padding: 24rpx;
+  margin-bottom: 20rpx; border: 1rpx solid $border; }
+.detail-prompt-text { font-size: 28rpx; color: $text-1; line-height: 1.8; }
+.detail-stats { display: flex; gap: 24rpx; }
+.detail-stat { display: flex; align-items: center; gap: 4rpx; font-size: 24rpx; color: $text-3; }
+.detail-actions { display: flex; gap: 16rpx; padding: 20rpx 32rpx;
+  border-top: 1rpx solid $border; }
 .detail-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  padding: 16rpx 0;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  font-weight: 600;
-
-  &.copy {
-    background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
-    color: #fff;
-  }
-
-  &.fav {
-    background: #F5F5F5;
-    color: #666;
-  }
-
-  &.favored {
-    background: #EDE7F6;
-    color: #7C4DFF;
-  }
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8rpx;
+  padding: 16rpx 0; border-radius: 999rpx; font-size: 28rpx; font-weight: 700;
+  transition: all 0.15s;
+  &.copy { background: $primary-grad; color: #FFFFFF; }
+  &.fav { background: $bg-raised; color: $text-2; border: 1rpx solid $border; }
+  &.favored { background: rgba(139,157,200,0.1); color: $primary; border-color: rgba(139,157,200,0.25); }
 }
 
-/* ── 社区详情弹窗 ── */
-.community-detail-popup {
-  max-height: 85vh;
-}
-
-.cd-image-wrap {
-  width: 100%;
-  max-height: 400rpx;
-  overflow: hidden;
-  background: #f0f0f0;
-}
-
-.cd-image {
-  width: 100%;
-  display: block;
-}
-
-.cd-body {
-  padding: 24rpx 32rpx;
-  max-height: 45vh;
-}
-
-.cd-author-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-bottom: 20rpx;
-}
-
-.cd-author-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.cd-name {
-  font-size: 28rpx;
-  color: #1C1C1C;
-  font-weight: 500;
-}
-
-.cd-time {
-  font-size: 22rpx;
-  color: #bbb;
-}
-
-.cd-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #1C1C1C;
-  margin-bottom: 16rpx;
-}
-
-.cd-prompt-box {
-  background: #F5F6F7;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-}
-
-.cd-prompt-text {
-  font-size: 26rpx;
-  color: #333;
-  line-height: 1.8;
-}
-
-.cd-stats {
-  display: flex;
-  gap: 24rpx;
-}
-
-.cd-actions {
-  display: flex;
-  gap: 12rpx;
-  padding: 20rpx 32rpx;
-  border-top: 1rpx solid #F0F0F0;
-}
-
+// ── Community Detail Popup ──
+.community-detail-popup { max-height: 85vh; background: $bg-card; }
+.cd-image-wrap { width: 100%; max-height: 400rpx; overflow: hidden; background: $bg-raised; }
+.cd-image { width: 100%; display: block; }
+.cd-body { padding: 24rpx 32rpx; max-height: 45vh; }
+.cd-author-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; }
+.cd-author-info { display: flex; flex-direction: column; }
+.cd-name { font-size: 28rpx; color: $text-1; font-weight: 600; }
+.cd-time { font-size: 22rpx; color: $text-3; }
+.cd-title { font-size: 34rpx; font-weight: 700; color: $text-1; margin-bottom: 16rpx; }
+.cd-prompt-box { background: $bg-raised; border-radius: 16rpx; padding: 24rpx;
+  margin-bottom: 20rpx; border: 1rpx solid $border; }
+.cd-prompt-text { font-size: 26rpx; color: $text-1; line-height: 1.8; }
+.cd-stats { display: flex; gap: 24rpx; }
+.cd-actions { display: flex; gap: 12rpx; padding: 20rpx 32rpx;
+  border-top: 1rpx solid $border; }
 .cd-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-  padding: 14rpx 0;
-  border-radius: 10rpx;
-  font-size: 26rpx;
-  font-weight: 500;
-
-  &.copy {
-    background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
-    color: #fff;
-  }
-
-  &.like {
-    background: #EDE7F6;
-    color: #7C4DFF;
-
-    &.liked {
-      background: #FFEBEE;
-      color: #FF2D55;
-    }
-  }
-
-  &.report {
-    background: #F5F5F5;
-    color: #999;
-  }
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6rpx;
+  padding: 14rpx 0; border-radius: 999rpx; font-size: 26rpx; font-weight: 600;
+  transition: all 0.15s;
+  &.copy { background: $primary-grad; color: #FFFFFF; }
+  &.like { background: $bg-raised; color: $text-2; border: 1rpx solid $border; }
+  &.like.liked { background: rgba(232,148,122,0.1); color: $danger; }
+  &.report { background: $bg-raised; color: $text-3; border: 1rpx solid $border; }
 }
 
-/* ── 举报选项 ── */
-.report-reasons {
-  padding: 16rpx 0;
-}
-
+// ── Report ──
+.report-reasons { padding: 16rpx 0; }
 .reason-option {
-  padding: 20rpx 24rpx;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  color: #333;
-  margin-bottom: 12rpx;
-  background: #F5F5F5;
-
-  &.active {
-    background: #EDE7F6;
-    color: #7C4DFF;
-    font-weight: 500;
-  }
+  padding: 20rpx 24rpx; border-radius: 16rpx; font-size: 28rpx;
+  color: $text-1; margin-bottom: 12rpx; background: $bg-raised; border: 1rpx solid $border;
+  transition: all 0.15s;
+  &.active { background: rgba(139,157,200,0.08); color: $primary; font-weight: 600;
+    border: 1rpx solid rgba(139,157,200,0.25); }
 }
 </style>
