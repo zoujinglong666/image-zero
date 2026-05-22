@@ -44,6 +44,8 @@ public class SecurityConfig {
         boolean isProd = isProduction();
 
         http
+            // 启用CORS（委托给CorsConfig的CorsFilter Bean）
+            .cors(cors -> {})
             // 禁用CSRF（使用JWT，不需要CSRF保护）
             .csrf(AbstractHttpConfigurer::disable)
             // 禁用默认登录页
@@ -70,7 +72,9 @@ public class SecurityConfig {
                     // VIP状态查询（公开）
                     .requestMatchers("/api/payment/status").permitAll()
                     // AI接口 - 允许匿名访问（未登录用户可试用）
-                    .requestMatchers("/api/analyze", "/api/generate", "/api/edit", "/api/task/**").permitAll()
+                    .requestMatchers("/api/analyze", "/api/generate", "/api/edit", "/api/upload", "/api/task/**").permitAll()
+                    // 数据统计接口（开发环境公开，生产需认证）
+                    .requestMatchers("/api/data/**").permitAll()
                     // Actuator - 仅 health 公开
                     .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                     .requestMatchers("/actuator/**").authenticated();

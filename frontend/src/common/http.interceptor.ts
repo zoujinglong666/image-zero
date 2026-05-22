@@ -80,7 +80,7 @@ const httpRequestConfig: RequestConfig = {
   header: {
     'content-type': 'application/json',
   },
-  timeout: 30_000, // 默认 30s，AI 接口可单次覆盖
+  timeout: 300_000, // 默认 5min，AI 接口可单次覆盖
   meta: {
     originalData: true, // 拦截器返回原始响应，自行解析
     toast: false,       // 默认不弹 toast，按需开启

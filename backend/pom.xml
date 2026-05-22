@@ -125,6 +125,20 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Dotenv（自动读取 .env 文件） -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
+        <!-- 智谱 AI SDK（GLM-4.6V-Flash 等视觉模型） -->
+        <dependency>
+            <groupId>ai.z.openapi</groupId>
+            <artifactId>zai-sdk</artifactId>
+            <version>0.3.3</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

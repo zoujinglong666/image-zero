@@ -68,10 +68,26 @@ openai:
   api-key: ${OPENAI_API_KEY:}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
 
-# AI 模型配置
+# 智谱 AI Configuration（GLM-4.6V-Flash 免费视觉模型）
+zhipu:
+  api-key: ${ZHIPU_API_KEY:}
+
+# 小米 MiMo Configuration（多模态视觉模型，OpenAI兼容格式）
+mimo:
+  api-key: ${MIMO_API_KEY:}
+  base-url: ${MIMO_BASE_URL:https://api.xiaomimimo.com/v1}
+  analyze-model: ${MIMO_ANALYZE_MODEL:mimo-v2.5}
+
+# 硅基流动 Configuration（Qwen2-VL 免费视觉模型，并发限制更宽松）
+siliconflow:
+  api-key: ${SILICONFLOW_API_KEY:}
+  base-url: ${SILICONFLOW_BASE_URL:https://api.siliconflow.cn/v1}
+  analyze-model: ${SILICONFLOW_ANALYZE_MODEL:Qwen/Qwen2-VL-7B-Instruct}
+
+# AI 模型配置（智谱 AI GLM-4.6V-Flash 免费视觉模型）
 ai:
-  analyze-model: ${AI_ANALYZE_MODEL:nvidia/nemotron-nano-12b-v2-vl:free}
-  generate-model: ${AI_GENERATE_MODEL:nvidia/nemotron-nano-12b-v2-vl:free}
+  analyze-model: ${AI_ANALYZE_MODEL:glm-4.6v-flash}
+  generate-model: ${AI_GENERATE_MODEL:dall-e-3}
 
 # Google Gemini Configuration
 gemini:
