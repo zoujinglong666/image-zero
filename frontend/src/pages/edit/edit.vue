@@ -21,10 +21,10 @@
     <scroll-view v-else scroll-y class="edit-scroll">
       <view class="hero-card">
         <view class="hero-copy">
-          <text class="hero-badge">Cute Flow</text>
-          <text class="hero-title">从分析结果到新图，三步完成</text>
+          <text class="hero-badge">{{ editData.style || '分析完成' }}</text>
+          <text class="hero-title">AI 已分析完成，提示词可复制</text>
           <text class="hero-desc">
-            先选生成引擎，再挑重点修改，最后预览并生成，避免一次看到太多参数。
+            MiMo 智能反推了画面风格与提示词，直接复制到 Midjourney / SD 使用，或继续编辑生成新图。
           </text>
         </view>
         <image
@@ -35,6 +35,43 @@
         />
         <view v-else class="hero-placeholder">
           <u-icon name="image" size="48" color="#9A9BAC" />
+        </view>
+      </view>
+
+      <!-- ═══ 提示词快速复制卡片（始终可见） ═══ -->
+      <view class="prompt-card">
+        <view class="prompt-card-head">
+          <view class="prompt-card-title-row">
+            <text class="prompt-card-title">AI 反推提示词</text>
+            <text class="prompt-card-badge">MiMo 分析</text>
+          </view>
+          <text class="prompt-card-sub">分析完成后即可复制，直接用于 Midjourney / Stable Diffusion 等工具</text>
+        </view>
+
+        <view class="prompt-section">
+          <view class="prompt-section-head">
+            <text class="prompt-lang">EN</text>
+            <button class="copy-chip" @click="copyPrompt('english')">
+              <u-icon name="file-text" size="28" color="#8B9DC8" />
+              <text>复制英文</text>
+            </button>
+          </view>
+          <view class="prompt-text-wrap">
+            <text class="prompt-text" selectable>{{ editData.prompt.english || '分析中...' }}</text>
+          </view>
+        </view>
+
+        <view class="prompt-section">
+          <view class="prompt-section-head">
+            <text class="prompt-lang">中文</text>
+            <button class="copy-chip" @click="copyPrompt('chinese')">
+              <u-icon name="file-text" size="28" color="#C4B5E0" />
+              <text>复制中文</text>
+            </button>
+          </view>
+          <view class="prompt-text-wrap">
+            <text class="prompt-text" selectable>{{ editData.prompt.chinese || '分析中...' }}</text>
+          </view>
         </view>
       </view>
 
@@ -104,8 +141,8 @@
         </view>
 
         <view class="hint-card">
-          <u-icon name="info-circle" size="34" color="#D4B896" />
-          <text>MiMo 目前仍建议用于图片理解，编辑出图阶段优先选择可直接生成图片的引擎。</text>
+          <u-icon name="info-circle" size="34" color="#8B9DC8" />
+          <text>图片分析已默认使用小米 MiMo 模型；下方选择的是「生图引擎」，用于编辑后的新图生成。</text>
         </view>
       </view>
 
@@ -131,7 +168,10 @@
           <view class="field">
             <view class="field-head">
               <text class="field-title">English Prompt</text>
-              <text class="field-count">{{ editData.prompt.english.length }}/2000</text>
+              <view class="field-head-right">
+                <text class="field-count">{{ editData.prompt.english.length }}/2000</text>
+                <button class="inline-copy-btn" @click="copyPrompt('english')">复制</button>
+              </view>
             </view>
             <textarea
               v-model="editData.prompt.english"
@@ -145,7 +185,10 @@
           <view class="field">
             <view class="field-head">
               <text class="field-title">中文描述</text>
-              <text class="field-count">{{ editData.prompt.chinese.length }}/1000</text>
+              <view class="field-head-right">
+                <text class="field-count">{{ editData.prompt.chinese.length }}/1000</text>
+                <button class="inline-copy-btn" @click="copyPrompt('chinese')">复制</button>
+              </view>
             </view>
             <textarea
               v-model="editData.prompt.chinese"
@@ -263,11 +306,11 @@
             </view>
             <slider
               :value="editData.styleConfidence * 100"
-              min="0"
-              max="100"
+              :min="0"
+              :max="100"
               activeColor="#8B9DC8"
               backgroundColor="rgba(201,168,124,0.10)"
-              block-size="18"
+              :block-size="18"
               @change="(e: any) => editData && (editData.styleConfidence = e.detail.value / 100)"
             />
           </view>
@@ -343,7 +386,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { GenerationProvider, ImageAnalysisResult } from '@/types'
 import { analyzeImage, editImage } from '@/api/image'
@@ -354,8 +397,10 @@ const sourceImageUrl = ref('')
 const previewImageUrl = ref('')
 const running = ref(false)
 const currentStep = ref(1)
-const currentEditor = ref<'prompt' | 'color' | 'elements' | 'style'>('prompt')
+const currentEditor = ref<string>('prompt')
 const selectedProvider = ref<GenerationProvider>('zhipu')
+const rewardedAd = ref<any>(null)          // 激励视频广告实例
+const pendingGenerateParams = ref<any>(null) // 广告看完后继续生成用的参数
 
 const stepItems = [
   { step: 1, title: '选引擎', desc: '决定生成路线' },
@@ -463,7 +508,6 @@ onLoad((options) => {
     } catch (e) {
       console.error('[Edit] 解析失败:', e)
     }
-    return
   }
 
   if (options?.imageUrl) {
@@ -471,7 +515,47 @@ onLoad((options) => {
     sourceImageUrl.value = imageUrl
     analyzeAndEdit(imageUrl)
   }
+
+  // 初始化激励视频广告（微信小程序环境）
+  initRewardedAd()
 })
+
+onUnmounted(() => {
+  // 销毁广告实例，防止内存泄漏
+  // uni 激励视频广告无需手动 destroy，直接置空即可
+  rewardedAd.value = null
+})
+
+// ── 激励视频广告 ──
+// 微信小程序激励视频广告
+// 文档：https://uniapp.dcloud.net.cn/api/pages/adbideo.html
+function initRewardedAd() {
+  // 仅微信小程序环境需要初始化
+  // #ifdef MP-WEIXIN
+  console.log('[广告] 微信小程序环境，激励视频广告已预留')
+  // #endif
+}
+
+async function markAdWatchedThenGenerate() {
+  try {
+    await uni.request({
+      url: '/api/ad/reward',
+      method: 'POST',
+      header: getAuthHeader(),
+    })
+  } catch {
+    // 标记失败不阻塞生成，后端会自己判断
+  }
+  if (pendingGenerateParams.value) {
+    doGenerate(pendingGenerateParams.value)
+    pendingGenerateParams.value = null
+  }
+}
+
+function getAuthHeader(): Record<string, string> {
+  const token = uni.getStorageSync('token') || ''
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 async function analyzeAndEdit(imageUrl: string) {
   uni.showLoading({ title: 'AI 正在分析图片...', mask: true })
@@ -551,18 +635,105 @@ async function runGeneration() {
   running.value = true
   uni.showLoading({ title: 'AI 正在生成新图...', mask: true })
 
+  const params = {
+    originalPrompt: editData.value.prompt.english,
+    originalImage: sourceImageUrl.value,
+    colorScheme: editData.value.colorScheme,
+    elementStyle: editData.value.elements,
+    layout: editData.value.layout,
+    text: editData.value.prompt.chinese,
+    style: editData.value.style,
+    provider: selectedProvider.value,
+  }
+
   try {
-    const result = await editImage({
-      originalPrompt: editData.value.prompt.english,
-      originalImage: sourceImageUrl.value,
-      colorScheme: editData.value.colorScheme,
-      elementStyle: editData.value.elements,
-      layout: editData.value.layout,
-      text: editData.value.prompt.chinese,
-      style: editData.value.style,
-      provider: selectedProvider.value,
+    const res = await editImage(params)
+    // editImage 返回 { imageUrl, prompt }
+    previewImageUrl.value = res.imageUrl
+    uni.showToast({ title: '生成完成', icon: 'success' })
+  } catch (err: any) {
+    // HTTP 业务逻辑：后端可能通过 HTTP 200 + 特殊 code 返回 needAd
+    // 或者 HTTP 403 配合 needAd 字段
+    const data = err?.data || err
+    if (data?.needAd) {
+      pendingGenerateParams.value = params
+      uni.hideLoading()
+      showRewardedAd(data.adUnitId)
+      return
+    }
+    uni.showToast({ title: err.message || '生成失败', icon: 'none' })
+  } finally {
+    running.value = false
+    uni.hideLoading()
+  }
+}
+
+// 弹出激励视频广告
+function showRewardedAd(adUnitId?: string) {
+  // #ifdef MP-WEIXIN
+  if (!adUnitId) {
+    uni.showToast({ title: '广告配置缺失，将直接生成', icon: 'none' })
+    if (pendingGenerateParams.value) {
+      doGenerate(pendingGenerateParams.value)
+      pendingGenerateParams.value = null
+    }
+    return
+  }
+
+  try {
+    const ad = uni.createRewardedVideoAd({ adUnitId })
+    ad.onClose((res: any) => {
+      if (res && res.isEnded) {
+        markAdWatchedThenGenerate()
+      } else {
+        uni.showToast({ title: '需要看完广告才能继续哦', icon: 'none' })
+      }
     })
-    previewImageUrl.value = result.imageUrl
+    ad.onError((err: any) => {
+      console.error('[广告] 加载失败:', err)
+      // 广告加载失败 → 开发模式下直接继续生成
+      if (pendingGenerateParams.value) {
+        uni.showToast({ title: '广告暂时不可用，将直接生成', icon: 'none' })
+        doGenerate(pendingGenerateParams.value)
+        pendingGenerateParams.value = null
+      }
+    })
+    ad.load().then(() => {
+      ad.show()
+    }).catch(() => {
+      if (pendingGenerateParams.value) {
+        uni.showToast({ title: '广告加载失败，将直接生成', icon: 'none' })
+        doGenerate(pendingGenerateParams.value)
+        pendingGenerateParams.value = null
+      }
+    })
+    rewardedAd.value = ad
+  } catch (e) {
+    console.error('[广告] showRewardedAd 失败:', e)
+    if (pendingGenerateParams.value) {
+      doGenerate(pendingGenerateParams.value)
+      pendingGenerateParams.value = null
+    }
+  }
+  // #endif
+
+  // 非微信小程序环境（H5/App 调试时）→ 直接跳过广告
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '非小程序环境，已跳过广告', icon: 'none' })
+  if (pendingGenerateParams.value) {
+    doGenerate(pendingGenerateParams.value)
+    pendingGenerateParams.value = null
+  }
+  // #endif
+}
+
+// 真正调后端生图（跳过广告检查）
+async function doGenerate(params: any) {
+  running.value = true
+  uni.showLoading({ title: 'AI 正在生成新图...', mask: true })
+  try {
+    const res: any = await editImage(params)
+    previewImageUrl.value = res.data?.imageUrl || res.imageUrl
     uni.showToast({ title: '生成完成', icon: 'success' })
   } catch (err: any) {
     uni.showToast({ title: err.message || '生成失败', icon: 'none' })
@@ -577,6 +748,24 @@ function previewGeneratedImage() {
   uni.previewImage({
     urls: [previewImageUrl.value],
     current: previewImageUrl.value,
+  })
+}
+
+function copyPrompt(lang: 'english' | 'chinese') {
+  if (!editData.value) return
+  const text = lang === 'english' ? editData.value.prompt.english : editData.value.prompt.chinese
+  if (!text) {
+    uni.showToast({ title: '暂无提示词内容', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: `${lang === 'english' ? '英文' : '中文'}提示词已复制`, icon: 'success', duration: 1500 })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请手动复制', icon: 'none' })
+    }
   })
 }
 
@@ -633,10 +822,59 @@ $danger:     #E8947A;
 }
 
 // ── Cards ──
-.hero-card, .stats-card, .panel {
+.hero-card, .stats-card, .panel, .prompt-card {
   margin: 24rpx; border-radius: 24rpx;
   background: $bg-card; border: 1rpx solid $border;
   box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
+}
+.prompt-card {
+  padding: 28rpx;
+  border-color: rgba(139,157,200,0.25);
+  box-shadow: 0 4rpx 24rpx rgba(139,157,200,0.08);
+}
+.prompt-card-head { margin-bottom: 24rpx; }
+.prompt-card-title-row {
+  display: flex; align-items: center; gap: 14rpx; margin-bottom: 8rpx;
+}
+.prompt-card-title { font-size: 32rpx; font-weight: 800; color: $text-1; }
+.prompt-card-badge {
+  padding: 4rpx 16rpx; border-radius: 999rpx;
+  background: rgba(139,157,200,0.12); color: $primary;
+  font-size: 20rpx; font-weight: 700;
+}
+.prompt-card-sub { font-size: 23rpx; line-height: 1.6; color: $text-2; }
+
+.prompt-section {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid $border;
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+}
+.prompt-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.prompt-lang {
+  padding: 6rpx 18rpx; border-radius: 999rpx;
+  background: rgba(139,157,200,0.1); color: $primary;
+  font-size: 22rpx; font-weight: 700;
+}
+.copy-chip {
+  display: flex; align-items: center; gap: 8rpx;
+  padding: 8rpx 22rpx; border: 1rpx solid rgba(139,157,200,0.25);
+  border-radius: 999rpx; background: $bg-card;
+  font-size: 22rpx; font-weight: 600; color: $primary;
+  transition: all 0.15s;
+  &:active { background: rgba(139,157,200,0.08); }
+}
+.prompt-text-wrap {
+  padding: 20rpx 22rpx; border-radius: 18rpx;
+  background: $bg-raised; border: 1rpx solid $border;
+}
+.prompt-text {
+  font-size: 25rpx; line-height: 1.8; color: $text-1;
+  word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
 }
 .hero-card { padding: 28rpx; display: flex; gap: 20rpx; align-items: center; }
 .hero-copy { flex: 1; display: flex; flex-direction: column; }
@@ -720,6 +958,15 @@ $danger:     #E8947A;
 .field { margin-bottom: 24rpx; }
 .field-head, .field-inline { display: flex; align-items: center; justify-content: space-between;
   gap: 16rpx; margin-bottom: 12rpx; }
+.field-head-right {
+  display: flex; align-items: center; gap: 14rpx;
+}
+.inline-copy-btn {
+  padding: 4rpx 18rpx; border: 1rpx solid rgba(139,157,200,0.25);
+  border-radius: 999rpx; background: transparent;
+  color: $primary; font-size: 21rpx; font-weight: 600;
+  &:active { background: rgba(139,157,200,0.08); }
+}
 .field-title { font-size: 27rpx; font-weight: 700; color: $text-1; }
 .field-tip, .field-count { font-size: 22rpx; color: $text-3; }
 .field-textarea, .text-input {

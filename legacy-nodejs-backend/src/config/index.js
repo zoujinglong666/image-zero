@@ -57,6 +57,15 @@ const config = {
     dir: process.env.LOG_DIR || 'logs/',
   },
 
+  // 智谱 AI 配置（GLM-Image 生图）
+  zhipu: {
+    apiKey: process.env.ZHIPU_API_KEY || '',
+    model: process.env.ZHIPU_MODEL || 'glm-image',       // glm-image | cogview-4 | cogview-3-flash
+    enableAdGate: process.env.ZHIPU_ENABLE_AD_GATE !== 'false', // 默认开启广告墙
+    dailyFreeLimit: parseInt(process.env.ZHIPU_DAILY_FREE_LIMIT) || 3, // 每日免费次数（看广告后可用）
+    costPerGen: parseFloat(process.env.ZHIPU_COST_PER_GEN) || 0.1, // 每次生图成本（元）
+  },
+
   // 数据目录
   dataDir: process.env.DATA_DIR || '',
 }

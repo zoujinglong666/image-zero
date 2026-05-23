@@ -4,8 +4,9 @@
 import fs from 'fs'
 import axios from 'axios'
 import { analyzeImage, generatePollinationsURL, editImageWithAI } from '../services/aiService.js'
+import { generateWithZhipu, initZhipuClient } from '../services/zhipuService.js'
 import { validateImageUrl, validatePrompt, validateMagicBytes, sanitizeFilename, safeUnlink, isPathSafe } from '../utils/validator.js'
-import { findOrCreateUserFromToken, addHistory } from '../services/dbService.js'
+import { findOrCreateUserFromToken, addHistory, findUserByUid, findUserById, getTodayGenCount, incrementTodayGenCount, getWatchedAds, markAdWatched } from '../services/dbService.js'
 import config from '../config/index.js'
 import logger from '../utils/logger.js'
 import jwt from 'jsonwebtoken'
@@ -170,46 +171,119 @@ export async function analyze(req, res, next) {
 }
 
 /**
- * POST /api/generate — AI 图片生成
+ * POST /api/generate — AI 图片生成（智谱 GLM-Image）
+ * 防刷机制：需要登录 + 每日次数限制 + 广告观看记录
  */
 export async function generate(req, res, next) {
+  const startTime = Date.now()
   try {
-    const { prompt, width = 1024, height = 1024, seed, model = 'flux' } = req.body
+    const { prompt, width = 1280, height = 1280, model } = req.body
 
     if (!validatePrompt(prompt)) {
       throw new BadRequestError('提示词无效')
     }
 
-    logger.info('生成图片...')
-
-    const imageUrl = generatePollinationsURL(prompt, { width, height, seed, model })
-
-    // 自动写入生成记录
+    // ── 1. 用户身份校验 ──
     const userId = resolveUserId(req)
-    if (userId > 0) {
-      try {
-        addHistory(userId, {
-          type: 'generate',
-          promptCn: prompt,
-          promptEn: prompt,
-          generatedUrl: imageUrl,
+    if (!userId || userId <= 0) {
+      throw new BadRequestError('请先登录后再生成图片')
+    }
+
+    // ── 2. 获取用户信息（防刷） ──
+    const user = findUserById(userId)
+
+    // ── 3. 广告墙检查（预留口子） ──
+    const adGateEnabled = config.zhipu?.enableAdGate !== false
+    const watchedAds = getWatchedAds(userId)
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const watchedToday = !!watchedAds[todayStr]
+
+    if (adGateEnabled && !watchedToday) {
+      // 测试模式：前端携带 X-Skip-Ad: 1 头可跳过广告
+      const skipAd = req.headers['x-skip-ad'] === '1' || req.query.skip_ad === '1'
+      if (!skipAd) {
+        return res.success({
+          needAd: true,
+          message: '请观看激励视频后继续使用生图功能',
+          adUnitId: process.env.WX_AD_UNIT_ID || '',
         })
-      } catch (dbErr) {
-        logger.warn(`[DB] 写入生成记录失败: ${dbErr.message}`)
       }
     }
 
+    // ── 4. 每日次数限制 ──
+    const dailyLimit = (user?.daily_quota !== undefined ? user.daily_quota : config.zhipu?.dailyFreeLimit) || 3
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const genCount = getTodayGenCount(userId, todayStart)
+
+    if (genCount >= dailyLimit) {
+      return res.success({
+        needAd: true,
+        quotaExhausted: true,
+        message: `今日${dailyLimit}次免费额度已用完，观看广告可继续使用`,
+        adUnitId: process.env.WX_AD_UNIT_ID || '',
+      })
+    }
+
+    // ── 5. 调用智谱生图 ──
+    logger.info(`[生图] userId=${userId} model=${model || 'glm-image'} size=${width}x${height}`)
+
+    const sizeMap = {
+      '1024x1024': '1024x1024',
+      '1280x1280': '1280x1280',
+      '1568x1056': '1568x1056',
+      '1056x1568': '1056x1568',
+    }
+    const size = sizeMap[`${width}x${height}`] || '1280x1280'
+
+    const result = await generateWithZhipu(prompt, {
+      model: model || config.zhipu?.model || 'glm-image',
+      size,
+      quality: 'hd',
+      user_id: String(userId).slice(0, 128),
+    })
+
+    const elapsed = Date.now() - startTime
+
+    // ── 6. 写入历史记录 ──
+    try {
+      addHistory(userId, {
+        type: 'generate',
+        promptCn: prompt,
+        promptEn: prompt,
+        generatedUrl: result.url,
+        model: result.model,
+        cost: config.zhipu?.costPerGen || 0.1,
+      })
+      logger.info(`[DB] 生图记录已写入: userId=${userId}`)
+    } catch (dbErr) {
+      logger.warn(`[DB] 写入生图历史失败: ${dbErr.message}`)
+    }
+
+    // ── 7. 更新今日生成计数 ──
+    try {
+      incrementTodayGenCount(userId)
+    } catch {}
+
     res.success({
-      images: [{ url: imageUrl, revised_prompt: prompt }],
+      images: [{ url: result.url, revised_prompt: result.revised_prompt }],
       prompt,
-      size: `${width}x${height}`,
+      size: result.size,
+      model: result.model,
+      elapsed,
     })
   } catch (err) {
-    if (err instanceof BadRequestError) {
-      return next(err)
+    const elapsed = Date.now() - startTime
+    logger.error(`[生图] 失败 (${elapsed}ms): ${err.message}`)
+
+    if (err instanceof BadRequestError) return next(err)
+    if (err.message?.includes('熔断') || err.message?.includes('timeout')) {
+      return next(new ServiceUnavailableError('生图服务繁忙，请稍后重试'))
     }
-    logger.error(`生成失败: ${err.message}`)
-    next(new InternalError('生成失败，请重试'))
+    if (err.message?.includes('quota') || err.message?.includes('429')) {
+      return next(new RateLimitError('生图额度已用完，请联系管理员'))
+    }
+    next(new InternalError('生图失败，请重试'))
   }
 }
 

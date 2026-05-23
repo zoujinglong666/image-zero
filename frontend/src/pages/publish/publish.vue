@@ -3,7 +3,7 @@
     <u-navbar
       title="分享到社区"
       :bgColor="'#FFFFFF'"
-      :titleStyle="{ color: '#1C1C1C', fontWeight: '600' }"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '700' }"
       :borderBottom="true"
       :placeholder="true"
     />
@@ -230,12 +230,20 @@ async function submitPublish() {
 </script>
 
 <style lang="scss" scoped>
+$Mist:   #F6F7FB;   // 页面背景
+$Card:   #FFFFFF;   // 卡片
+$raised:  #F0F1F5;   // 凸起表面
+$border:  rgba(0,0,0,0.05);
+$text-1: #2C2E3A;   // 主文字
+$text-2: #6B6E7D;   // 次文字
+$text-3: #9A9BAC;   // 弱文字
+$primary: #8B9DC8;   // 雾蓝（主色）
+$primary-grad: linear-gradient(135deg, #8B9DC8, #A3B0CC);
+$danger: #E8947A;   // 柔珊瑚
+
 .page {
   min-height: 100vh;
-  width: 100%;
-  max-width: 100vw;
-  overflow: hidden;
-  background: #F5F6F7;
+  background: $Mist;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -253,18 +261,19 @@ async function submitPublish() {
 .upload-area {
   width: 100%;
   height: 360rpx;
-  border: 2rpx dashed #ddd;
-  border-radius: 16rpx;
+  border: 2rpx dashed rgba(0,0,0,0.1);
+  border-radius: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 32rpx;
   overflow: hidden;
-  background: #fafafa;
+  background: $Card;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 
   &:active {
-    border-color: #7C4DFF;
-    background: #EDE7F6;
+    border-color: $primary;
+    background: $raised;
   }
 }
 
@@ -277,13 +286,13 @@ async function submitPublish() {
 
 .upload-hint {
   font-size: 28rpx;
-  color: #666;
+  color: $text-2;
   font-weight: 500;
 }
 
 .upload-sub {
   font-size: 22rpx;
-  color: #bbb;
+  color: $text-3;
 }
 
 .upload-preview {
@@ -304,7 +313,7 @@ async function submitPublish() {
   right: 12rpx;
   width: 56rpx;
   height: 56rpx;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.45);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -320,7 +329,7 @@ async function submitPublish() {
 
 .form-label {
   font-size: 28rpx;
-  color: #1C1C1C;
+  color: $text-1;
   font-weight: 600;
   margin-bottom: 16rpx;
   display: block;
@@ -330,15 +339,16 @@ async function submitPublish() {
   width: 100%;
   height: 88rpx;
   padding: 0 24rpx;
-  border: 2rpx solid #eee;
-  border-radius: 12rpx;
+  border: 2rpx solid rgba(0,0,0,0.08);
+  border-radius: 16rpx;
   font-size: 28rpx;
-  color: #1C1C1C;
-  background: #fff;
+  color: $text-1;
+  background: $Card;
   box-sizing: border-box;
+  transition: border-color 0.15s;
 
   &:focus {
-    border-color: #7C4DFF;
+    border-color: $primary;
   }
 }
 
@@ -346,22 +356,23 @@ async function submitPublish() {
   width: 100%;
   min-height: 240rpx;
   padding: 24rpx;
-  border: 2rpx solid #eee;
-  border-radius: 12rpx;
+  border: 2rpx solid rgba(0,0,0,0.08);
+  border-radius: 16rpx;
   font-size: 28rpx;
-  color: #1C1C1C;
+  color: $text-1;
   line-height: 1.6;
-  background: #fff;
+  background: $Card;
   box-sizing: border-box;
+  transition: border-color 0.15s;
 
   &:focus {
-    border-color: #7C4DFF;
+    border-color: $primary;
   }
 }
 
 .char-count {
   font-size: 22rpx;
-  color: #bbb;
+  color: $text-3;
   text-align: right;
   display: block;
   margin-top: 8rpx;
@@ -376,14 +387,19 @@ async function submitPublish() {
   display: inline-block;
   padding: 12rpx 28rpx;
   border-radius: 32rpx;
-  background: #F5F5F5;
+  background: $raised;
   font-size: 26rpx;
-  color: #666;
+  color: $text-2;
   margin-right: 16rpx;
+  border: 1rpx solid $border;
+  transition: all 0.15s;
 
   &.active {
-    background: #7C4DFF;
-    color: #fff;
+    background: $primary-grad;
+    color: #FFFFFF;
+    font-weight: 600;
+    border-color: transparent;
+    box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.18);
   }
 }
 
@@ -399,8 +415,10 @@ async function submitPublish() {
   right: 0;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #fff;
-  border-top: 1rpx solid #F0F0F0;
+  background: rgba(246,247,251,0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1rpx solid $border;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.03);
 }
 
 .submit-btn {
@@ -409,11 +427,13 @@ async function submitPublish() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #7C4DFF, #7C4DFF);
-  border-radius: 16rpx;
+  background: $primary-grad;
+  border-radius: 999rpx;
   font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 700;
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.2);
+  transition: opacity 0.15s;
 
   &.disabled {
     opacity: 0.4;
@@ -426,7 +446,7 @@ async function submitPublish() {
 
 .publish-tip {
   font-size: 22rpx;
-  color: #bbb;
+  color: $text-3;
   text-align: center;
   display: block;
   margin-top: 12rpx;

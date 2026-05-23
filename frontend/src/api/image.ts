@@ -287,6 +287,13 @@ export async function generateImage(params: ImageGenerationParams): Promise<stri
     '/generate',
   )
 
+  // 业务层广告墙拦截
+  if ((data as any)?.needAd) {
+    const err: any = new Error((data as any).message || '请先观看广告')
+    err.data = data
+    throw err
+  }
+
   const imageResultUrl = data.images[0].url
   console.log('✅ [API] 生成完成:', imageResultUrl.substring(0, 80))
   return imageResultUrl
@@ -314,6 +321,13 @@ export async function editImage(params: EditParams): Promise<{ imageUrl: string;
     }, { timeout: 120_000 } as any),
     '/edit',
   )
+
+  // 业务层广告墙拦截（HTTP 200 但 data 里带 needAd）
+  if ((data as any)?.needAd) {
+    const err: any = new Error((data as any).message || '请先观看广告')
+    err.data = data
+    throw err
+  }
 
   console.log('✅ [API] 编辑完成')
   return data

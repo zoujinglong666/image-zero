@@ -128,8 +128,8 @@ public class AiService {
      */
     private Map<String, Object> analyzeWithZhipu(String imageUrl) {
         if (zhipuApiKey == null || zhipuApiKey.isBlank()) {
-            log.warn("[ZhipuAI] API Key 未配置，降级到 OpenAI 兼容层");
-            return analyzeWithOpenAI(imageUrl);
+            log.warn("[ZhipuAI] API Key 未配置，降级到 SiliconFlow（跳过 OpenAI 避免同后端）");
+            return analyzeWithSiliconFlow(imageUrl);
         }
 
         ZhipuAiClient client = ZhipuAiClient.builder()
@@ -177,9 +177,9 @@ public class AiService {
                         Thread.sleep(delay * 1000L);
                         continue;
                     }
-                    // 其他错误或重试耗尽 — fallback
-                    log.warn("[ZhipuAI] 失败，fallback 到 OpenAI 兼容层");
-                    return analyzeWithOpenAI(imageUrl);
+                    // 其他错误或重试耗尽 — fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）
+                    log.warn("[ZhipuAI] 失败，fallback 到 SiliconFlow");
+                    return analyzeWithSiliconFlow(imageUrl);
                 }
 
                 Object messageObj = response.getData().getChoices().get(0).getMessage();
@@ -197,8 +197,8 @@ public class AiService {
                 }
 
                 if (content == null || content.isBlank()) {
-                    log.error("[ZhipuAI] 响应 content 为空，fallback 到 OpenAI 兼容层");
-                    return analyzeWithOpenAI(imageUrl);
+                    log.error("[ZhipuAI] 响应 content 为空，fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）");
+                    return analyzeWithSiliconFlow(imageUrl);
                 }
 
                 log.info("[ZhipuAI] 第{}次成功, content 前100字: {}",
@@ -219,8 +219,8 @@ public class AiService {
                     log.warn("[ZhipuAI] 429限流(异常)，{}秒后重试 ({}/{}): {}", delay, attempt, maxRetries, msg);
                     try { Thread.sleep(delay * 1000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
                 } else {
-                    log.error("[ZhipuAI] 异常，fallback 到 OpenAI 兼容层: {}", msg);
-                    return analyzeWithOpenAI(imageUrl);
+                    log.error("[ZhipuAI] 异常，fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）: {}", msg);
+                    return analyzeWithSiliconFlow(imageUrl);
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
@@ -313,8 +313,8 @@ public class AiService {
      */
     private Map<String, Object> analyzeWithSiliconFlow(String imageUrl) {
         if (siliconflowApiKey == null || siliconflowApiKey.isBlank()) {
-            log.warn("[SiliconFlow] API Key 未配置，降级到 OpenAI 兼容层");
-            return analyzeWithOpenAI(imageUrl);
+            log.warn("[SiliconFlow] API Key 未配置，返回降级分析结果");
+            return buildFallbackAnalysis();
         }
 
         int maxRetries = 3;
@@ -377,8 +377,8 @@ public class AiService {
      */
     private Map<String, Object> analyzeWithOpenAI(String imageUrl) {
         if (openaiApiKey == null || openaiApiKey.isBlank()) {
-            log.warn("OpenAI API Key 未配置，返回降级分析结果");
-            return buildFallbackAnalysis();
+            log.warn("OpenAI API Key 未配置，尝试 SiliconFlow 作为兜底");
+            return analyzeWithSiliconFlow(imageUrl);
         }
 
         int maxRetries = 3;
@@ -431,17 +431,17 @@ public class AiService {
                     }
                 } else {
                     log.error("[AI分析] 429限流! 已重试{}次仍失败: {}", maxRetries, e.getResponseBodyAsString());
-                    return buildFallbackAnalysis();
+                    return analyzeWithSiliconFlow(imageUrl);
                 }
             } catch (org.springframework.web.client.HttpStatusCodeException e) {
                 log.error("OpenAI分析失败, 状态码={}, 响应体={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-                return buildFallbackAnalysis(); // 非429错误不重试
+                return analyzeWithSiliconFlow(imageUrl); // 非429错误，尝试 SiliconFlow 兜底
             } catch (Exception e) {
                 log.error("OpenAI分析失败(第{}次)", attempt, e);
-                if (attempt == maxRetries) return buildFallbackAnalysis();
+                if (attempt == maxRetries) return analyzeWithSiliconFlow(imageUrl);
             }
         }
-        return buildFallbackAnalysis();
+        return analyzeWithSiliconFlow(imageUrl);
     }
 
     /**
@@ -528,6 +528,11 @@ public class AiService {
             log.warn("[AI生成] OpenRouter 不支持 /images/generations，改用 Pollinations");
             return generateWithPollinations(prompt, width, height);
         }
+        // baseUrl 指向智谱时直接走智谱专属通道（参数格式更匹配）
+        if (openaiBaseUrl != null && openaiBaseUrl.contains("open.bigmodel.cn")) {
+            log.info("[AI生成] OpenAI兼容接口检测到智谱 baseUrl，切换 generateWithZhipu");
+            return generateWithZhipu(prompt, width, height, model);
+        }
 
         if (openaiApiKey == null || openaiApiKey.isBlank()) {
             log.warn("[AI生成] OpenAI API Key 未配置，改用 Pollinations");
@@ -556,6 +561,10 @@ public class AiService {
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             log.error("[AI生成] OpenAI兼容接口失败, 状态码={}, 响应体={}",
                     e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().is5xxServerError() || e.getStatusCode().value() == 429) {
+                log.warn("[AI生成] OpenAI兼容接口 {} (服务异常/限流)，改用 Pollinations 兜底", e.getStatusCode());
+                return generateWithPollinations(prompt, width, height);
+            }
             throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("[AI生成] OpenAI兼容接口异常", e);
@@ -570,11 +579,19 @@ public class AiService {
         }
 
         try {
-            String size = mapSize(width, height);
+            String size = mapSizeForZhipu(width, height);
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", model);
             requestBody.put("prompt", prompt);
             requestBody.put("size", size);
+            // glm-image 仅支持 quality=hd；cogview 系列支持 standard/hd
+            if (model != null && model.startsWith("cogview")) {
+                requestBody.put("quality", "standard");
+            } else {
+                requestBody.put("quality", "hd");
+            }
+            // user_id 用于智谱风控（6-128 字符）
+            requestBody.put("user_id", "turing-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -592,8 +609,8 @@ public class AiService {
             log.error("[AI生成] 智谱接口失败, 状态码={}, 响应体={}",
                     e.getStatusCode(), e.getResponseBodyAsString(), e);
 
-            if (e.getStatusCode().is5xxServerError()) {
-                log.warn("[AI生成] 智谱上游 5xx，改用 Pollinations 兜底");
+            if (e.getStatusCode().is5xxServerError() || e.getStatusCode().value() == 429) {
+                log.warn("[AI生成] 智谱接口 {} (模型繁忙/服务异常)，改用 Pollinations 兜底", e.getStatusCode());
                 return generateWithPollinations(prompt, width, height);
             }
             throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
@@ -722,7 +739,7 @@ public class AiService {
             String enhancedPrompt = originalPrompt;
             if (originalImage != null && !originalImage.isBlank()) {
                 try {
-                    Map<String, Object> analysisResult = analyzeImage(originalImage, useProvider);
+                    Map<String, Object> analysisResult = analyzeImage(originalImage, null); // 分析走默认最优（MiMo > 智谱 > SiliconFlow），不受生图 provider 影响
                     @SuppressWarnings("unchecked")
                     Map<String, Object> promptResult = (Map<String, Object>) ((Map<String, Object>) analysisResult.get("result")).get("prompt");
                     if (promptResult != null && promptResult.get("english") != null) {
@@ -1083,6 +1100,21 @@ public class AiService {
             return "gemini";
         }
         return "pollinations";
+    }
+
+    /**
+     * 智谱生图尺寸映射（glm-image / cogview 系列）
+     * 支持尺寸: 1024x1024 / 1280x1280 / 1568x1056 / 1056x1568
+     */
+    private String mapSizeForZhipu(Integer width, Integer height) {
+        int w = width != null ? width : 1280;
+        int h = height != null ? height : 1280;
+        // 最接近智谱支持尺寸
+        if (w <= 1024 && h <= 1024) return "1024x1024";
+        if (w >= 1568 || h >= 1568) {
+            return w >= h ? "1568x1056" : "1056x1568";
+        }
+        return "1280x1280";
     }
 
     private String mapSize(Integer width, Integer height) {

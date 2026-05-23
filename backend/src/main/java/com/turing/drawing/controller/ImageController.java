@@ -7,11 +7,13 @@ import com.turing.drawing.security.UserPrincipal;
 import com.turing.drawing.service.CosService;
 import com.turing.drawing.service.ImageService;
 import com.turing.drawing.service.PaymentService;
+import com.turing.drawing.service.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +30,7 @@ public class ImageController {
     private final ImageService imageService;
     private final CosService cosService;
     private final PaymentService paymentService;
+    private final UserPreferenceService userPreferenceService;
 
     /**
      * 图片分析 — 反推AI绘画提示词
@@ -92,6 +95,8 @@ public class ImageController {
      * 图片生成 — 根据提示词生成图片
      * POST /api/generate
      * 前端期望: { images: [{ url, revised_prompt }] }
+     *
+     * 防刷机制: 登录用户 + 广告墙（需观看激励视频）+ 每日次数限制
      */
     @PostMapping("/generate")
     public ApiResponse<Map<String, Object>> generate(
@@ -99,8 +104,39 @@ public class ImageController {
             @RequestBody Map<String, Object> request) {
         Long userId = principal != null ? principal.getId() : 0L;
 
-        // 额度检查（生成需要VIP）
-        if (userId > 0 && !paymentService.checkQuota(userId)) {
+        // 1. 必须登录
+        if (userId == 0) {
+            return ApiResponse.error(401, "请先登录后再生成图片");
+        }
+
+        // 2. 广告墙检查（预留口子，可通过配置关闭）
+        if (userPreferenceService.isAdGateEnabled()) {
+            boolean watched = userPreferenceService.hasWatchedAdToday(userId);
+            if (!watched) {
+                // 测试模式：前端传 X-Skip-Ad: 1 头可跳过（正式上线后可删除此判断）
+                boolean skipAd = request.get("skipAd") != null
+                        || (principal != null && "dev".equals(principal.getUsername()));
+                if (!skipAd) {
+                    return ApiResponse.success(Map.of(
+                            "needAd", true,
+                            "message", "请观看激励视频后继续使用生图功能",
+                            "adUnitId", userPreferenceService.getAdUnitId()
+                    ));
+                }
+            }
+        }
+
+        // 3. 每日次数限制（VIP 无限）
+        if (!paymentService.checkQuota(userId)) {
+            // 额度用完，提示看广告解锁更多
+            if (userPreferenceService.isAdGateEnabled()) {
+                return ApiResponse.success(Map.of(
+                        "needAd", true,
+                        "quotaExhausted", true,
+                        "message", "今日免费额度已用完，观看广告可继续使用",
+                        "adUnitId", userPreferenceService.getAdUnitId()
+                ));
+            }
             return ApiResponse.error(403, "今日免费额度已用完，升级VIP获取更多次数");
         }
 
@@ -116,10 +152,9 @@ public class ImageController {
 
         Map<String, Object> result = imageService.generateImage(userId, prompt, width, height, model, provider);
 
-        // 消耗额度
-        if (userId > 0) {
-            paymentService.consumeQuota(userId);
-        }
+        // 消耗额度 + 更新今日生成计数
+        paymentService.consumeQuota(userId);
+        userPreferenceService.incrementTodayGenCount(userId);
 
         return ApiResponse.success(result);
     }
@@ -170,6 +205,20 @@ public class ImageController {
         DrawingTask task = imageService.getTaskStatus(id);
         if (task == null) return ApiResponse.error("任务不存在");
         return ApiResponse.success(task);
+    }
+
+    /**
+     * 广告奖励接口 — 用户观看激励视频后调用，标记今日已看广告
+     * POST /api/ad/reward
+     */
+    @PostMapping("/ad/reward")
+    public ApiResponse<?> adReward(@AuthenticationPrincipal UserPrincipal principal) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
+        userPreferenceService.markAdWatched(principal.getId());
+        log.info("[广告] userId={} 今日广告已记录", principal.getId());
+        return ApiResponse.success(Map.of("ok", true, "message", "广告观看记录已保存"));
     }
 
     /**

@@ -68,9 +68,13 @@ openai:
   api-key: ${OPENAI_API_KEY:}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
 
-# 智谱 AI Configuration（GLM-4.6V-Flash 免费视觉模型）
+# 智谱 AI Configuration（GLM-4.6V-Flash 免费视觉模型 + GLM-Image 生图）
 zhipu:
   api-key: ${ZHIPU_API_KEY:}
+  generate-model: ${ZHIPU_GENERATE_MODEL:glm-image}
+  enable-ad-gate: ${ZHIPU_ENABLE_AD_GATE:true}
+  daily-free-limit: ${ZHIPU_DAILY_FREE_LIMIT:3}
+  cost-per-gen: ${ZHIPU_COST_PER_GEN:0.1}
 
 # 小米 MiMo Configuration（多模态视觉模型，OpenAI兼容格式）
 mimo:

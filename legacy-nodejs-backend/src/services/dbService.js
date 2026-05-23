@@ -254,6 +254,108 @@ export function setUserPreferences(userId, prefs) {
 }
 
 // ══════════════════════════════════════════
+//  智谱生图 — 用户防刷辅助函数
+// ══════════════════════════════════════════
+
+/**
+ * 根据数据库主键 ID 查找用户
+ *（findUserByUid 是按 uid 字段查，这个按 id 查）
+ */
+export function findUserById(userId) {
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
+}
+
+/**
+ * 获取用户今日已生成次数
+ * 通过 user_preferences 表记录每日计数，key 格式: gen_count_YYYY_MM_DD
+ * @param {number} userId
+ * @param {Date|number} todayStart - Date 对象或 unix timestamp (秒)
+ * @returns {number}
+ */
+export function getTodayGenCount(userId, todayStart) {
+  const today = new Date()
+  if (todayStart instanceof Date) {
+    today.setTime(todayStart.getTime())
+  }
+  const dateKey = `gen_count_${today.getFullYear()}_${String(today.getMonth() + 1).padStart(2, '0')}_${String(today.getDate()).padStart(2, '0')}`
+  const row = db.prepare(
+    'SELECT pref_value FROM user_preferences WHERE user_id = ? AND pref_key = ?'
+  ).get(userId, dateKey)
+  return row ? parseInt(row.pref_value) || 0 : 0
+}
+
+/**
+ * 递增用户今日生成计数
+ * 如果今日记录不存在则自动创建
+ * @param {number} userId
+ */
+export function incrementTodayGenCount(userId) {
+  const today = new Date()
+  const dateKey = `gen_count_${today.getFullYear()}_${String(today.getMonth() + 1).padStart(2, '0')}_${String(today.getDate()).padStart(2, '0')}`
+  const now = Math.floor(Date.now() / 1000)
+
+  const existing = db.prepare(
+    'SELECT id, pref_value FROM user_preferences WHERE user_id = ? AND pref_key = ?'
+  ).get(userId, dateKey)
+
+  if (existing) {
+    const newVal = (parseInt(existing.pref_value) || 0) + 1
+    db.prepare(
+      'UPDATE user_preferences SET pref_value = ?, updated_at = ? WHERE id = ?'
+    ).run(String(newVal), now, existing.id)
+  } else {
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, ?, '1', ?)
+    `).run(userId, dateKey, now)
+  }
+}
+
+/**
+ * 获取用户广告观看记录
+ * watched_ads 存为 JSON 字符串: { "2026-05-23": 1, ... }
+ * 存在 user_preferences 中，key = watched_ads
+ * @param {number} userId
+ * @returns {object}
+ */
+export function getWatchedAds(userId) {
+  const row = db.prepare(
+    'SELECT pref_value FROM user_preferences WHERE user_id = ? AND pref_key = ?'
+  ).get(userId, 'watched_ads')
+  if (!row) return {}
+  try {
+    return JSON.parse(row.pref_value)
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * 记录用户今日已观看广告
+ * @param {number} userId
+ */
+export function markAdWatched(userId) {
+  const watched = getWatchedAds(userId)
+  const today = new Date().toISOString().slice(0, 10)
+  watched[today] = 1
+  const now = Math.floor(Date.now() / 1000)
+  const existing = db.prepare(
+    'SELECT id FROM user_preferences WHERE user_id = ? AND pref_key = ?'
+  ).get(userId, 'watched_ads')
+
+  if (existing) {
+    db.prepare(
+      'UPDATE user_preferences SET pref_value = ?, updated_at = ? WHERE id = ?'
+    ).run(JSON.stringify(watched), now, existing.id)
+  } else {
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, 'watched_ads', ?, ?)
+    `).run(userId, JSON.stringify(watched), now)
+  }
+}
+
+// ══════════════════════════════════════════
 //  VIP 相关 (预留)
 // ══════════════════════════════════════════
 

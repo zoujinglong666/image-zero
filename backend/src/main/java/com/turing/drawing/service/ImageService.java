@@ -91,7 +91,7 @@ public class ImageService {
                 .height(height != null ? height : 1024)
                 .model(model != null ? model : "flux")
                 .status("processing")
-                .provider(provider != null ? provider : "openai")
+                .provider(provider != null ? provider : "zhipu")
                 .build();
         drawingTaskMapper.insert(task);
 

@@ -4,6 +4,7 @@
 import { Router } from 'express'
 import multer from 'multer'
 import { analyze, generate, edit } from '../controllers/imageController.js'
+import { markAdWatched, findUserByUid } from '../services/dbService.js'
 import { adaptPrompt, enhancePrompt } from '../services/promptAdapter.js'
 import { RateLimiter } from '../middlewares/rateLimiter.js'
 import { createTimeoutMiddleware } from '../middlewares/timeout.js'
@@ -11,6 +12,7 @@ import { optionalAuth } from '../middlewares/auth.js'
 import { BadRequestError } from '../middlewares/responseHandler.js'
 import { sanitizeFilename } from '../utils/validator.js'
 import config from '../config/index.js'
+import logger from '../utils/logger.js'
 
 const router = Router()
 const rateLimiter = new RateLimiter()
@@ -54,6 +56,27 @@ router.post('/analyze',
   upload.single('image'),
   analyze
 )
+
+// POST /api/ad/reward — 记录用户观看激励视频广告
+// 前端在广告播放完成后调用此接口，后端标记今日已看广告
+router.post('/ad/reward', optionalAuth, (req, res, next) => {
+  try {
+    // req.user 来自 optionalAuth，里面是 JWT payload（含 uid）
+    const uid = req.user?.uid || req.user?.id
+    if (!uid) {
+      throw new BadRequestError('请先登录')
+    }
+    const user = findUserByUid(uid)
+    if (!user) {
+      throw new BadRequestError('用户不存在，请重新登录')
+    }
+    markAdWatched(user.id)
+    logger.info(`[广告] userId=${user.id} uid=${uid} 今日广告已记录`)
+    res.success({ ok: true, message: '广告观看记录已保存' })
+  } catch (err) {
+    next(err)
+  }
+})
 
 // POST /api/generate — AI 图片生成
 router.post('/generate',
