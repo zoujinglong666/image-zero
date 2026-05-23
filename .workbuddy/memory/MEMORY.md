@@ -51,11 +51,29 @@
 - edit.vue step 2 编辑器 English Prompt / 中文描述旁各加行内复制按钮
 - hero-card 文字更新：强调"提示词可复制"的核心价值
 
+## 前端 URL 拼接规范（2026-05-23 重要！）
+
+- `.env`（dev）的 `VITE_API_BASE_URL` **带 `/api` 后缀**，值为 `http://localhost:8080/api`（供小程序直连）
+- `.env.production`（prod）的 `VITE_API_BASE_URL` **必须带 `/api` 后缀**，值为 `https://api.image-zero.art/api`
+- **H5 开发环境**：`getApiBaseUrl()` 检测到 localhost 自动返回 `/api`（走 Vite 代理），忽略 `.env` 值
+- `http`（uview-pro）走 `http.interceptor.ts` baseUrl = `config.api.baseUrl` = `/api`（H5 dev）/ 完整URL（小程序/prod）
+- `uni.uploadFile` / `uni.request` 裸调用**必须**用 `configUtils.getFullApiUrl()` 或 `config.api.baseUrl + path`，**禁止**直接读 `import.meta.env.VITE_API_BASE_URL`
+- 已修复：`prompt.ts`（uploadCommunityImage/deleteCommunityPost）、`data.ts`（uploadAvatar）
+- 上传参数名约定：图片编辑用 `name: 'file'`，社区用 `name: 'image'`，头像用 `name: 'avatar'`
+
+## 上线配置清单
+
+- `backend/.env`：JWT_SECRET、CORS_ALLOWED_ORIGINS、COS 密钥、AI API 密钥均在生产 `.env` 中配置
+- `frontend/.env.production`：`VITE_API_BASE_URL=https://api.image-zero.art/api`
+- SecurityConfig：`/api/data/**` 是刻意 permitAll()（GET 有软降级，写操作内部有 auth 守卫），不需要改
+- flyway 自动迁移：`spring.flyway.enabled=true`，SQL 放 `backend/src/main/resources/db/migration/`
+
 ## 启动验证
 
 - Spring Boot 启动正常：`Started TuringDrawingApplication in ~3.4s`
 - 编译：70 个源文件，0 错误（只有 Lombok EqualsAndHashCode warning，无害）
 - 连接数据库：MySQL，需本地 `turing_drawing` 库可用
+- 重启命令：`kill $(lsof -ti :8080); cd backend && mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dserver.port=8080"`
 
 ## 用户偏好
 

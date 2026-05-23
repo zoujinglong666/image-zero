@@ -31,12 +31,12 @@ public class DataController {
     public ApiResponse<PageResult<History>> listHistory(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(defaultValue = "20") int page_size,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Boolean favorite,
             @RequestParam(required = false) String keyword) {
         Long userId = principal != null ? principal.getId() : 0L;
-        PageResult<History> result = dataService.listHistory(userId, page, pageSize, type, favorite, keyword);
+        PageResult<History> result = dataService.listHistory(userId, page, page_size, type, favorite, keyword);
         return ApiResponse.success(result);
     }
 

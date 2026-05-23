@@ -1,4 +1,5 @@
 import { http } from 'uview-pro'
+import { config, configUtils } from '@/config'
 
 /**
  * ════════════════════════════════════════════
@@ -140,7 +141,7 @@ export function uploadCommunityImage(filePath: string): Promise<{
 }> {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: `${getApiBase()}/api/prompt/upload`,
+      url: configUtils.getFullApiUrl('/prompt/upload'),
       filePath,
       name: 'image',
       header: getAuthHeader(),
@@ -208,10 +209,9 @@ export function reportCommunityPost(id: number, params: {
 
 /** 删除自己的分享 */
 export function deleteCommunityPost(id: number): Promise<void> {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${API_BASE}/api/prompt/community/${id}`,
+      url: configUtils.getFullApiUrl(`/prompt/community/${id}`),
       method: 'DELETE',
       header: getAuthHeader(),
       success(res) {
@@ -227,9 +227,6 @@ export function deleteCommunityPost(id: number): Promise<void> {
 //  内部工具函数
 // ══════════════════════════════════════════
 
-function getApiBase(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-}
 
 function getAuthHeader(): Record<string, string> {
   try {

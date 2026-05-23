@@ -1,4 +1,5 @@
 import { http } from 'uview-pro'
+import { configUtils } from '@/config'
 
 /**
  * ════════════════════════════════════════════
@@ -46,14 +47,14 @@ export interface UserProfile {
 /** 分页查询历史记录 */
 export function fetchHistory(params: {
   page?: number
-  pageSize?: number
+  page_size?: number
   type?: string
   favorite?: boolean
   keyword?: string
 } = {}): Promise<HistoryPageResult> {
   const query = new URLSearchParams()
   if (params.page) query.set('page', String(params.page))
-  if (params.pageSize) query.set('pageSize', String(params.pageSize))
+  if (params.page_size) query.set('page_size', String(params.page_size))
   if (params.type) query.set('type', params.type)
   if (params.favorite) query.set('favorite', 'true')
   if (params.keyword) query.set('keyword', params.keyword)
@@ -118,7 +119,7 @@ export function uploadAvatar(tempFilePath: string): Promise<{ url: string }> {
   return new Promise((resolve, reject) => {
     const token = uni.getStorageSync('token') || ''
     uni.uploadFile({
-      url: (import.meta.env.VITE_API_BASE_URL || '') + '/data/avatar',
+      url: configUtils.getFullApiUrl('/data/avatar'),
       filePath: tempFilePath,
       name: 'avatar',
       header: {

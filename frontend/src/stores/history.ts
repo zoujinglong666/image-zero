@@ -88,7 +88,7 @@ export const useHistoryStore = defineStore('history', () => {
 
     loading.value = true
     try {
-      const result = await fetchHistory({ page, pageSize: 20 })
+      const result = await fetchHistory({ page, page_size: 20 })
       history.value = result.list.map(apiToLocal)
       currentPage.value = result.pagination.page
       totalPages.value = result.pagination.totalPages

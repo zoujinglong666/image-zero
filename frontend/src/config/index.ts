@@ -104,7 +104,15 @@ const getPlatform = (): Platform => {
 
 // 获取API基础URL
 const getApiBaseUrl = (): string => {
-  // 优先使用环境变量
+  // #ifdef H5
+  // H5开发环境：localhost 强制走 Vite 代理，忽略环境变量
+  const hostname = window.location.hostname
+  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    return '/api'
+  }
+  // #endif
+
+  // 使用环境变量（覆盖平台默认值）
   const envUrl = import.meta.env.VITE_API_BASE_URL
   if (envUrl) {
     return envUrl
@@ -127,11 +135,7 @@ const getApiBaseUrl = (): string => {
   // #endif
   
   // #ifdef H5
-  // H5可以根据当前域名判断
-  const hostname = window.location.hostname
-  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
-    return '/api' // 开发环境使用代理
-  }
+  // H5生产环境根据域名
   switch (env) {
     case 'development':
       return 'https://dev-api.image-zero.art/api'
