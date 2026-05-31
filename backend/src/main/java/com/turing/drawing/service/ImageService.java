@@ -35,23 +35,24 @@ public class ImageService {
 
     /**
      * 分析图片，返回反推提示词结果
+     * @param scene 场景类型（ecommerce/avatar/ppt/style-transfer），用于优化AI分析策略
      */
-    public Map<String, Object> analyzeImage(Long userId, String imageUrl, String provider) {
+    public Map<String, Object> analyzeImage(Long userId, String imageUrl, String provider, String scene) {
         long startTime = System.currentTimeMillis();
 
         // 1. 创建轻量任务记录（不存图片数据）
         DrawingTask task = DrawingTask.builder()
                 .userId(userId)
                 .type("analyze")
-                .prompt("[image_analyze]")
+                .prompt("[image_analyze]" + (scene != null ? "[" + scene + "]" : ""))
                 .status("processing")
                 .provider(provider != null ? provider : "mimo")
                 .build();
         drawingTaskMapper.insert(task);
 
         try {
-            // 2. 调用AI分析（核心！）
-            Map<String, Object> analysisResult = aiService.analyzeImage(imageUrl, provider);
+            // 2. 调用AI分析（核心！）— 携带场景参数
+            Map<String, Object> analysisResult = aiService.analyzeImage(imageUrl, provider, scene);
             long elapsed = System.currentTimeMillis() - startTime;
 
             // 3. 更新任务状态（只存状态，不存 base64 数据）

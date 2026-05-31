@@ -32,6 +32,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtConfig jwtConfig;
+    private final InviteService inviteService;
 
     /** 小程序 appid/secret */
     @Value("${wechat.mini-program-app-id:}")
@@ -55,22 +56,25 @@ public class AuthService {
 
     /**
      * 微信小程序登录
+     * @param code 微信授权码
+     * @param inviteCode 邀请码（可选，从分享链接带入）
      */
-    public Map<String, Object> wechatLogin(String code) {
+    public Map<String, Object> wechatLogin(String code, String inviteCode) {
         // 参数验证
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("授权码不能为空");
         }
-        
+
         String openid = resolveMiniProgramOpenid(code);
         if (openid == null || openid.isBlank()) {
             throw new RuntimeException("获取微信用户标识失败");
         }
-        
+
         String openidHash = hashSha256(openid);
 
         Optional<User> userOpt = userMapper.findByOpenidHash(openidHash);
         User user;
+        boolean isNewUser = false;
         if (userOpt.isPresent()) {
             user = userOpt.get();
         } else {
@@ -82,6 +86,12 @@ public class AuthService {
                     .isActive(true)
                     .build();
             userMapper.insert(user);
+            isNewUser = true;
+        }
+
+        // 新用户 + 有邀请码 → 记录邀请关系
+        if (isNewUser && inviteCode != null && !inviteCode.isBlank()) {
+            inviteService.recordInvite(user.getId(), inviteCode);
         }
 
         userMapper.updateLastLoginAt(user.getId(), LocalDateTime.now());
@@ -288,7 +298,7 @@ public class AuthService {
 
     /**
      * 调用微信小程序 code2Session 获取 openid
-     * 如果未配置 mini-program appid/secret 则降级为用 code 临时替代（开发模式）
+     * 未配置 appid/secret 时直接抛异常，不降级
      */
     @SuppressWarnings("unchecked")
     private String resolveMiniProgramOpenid(String code) {
@@ -297,11 +307,14 @@ public class AuthService {
             log.warn("微信小程序登录code为空");
             return null;
         }
-        
-        if (miniProgramAppId == null || miniProgramAppId.isBlank() || miniProgramAppSecret == null || miniProgramAppSecret.isBlank()) {
-            log.warn("微信小程序 appid/secret 未配置，使用 code 临时替代 openid（仅开发环境）");
-            return code;
+
+        // 必须配置 appid/secret，否则无法走真实微信登录
+        if (miniProgramAppId == null || miniProgramAppId.isBlank()
+                || miniProgramAppSecret == null || miniProgramAppSecret.isBlank()) {
+            log.error("微信小程序 appid/secret 未配置，请在 backend/.env 中设置 WECHAT_MINI_PROGRAM_APP_ID 和 WECHAT_MINI_PROGRAM_APP_SECRET");
+            throw new IllegalStateException("微信小程序登录未配置，请联系管理员");
         }
+
         try {
             String url = String.format(
                     "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
@@ -312,12 +325,15 @@ public class AuthService {
             }
             if (resp != null) {
                 log.error("微信 code2Session 失败: errcode={}, errmsg={}", resp.get("errcode"), resp.get("errmsg"));
+                throw new RuntimeException("微信登录失败: " + resp.get("errmsg"));
             }
+            throw new RuntimeException("微信 code2Session 无响应");
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             log.error("调用微信 code2Session 异常", e);
+            throw new RuntimeException("微信登录异常: " + e.getMessage());
         }
-        // 降级：用 code 替代
-        return code;
     }
 
     private String hashSha256(String input) {

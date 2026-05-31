@@ -34,6 +34,7 @@ public class AuthController {
 
     /**
      * POST /api/auth/wechat — 微信小程序登录
+     * 支持邀请码参数：body.inviteCode（从分享链接带入）
      */
     @PostMapping("/wechat")
     public ApiResponse<Map<String, Object>> wechatLogin(@RequestBody Map<String, String> body) {
@@ -41,7 +42,8 @@ public class AuthController {
         if (code == null || code.isBlank()) {
             return ApiResponse.error("缺少 code 参数");
         }
-        Map<String, Object> result = authService.wechatLogin(code);
+        String inviteCode = body.get("inviteCode");
+        Map<String, Object> result = authService.wechatLogin(code, inviteCode);
         return ApiResponse.success(result);
     }
 

@@ -40,37 +40,101 @@
           <view class="upload-icon-wrap">
             <u-icon name="plus" size="72" color="#8B9DC8" />
           </view>
-          <text class="upload-title">上传图片，AI 反推提示词</text>
-          <text class="upload-desc">支持 JPG / PNG / WEBP，自动压缩后分析</text>
+          <text class="upload-title">{{ sceneUploadTitle }}</text>
+          <text class="upload-desc">{{ sceneUploadDesc }}</text>
+          <view v-if="selectedScene" class="scene-badge">
+            <text>📌 {{ sceneConfig[selectedScene]?.name || '' }}</text>
+          </view>
         </view>
         <view class="hero-glow" />
       </view>
 
-      <!-- ====== 快捷工具入口 ====== -->
-      <view class="quick-tools">
-        <view class="tool-item" @click="goToCreate">
-          <view class="tool-icon">
-            <u-icon name="photo" size="40" color="#8B9DC8" />
+      <!-- ====== 场景选择（四大垂直场景）====== -->
+      <view class="scene-section">
+        <view class="section-header">
+          <view class="section-title-row">
+            <view class="section-dot" />
+            <text class="section-title">你想做什么？</text>
           </view>
-          <text class="tool-label">AI解析</text>
+          <text class="section-sub-title">选一个场景，AI 自动优化分析策略</text>
         </view>
-        <view class="tool-item" @click="goToEditDirect">
-          <view class="tool-icon">
-            <u-icon name="edit-pen" size="40" color="#A3B0CC" />
+
+        <view class="scene-grid">
+          <!-- 场景1: 电商主图 -->
+          <view class="scene-card" :class="{ active: selectedScene === 'ecommerce' }" @click="selectScene('ecommerce')">
+            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #FFE5B4, #FFD700);">
+              <text class="scene-emoji">🛒</text>
+            </view>
+            <view class="scene-body">
+              <text class="scene-name">电商主图</text>
+              <text class="scene-desc">反推竞品构图/光影/材质 → 换色换背景一键出图</text>
+              <view class="scene-tags">
+                <text class="scene-tag">白底图</text>
+                <text class="scene-tag">场景图</text>
+                <text class="scene-tag">多尺寸</text>
+              </view>
+            </view>
+            <view v-if="selectedScene === 'ecommerce'" class="scene-check">
+              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            </view>
           </view>
-          <text class="tool-label">编辑</text>
-        </view>
-        <view class="tool-item" @click="goToPromptLib">
-          <view class="tool-icon">
-            <u-icon name="file-text" size="40" color="#8B9DC8" />
+
+          <!-- 场景2: 社交头像 -->
+          <view class="scene-card" :class="{ active: selectedScene === 'avatar' }" @click="selectScene('avatar')">
+            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #E8B4F0, #FF69B4);">
+              <text class="scene-emoji">📱</text>
+            </view>
+            <view class="scene-body">
+              <text class="scene-name">社交头像</text>
+              <text class="scene-desc">提取参考图风格 → 换脸/换背景/换发型 → 多尺寸导出</text>
+              <view class="scene-tags">
+                <text class="scene-tag">1:1</text>
+                <text class="scene-tag">9:16</text>
+                <text class="scene-tag">病毒传播</text>
+              </view>
+            </view>
+            <view v-if="selectedScene === 'avatar'" class="scene-check">
+              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            </view>
           </view>
-          <text class="tool-label">词库</text>
-        </view>
-        <view class="tool-item" @click="goToHistory">
-          <view class="tool-icon">
-            <u-icon name="clock" size="40" color="#A3B0CC" />
+
+          <!-- 场景3: PPT配图 -->
+          <view class="scene-card" :class="{ active: selectedScene === 'ppt' }" @click="selectScene('ppt')">
+            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #A8E6CF, #56AB91);">
+              <text class="scene-emoji">📊</text>
+            </view>
+            <view class="scene-body">
+              <text class="scene-name">PPT配图</text>
+              <text class="scene-desc">上传风格参考 → 匹配配色排版 → 批量生成商务插图</text>
+              <view class="scene-tags">
+                <text class="scene-tag">16:9</text>
+                <text class="scene-tag">扁平风</text>
+                <text class="scene-tag">批量</text>
+              </view>
+            </view>
+            <view v-if="selectedScene === 'ppt'" class="scene-check">
+              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            </view>
           </view>
-          <text class="tool-label">历史</text>
+
+          <!-- 场景4: 风格迁移 -->
+          <view class="scene-card" :class="{ active: selectedScene === 'style-transfer' }" @click="selectScene('style-transfer')">
+            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #8B9DC8, #C4B5E0);">
+              <text class="scene-emoji">🎨</text>
+            </view>
+            <view class="scene-body">
+              <text class="scene-name">风格迁移</text>
+              <text class="scene-desc">照片→油画/动漫/赛博朋克 → 强度可调 → 对比预览</text>
+              <view class="scene-tags">
+                <text class="scene-tag">梵高</text>
+                <text class="scene-tag">宫崎骏</text>
+                <text class="scene-tag">赛博</text>
+              </view>
+            </view>
+            <view v-if="selectedScene === 'style-transfer'" class="scene-check">
+              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            </view>
+          </view>
         </view>
       </view>
 
@@ -243,7 +307,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { onPullDownRefresh } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { analyzeImage as apiAnalyze, generateImage as apiGenerate, uploadImage as apiUpload, checkNetwork, watchNetworkChange } from '@/api/image'
 import { getHomeData, getLatestPosts, likeSubmission } from '@/api/community'
@@ -290,7 +354,96 @@ const analysisElapsed = ref('')
 let analyzeStartTime = 0
 let analyzeTimer: ReturnType<typeof setInterval> | null = null
 
+// ─── 场景化工作台 ──────────────────────────────
+type SceneType = 'ecommerce' | 'avatar' | 'ppt' | 'style-transfer' | ''
+const selectedScene = ref<SceneType>('')
+
+/** 场景配置表 */
+const sceneConfig: Record<Exclude<SceneType, ''>, {
+  name: string
+  uploadTitle: string
+  uploadDesc: string
+  analyzeHint: string
+  defaultProvider: string
+  outputSizes: Array<{ label: string; w: number; h: number }>
+}> = {
+  ecommerce: {
+    name: '电商主图',
+    uploadTitle: '上传竞品/参考图，AI 反推构图与材质',
+    uploadDesc: '自动分析光影角度 → 换色换背景 → 多尺寸电商图',
+    analyzeHint: '这是一张电商产品图，请重点分析：1)拍摄角度和构图方式 2)光影布局 3)产品材质和质感 4)背景处理方式 5)适合的电商平台尺寸规格',
+    defaultProvider: 'zhipu',
+    outputSizes: [
+      { label: '方形', w: 1000, h: 1000 },
+      { label: '主图', w: 800, h: 800 },
+      { label: '详情', w: 1200, h: 1200 },
+      { label: '横版', w: 1920, h: 600 },
+    ],
+  },
+  avatar: {
+    name: '社交头像',
+    uploadTitle: '上传风格参考图，AI 提取并迁移',
+    uploadDesc: '保持氛围感 → 换脸换背景 → 一键多尺寸',
+    analyzeHint: '这是一张社交头像/壁纸风格的图片，请重点分析：1)整体画风和艺术风格 2)色彩情绪和氛围 3)人物姿态和表情特点 4)背景元素和景深效果 5)适合做头像/壁纸的裁剪建议',
+    defaultProvider: 'zhipu',
+    outputSizes: [
+      { label: '头像1:1', w: 1000, h: 1000 },
+      { label: '壁纸9:16', w: 1080, h: 1920 },
+      { label: '朋友圈', w: 1200, h: 1200 },
+      { label: '横幅', w: 1920, h: 1080 },
+    ],
+  },
+  ppt: {
+    name: 'PPT配图',
+    uploadTitle: '上传喜欢的配图风格参考',
+    uploadDesc: '分析配色排版 → 输入文字需求 → 批量生成',
+    analyzeHint: '这是一张PPT/商务配图风格的图片，请重点分析：1)配色方案和色彩比例 2)插图风格(扁平/插画风/数据图表风) 3)排版布局和留白 4)字体和文字设计风格 5)是否适合商务演示场景',
+    defaultProvider: 'zhipu',
+    outputSizes: [
+      { label: '16:9宽屏', w: 1920, h: 1080 },
+      { label: '4:3标准', w: 1600, h: 1200 },
+      { label: '全屏海报', w: 1080, h: 1920 },
+    ],
+  },
+  'style-transfer': {
+    name: '风格迁移',
+    uploadTitle: '上传原图，AI 帮你变身',
+    uploadDesc: '保护主体不变 → 选择目标风格 → 强度可调',
+    analyzeHint: '这是一张用于风格迁移的原图，请重点分析：1)画面主体内容(必须保留) 2)当前风格特征 3)色彩分布 4)构图结构 5)如果转换为其他艺术风格(如梵高油画、宫崎骏动漫、赛博朋克)，哪些元素应该保留、哪些可以改变',
+    defaultProvider: 'zhipu',
+    outputSizes: [
+      { label: '原图比例', w: 1024, h: 1024 },
+      { label: '横向', w: 1280, h: 720 },
+      { label: '竖向', w: 720, h: 1280 },
+    ],
+  },
+}
+
+/** 当前场景的上传区文案（响应式） */
+const sceneUploadTitle = computed(() => {
+  return selectedScene.value ? sceneConfig[selectedScene.value]?.uploadTitle : '上传图片，AI 反推提示词'
+})
+const sceneUploadDesc = computed(() => {
+  return selectedScene.value ? sceneConfig[selectedScene.value]?.uploadDesc : '支持 JPG / PNG / WEBP，自动压缩后分析'
+})
+
+/** 选择/取消选择场景 */
+function selectScene(scene: SceneType) {
+  if (selectedScene.value === scene) {
+    selectedScene.value = ''
+  } else {
+    selectedScene.value = scene
+  }
+}
+
 // ─── 生命周期 ────────────────────────────
+onLoad((options?: any) => {
+  // 处理邀请码（从分享链接携带）
+  if (options && options.inviteCode) {
+    handleInviteCode(String(options.inviteCode))
+  }
+})
+
 onMounted(async () => {
   isOnline.value = await checkNetwork()
   const unwatch = watchNetworkChange((online) => {
@@ -476,9 +629,10 @@ const triggerUpload = () => {
 
       // 先上传拿 URL，再跳转分析（不再传 base64！）
       const serverUrl = await apiUpload(tempUrl)
-      console.log(`✅ [首页] 上传成功，跳转编辑页...`)
+      console.log(`✅ [首页] 上传成功，跳转编辑页... scene=${selectedScene.value || 'none'}`)
+      const sceneParam = selectedScene.value ? `&scene=${selectedScene.value}` : ''
       uni.navigateTo({
-        url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}`
+        url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}${sceneParam}`
       })
     } catch (err: any) {
       console.error('❌ [上传]', err)
@@ -500,8 +654,9 @@ const triggerUpload = () => {
       uploadedImage.value = res.tempFilePaths[0]
       try {
         const serverUrl = await apiUpload(res.tempFilePaths[0])
+        const sceneParam = selectedScene.value ? `&scene=${selectedScene.value}` : ''
         uni.navigateTo({
-          url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}`
+          url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}${sceneParam}`
         })
       } catch (err: any) {
         uni.showToast({ title: '上传失败，请重试', icon: 'none' })
@@ -556,6 +711,14 @@ const onAddToFavorites = () => {
     title: '图灵绘境 - AI反推提示词神器',
     imageUrl: '/static/logo.png',
   }
+}
+
+// 处理邀请码（从分享链接携带）
+function handleInviteCode(code: string) {
+  if (!code) return
+  // 存储邀请码，登录时携带
+  uni.setStorageSync('pending_invite_code', code)
+  console.log('[邀请] 收到邀请码:', code)
 }
 
 // 暴露分享方法（uni-app 页面生命周期要求）
@@ -779,5 +942,44 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
 @keyframes spin { to { transform: rotate(360deg); } }
 .no-more { text-align: center; padding: 32rpx 0;
   text { font-size: 24rpx; color: $text-3; }
+}
+
+// ── Scene Cards（场景选择卡片）──
+.scene-section { margin-top: 48rpx; padding: 0 28rpx; }
+.scene-grid { display: flex; flex-direction: column; gap: 20rpx; margin-top: 24rpx; }
+
+.scene-card {
+  display: flex; align-items: center; gap: 20rpx;
+  background: $bg-card; border-radius: 20rpx; padding: 24rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease; position: relative;
+  &:active { transform: scale(0.98); }
+  &.active {
+    border-color: #D4A017; background: #FFFBF0;
+    box-shadow: 0 4rpx 16rpx rgba(212, 160, 23, 0.12);
+  }
+}
+.scene-icon-wrap {
+  width: 88rpx; height: 88rpx; border-radius: 20rpx;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  .scene-emoji { font-size: 40rpx; }
+}
+.scene-body { flex: 1; min-width: 0; }
+.scene-name { font-size: 30rpx; font-weight: 700; color: $text-1; display: block; }
+.scene-desc { font-size: 22rpx; color: $text-3; margin-top: 6rpx; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scene-tags { display: flex; gap: 10rpx; margin-top: 10rpx; flex-wrap: wrap; }
+.scene-tag {
+  font-size: 18rpx; color: #D4A017; background: rgba(212, 160, 23, 0.1);
+  padding: 4rpx 14rpx; border-radius: 8rpx; line-height: 1.4;
+}
+.scene-check { flex-shrink: 0; }
+
+// 场景徽章（上传区）
+.scene-badge {
+  display: inline-flex; align-items: center; gap: 6rpx;
+  margin-top: 12rpx; padding: 8rpx 20rpx;
+  background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+  border-radius: 20rpx; border: 1rpx solid rgba(212, 160, 23, 0.3);
+  text { font-size: 22rpx; color: #B8860B; font-weight: 600; }
 }
 </style>

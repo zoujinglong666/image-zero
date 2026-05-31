@@ -230,8 +230,9 @@ export async function uploadImage(filePath: string): Promise<string> {
 /**
  * 分析图片 - 调用后端 AI 服务
  * 如果传入的是 URL（非 base64），跳过压缩直接发送
+ * @param scene 场景类型（ecommerce/avatar/ppt/style-transfer），后端据此优化分析策略
  */
-export async function analyzeImage(imageUrl: string, provider?: GenerationProvider): Promise<ImageAnalysisResult> {
+export async function analyzeImage(imageUrl: string, provider?: GenerationProvider, scene?: string): Promise<ImageAnalysisResult> {
   // 网络预检
   const online = await checkNetwork()
   if (!online) {
@@ -258,7 +259,7 @@ export async function analyzeImage(imageUrl: string, provider?: GenerationProvid
   const response = await retryRequest<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>(
     () => http.post<{ elapsed: number; result: ImageAnalysisResult; cached: boolean }>(
       '/analyze',
-      { imageUrl: processedUrl, provider },
+      { imageUrl: processedUrl, provider, ...(scene ? { scene } : {}) },
       { timeout: 120_000 } as any,
     ),
     '/analyze',

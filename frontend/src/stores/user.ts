@@ -110,23 +110,24 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /** 上传头像并同步到后端 */
+  /** 上传头像并更新到后端 */
   async function updateAvatar(tempFilePath: string): Promise<boolean> {
     try {
       const result = await uploadAvatar(tempFilePath)
       const url = result?.url || ''
       if (url) {
         await updateProfile({ avatarUrl: url })
-        avatarUrl.value = url
-        if (userInfo.value) {
-          userInfo.value.avatarUrl = url
-        }
+        // 强制重新从后端拉取最新资料，确保数据一致
+        await loadProfile()
         return true
       }
+      // 上传成功但没有返回 URL
+      console.error('[Profile] 上传成功但无 URL 返回:', result)
+      uni.showToast({ title: '头像上传失败（无地址）', icon: 'none' })
       return false
     } catch (e: any) {
-      console.error('[Profile] 上传头像失败:', e.message)
-      uni.showToast({ title: '头像更新失败', icon: 'none' })
+      console.error('[Profile] 上传头像失败:', e.message, e)
+      uni.showToast({ title: '头像更新失败: ' + (e.message || '未知错误'), icon: 'none' })
       return false
     }
   }

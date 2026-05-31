@@ -368,6 +368,13 @@
             <u-icon name="photo" size="56" color="#9A9BAC" />
             <text>还没有预览图，点击下方按钮生成看看。</text>
           </view>
+          <!-- 下载按钮 -->
+          <view v-if="previewImageUrl" class="preview-actions">
+            <button class="download-btn" @click="downloadGeneratedImage">
+              <u-icon name="download" size="34" color="#fff" />
+              <text>保存图片</text>
+            </button>
+          </view>
         </view>
       </view>
 
@@ -401,6 +408,10 @@ const currentEditor = ref<string>('prompt')
 const selectedProvider = ref<GenerationProvider>('zhipu')
 const rewardedAd = ref<any>(null)          // 激励视频广告实例
 const pendingGenerateParams = ref<any>(null) // 广告看完后继续生成用的参数
+
+// ── 场景化工作台（从首页传入）──
+type SceneType = 'ecommerce' | 'avatar' | 'ppt' | 'style-transfer' | ''
+const currentScene = ref<SceneType>('')
 
 const stepItems = [
   { step: 1, title: '选引擎', desc: '决定生成路线' },
@@ -513,6 +524,11 @@ onLoad((options) => {
   if (options?.imageUrl) {
     const imageUrl = decodeURIComponent(options.imageUrl)
     sourceImageUrl.value = imageUrl
+    // 接收首页传来的场景参数
+    if (options?.scene) {
+      currentScene.value = options.scene as SceneType
+      console.log(`[Edit] 场景模式: ${currentScene.value}`)
+    }
     analyzeAndEdit(imageUrl)
   }
 
@@ -558,9 +574,9 @@ function getAuthHeader(): Record<string, string> {
 }
 
 async function analyzeAndEdit(imageUrl: string) {
-  uni.showLoading({ title: 'AI 正在分析图片...', mask: true })
+  uni.showLoading({ title: currentScene.value ? 'AI 场景分析中...' : 'AI 正在分析图片...', mask: true })
   try {
-    const result = await analyzeImage(imageUrl)
+    const result = await analyzeImage(imageUrl, selectedProvider.value, currentScene.value || undefined)
     editData.value = result
     originalDataStr.value = encodeURIComponent(JSON.stringify(result))
   } catch (err: any) {
@@ -749,6 +765,66 @@ function previewGeneratedImage() {
     urls: [previewImageUrl.value],
     current: previewImageUrl.value,
   })
+}
+
+function downloadGeneratedImage() {
+  downloadImage(previewImageUrl.value, 'turing-drawing')
+}
+
+function downloadImage(url: string, filename = 'image') {
+  if (!url) return
+  // #ifdef H5
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}-${Date.now()}.png`
+  // 跨域图片需要先 fetch 转成 blob
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const blobUrl = URL.createObjectURL(blob)
+      a.href = blobUrl
+      a.click()
+      URL.revokeObjectURL(blobUrl)
+      uni.showToast({ title: '图片已保存', icon: 'success' })
+    })
+    .catch(() => {
+      // fallback: 直接跳链接
+      a.click()
+      uni.showToast({ title: '图片已保存', icon: 'success' })
+    })
+  // #endif
+
+  // #ifndef H5
+  uni.showLoading({ title: '保存中...' })
+  uni.downloadFile({
+    url,
+    success: (res) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: res.tempFilePath,
+        success: () => {
+          uni.hideLoading()
+          uni.showToast({ title: '已保存到相册', icon: 'success' })
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (err.errMsg?.includes('auth')) {
+            uni.showModal({
+              title: '需要授权',
+              content: '请授权访问相册权限后再试',
+              showCancel: false,
+            })
+          } else {
+            uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+          }
+        },
+      })
+    },
+    fail: () => {
+      uni.hideLoading()
+      uni.showToast({ title: '下载失败，请重试', icon: 'none' })
+    },
+  })
+  // #endif
 }
 
 function copyPrompt(lang: 'english' | 'chinese') {
@@ -1018,6 +1094,20 @@ $danger:     #E8947A;
 .preview-image { width: 100%; height: 760rpx; display: block; }
 .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 14rpx; padding: 60rpx 0;
   background: $bg-raised; }
+.preview-actions {
+  padding: 16rpx 24rpx;
+  background: $bg-card;
+  border-top: 1rpx solid $border;
+}
+.download-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10rpx;
+  width: 100%; height: 80rpx; border: none; border-radius: 999rpx;
+  background: $primary-grad; color: #fff;
+  font-size: 28rpx; font-weight: 700;
+  box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.25);
+  transition: opacity 0.15s;
+  &:active { opacity: 0.85; }
+}
 
 // ── Bottom Bar ──
 .bottom-bar {

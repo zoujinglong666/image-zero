@@ -77,20 +77,25 @@ public class PromptService {
     // ══════════════════════════════════════════
 
     public void interact(Long promptId, Long userId, String action) {
+        // 未登录用户：只增加计数，不写互动记录（避免 user_id=0 FK 约束失败）
+        boolean isGuest = (userId == null || userId == 0L);
+
         switch (action) {
             case "like" -> promptLibraryMapper.incrementLikeCount(promptId);
             case "copy" -> promptLibraryMapper.incrementCopyCount(promptId);
             case "view" -> promptLibraryMapper.incrementViewCount(promptId);
         }
 
-        // 记录互动
-        PromptInteraction interaction = PromptInteraction.builder()
-                .userId(userId != null ? userId : 0L)
-                .promptId(promptId)
-                .targetType("library")
-                .action(action)
-                .build();
-        interactionMapper.insert(interaction);
+        // 已登录用户：额外记录互动明细
+        if (!isGuest) {
+            PromptInteraction interaction = PromptInteraction.builder()
+                    .userId(userId)
+                    .promptId(promptId)
+                    .targetType("library")
+                    .action(action)
+                    .build();
+            interactionMapper.insert(interaction);
+        }
     }
 
     // ══════════════════════════════════════════

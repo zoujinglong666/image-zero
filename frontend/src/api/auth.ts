@@ -16,7 +16,7 @@ import type {
 /**
  * 微信小程序登录
  * 1. 调用 wx.login() 获取 code
- * 2. 将 code 发送到后端 /auth/wechat
+ * 2. 将 code + inviteCode 发送到后端 /auth/wechat
  * 3. 后端 code2Session 换取 openid → JWT
  */
 export async function wechatLogin(): Promise<WechatLoginResult> {
@@ -33,7 +33,13 @@ export async function wechatLogin(): Promise<WechatLoginResult> {
     throw new Error('微信登录失败：未获取到 code')
   }
 
-  return http.post<WechatLoginResult>('/auth/wechat', { code: loginRes.code })
+  // 携带邀请码（如果有）
+  const inviteCode = uni.getStorageSync('pending_invite_code') || ''
+  if (inviteCode) {
+    uni.removeStorageSync('pending_invite_code')
+  }
+
+  return http.post<WechatLoginResult>('/auth/wechat', { code: loginRes.code, inviteCode })
   // #endif
 
   // #ifndef MP-WEIXIN
@@ -43,7 +49,11 @@ export async function wechatLogin(): Promise<WechatLoginResult> {
 
 /** 手动传入 code 的微信登录（调试用） */
 export function wechatLoginWithCode(code: string): Promise<WechatLoginResult> {
-  return http.post<WechatLoginResult>('/auth/wechat', { code })
+  const inviteCode = uni.getStorageSync('pending_invite_code') || ''
+  if (inviteCode) {
+    uni.removeStorageSync('pending_invite_code')
+  }
+  return http.post<WechatLoginResult>('/auth/wechat', { code, inviteCode })
 }
 
 // ════════════════════════════════════════════

@@ -18,6 +18,7 @@ import java.util.Map;
 /**
  * 支付与VIP订阅服务
  * 支持微信小程序支付、VIP套餐管理、额度管理
+ * 所有支付均走微信支付 V3 JSAPI，无 mock 逻辑
  */
 @Slf4j
 @Service
@@ -26,18 +27,16 @@ public class PaymentService {
 
     private final VipSubscriptionMapper vipSubscriptionMapper;
     private final UserMapper userMapper;
+    private final WechatPayService wechatPayService;
 
     @Value("${wechat.mini-program-app-id:}")
     private String miniProgramAppId;
-
-    @Value("${wechat.mini-program-app-secret:}")
-    private String miniProgramAppSecret;
 
     /** VIP套餐配置 */
     private static final Map<String, VipPlan> VIP_PLANS = Map.of(
             "basic", new VipPlan("basic", "基础版", 990, 30, 1, 50),
             "pro", new VipPlan("pro", "专业版", 2990, 30, 2, 200),
-            "ultimate", new VipPlan("ultimate", "旗舰版", 5990, 365, 3, -1)  // -1 表示无限
+            "ultimate", new VipPlan("ultimate", "旗舰版", 5990, 365, 3, -1)
     );
 
     // ══════════════════════════════════════════════════════
@@ -80,16 +79,15 @@ public class PaymentService {
     }
 
     // ══════════════════════════════════════════════════════
-    //  创建订单（微信支付前置）
+    //  创建订单（微信支付 JSAPI）
     // ══════════════════════════════════════════════════════
 
     /**
-     * 创建VIP订阅订单
-     * 返回微信支付所需参数（小程序调用 wx.requestPayment）
+     * 创建VIP订阅订单，调用微信支付 V3 JSAPI 统一下单
      *
-     * @param userId  用户ID
-     * @param plan    套餐: basic/pro/ultimate
-     * @return 微信支付参数 / 或模拟支付参数（开发模式）
+     * @param userId 用户ID
+     * @param plan   套餐: basic/pro/ultimate
+     * @return 微信支付前端调起参数 { orderId, paymentParams: { timeStamp, nonceStr, package, signType, paySign } }
      */
     @Transactional
     public Map<String, Object> createOrder(Long userId, String plan) {
@@ -112,6 +110,33 @@ public class PaymentService {
             throw new IllegalArgumentException("用户不存在");
         }
 
+        // 获取用户 openid（用于 JSAPI 支付）
+        String openid = user.getWechatOpenid();
+        if (openid == null || openid.isBlank()) {
+            throw new IllegalStateException("用户未绑定微信，无法发起支付，请重新登录");
+        }
+
+        // 幂等性：同一用户 + 同套餐 + pending 状态 → 返回已有订单的支付参数
+        VipSubscription existing = vipSubscriptionMapper.selectOne(
+                new LambdaQueryWrapper<VipSubscription>()
+                        .eq(VipSubscription::getUserId, userId)
+                        .eq(VipSubscription::getPlan, plan)
+                        .eq(VipSubscription::getStatus, "pending")
+                        .orderByDesc(VipSubscription::getId)
+                        .last("LIMIT 1")
+        );
+
+        if (existing != null) {
+            log.info("[支付] 检测到重复提交，复用已有订单: orderId={}", existing.getId());
+            // 重新生成支付参数（prepay_id 可能过期，每次都重新下单）
+            Map<String, String> wxParams = wechatPayService.createJSAPIOrder(
+                    existing, vipPlan.name, openid);
+            return Map.of(
+                    "orderId", existing.getId(),
+                    "paymentParams", wxParams
+            );
+        }
+
         // 创建订阅记录
         VipSubscription subscription = VipSubscription.builder()
                 .userId(userId)
@@ -119,88 +144,94 @@ public class PaymentService {
                 .status("pending")
                 .amountCents(vipPlan.priceCents)
                 .startedAt(LocalDateTime.now())
+                .expireAt(LocalDateTime.now().plusDays(vipPlan.durationDays))
                 .build();
         vipSubscriptionMapper.insert(subscription);
 
-        // 检查微信支付配置
-        if (miniProgramAppId == null || miniProgramAppId.isBlank()) {
-            // 开发模式：直接激活
-            log.info("[支付] 开发模式，直接激活VIP: userId={}, plan={}", userId, plan);
-            activateVip(userId, subscription.getId(), plan);
-            return Map.of(
-                    "orderId", subscription.getId(),
-                    "mode", "dev",
-                    "message", "开发模式，VIP已直接激活"
-            );
-        }
+        log.info("[支付] 创建订单成功: orderId={}, userId={}, plan={}, amount={}分",
+                subscription.getId(), userId, plan, vipPlan.priceCents);
 
-        try {
-            // 生产模式：调用微信支付统一下单接口
-            Map<String, Object> wxPayParams = createWxPayOrder(subscription, vipPlan);
-            return Map.of(
-                    "orderId", subscription.getId(),
-                    "mode", "production",
-                    "paymentParams", wxPayParams
-            );
-        } catch (Exception e) {
-            log.error("微信支付下单失败: {}", e.getMessage());
-            throw new RuntimeException("支付下单失败，请稍后重试");
-        }
+        // 调用微信支付 V3 统一下单
+        Map<String, String> wxParams = wechatPayService.createJSAPIOrder(
+                subscription, vipPlan.name, openid);
+
+        return Map.of(
+                "orderId", subscription.getId(),
+                "paymentParams", wxParams
+        );
     }
 
     // ══════════════════════════════════════════════════════
-    //  支付回调
+    //  支付回调处理
     // ══════════════════════════════════════════════════════
 
     /**
-     * 微信支付回调处理
-     * 验证签名 → 更新订阅状态 → 激活VIP
+     * 微信支付回调处理（V3 格式）—— 仅处理 VIP 订单
+     * 验证签名 → 解密 resource → 更新订单状态 → 激活VIP
+     *
+     * @param notifyData 解密后的回调数据 Map { out_trade_no, transaction_id, trade_state, ... }
      */
-    @Transactional
-    public void handlePaymentCallback(String orderId, String paymentNo) {
-        // 参数验证
-        if (orderId == null || orderId.isBlank()) {
-            log.warn("[支付回调] 订单ID为空");
+    public void handleVipPaymentCallback(Map<String, Object> notifyData) {
+        String tradeState = (String) notifyData.get("trade_state");
+        String outTradeNo = (String) notifyData.get("out_trade_no");
+        String transactionId = (String) notifyData.get("transaction_id");
+
+        log.info("[支付回调-VIP] trade_state={}, out_trade_no={}, transaction_id={}",
+                tradeState, outTradeNo, transactionId);
+
+        if (!"SUCCESS".equals(tradeState)) {
+            log.info("[支付回调-VIP] 订单未支付成功，忽略: trade_state={}", tradeState);
             return;
         }
-        if (paymentNo == null || paymentNo.isBlank()) {
-            log.warn("[支付回调] 支付单号为空");
+
+        Long orderId = parseVipOrderIdFromOutTradeNo(outTradeNo);
+        if (orderId == null) {
+            log.warn("[支付回调-VIP] 无法解析VIP订单ID: out_trade_no={}", outTradeNo);
             return;
         }
-        
-        Long orderIdLong;
-        try {
-            orderIdLong = Long.valueOf(orderId);
-        } catch (NumberFormatException e) {
-            log.warn("[支付回调] 无效的订单ID格式: {}", orderId);
-            return;
-        }
-        
-        VipSubscription subscription = vipSubscriptionMapper.selectById(orderIdLong);
+
+        // 幂等处理
+        VipSubscription subscription = vipSubscriptionMapper.selectById(orderId);
         if (subscription == null) {
-            log.warn("[支付回调] 订单不存在: {}", orderId);
+            log.warn("[支付回调-VIP] 订单不存在: orderId={}", orderId);
             return;
         }
         if ("active".equals(subscription.getStatus())) {
-            log.info("[支付回调] 订单已处理，跳过: {}", orderId);
+            log.info("[支付回调-VIP] 订单已处理，跳过: orderId={}", orderId);
             return;
         }
 
-        // 更新订阅状态
+        // 更新订单状态
         subscription.setStatus("active");
-        subscription.setPaymentNo(paymentNo);
+        subscription.setPaymentNo(transactionId);
         subscription.setStartedAt(LocalDateTime.now());
-
         VipPlan plan = VIP_PLANS.get(subscription.getPlan());
         if (plan != null) {
             subscription.setExpireAt(LocalDateTime.now().plusDays(plan.durationDays));
         }
         vipSubscriptionMapper.updateById(subscription);
 
-        // 激活用户VIP
+        // 激活用户 VIP
         activateVip(subscription.getUserId(), subscription.getId(), subscription.getPlan());
 
-        log.info("[支付回调] VIP激活成功: userId={}, plan={}", subscription.getUserId(), subscription.getPlan());
+        log.info("[支付回调-VIP] VIP激活成功: userId={}, plan={}, orderId={}",
+                subscription.getUserId(), subscription.getPlan(), orderId);
+    }
+
+    /**
+     * 从 out_trade_no 解析 VIP 订单ID
+     * 格式：VIP{orderId}T{timestamp}
+     */
+    private Long parseVipOrderIdFromOutTradeNo(String outTradeNo) {
+        try {
+            if (outTradeNo != null && outTradeNo.startsWith("VIP")) {
+                String[] parts = outTradeNo.split("T");
+                return Long.valueOf(parts[0].substring(3));
+            }
+        } catch (Exception e) {
+            log.error("[支付回调-VIP] 解析 out_trade_no 失败: {}", outTradeNo, e);
+        }
+        return null;
     }
 
     // ══════════════════════════════════════════════════════
@@ -264,12 +295,13 @@ public class PaymentService {
                 .set(User::getVipExpireAt, expireAt)
                 .set(User::getDailyQuota, vipPlan.dailyQuota));
 
-        // 更新订阅状态
+        // 更新订阅记录
         vipSubscriptionMapper.update(null, new LambdaUpdateWrapper<VipSubscription>()
                 .eq(VipSubscription::getId, subscriptionId)
                 .set(VipSubscription::getStatus, "active")
                 .set(VipSubscription::getStartedAt, LocalDateTime.now())
-                .set(VipSubscription::getExpireAt, LocalDateTime.now().plusDays(vipPlan.durationDays)));
+                .set(VipSubscription::getExpireAt,
+                        LocalDateTime.now().plusDays(vipPlan.durationDays)));
     }
 
     /**
@@ -282,26 +314,6 @@ public class PaymentService {
                 .set(User::getVipLevel, 0)
                 .set(User::getVipExpireAt, 0)
                 .set(User::getDailyQuota, 10));
-    }
-
-    /**
-     * 调用微信支付统一下单接口（模拟实现）
-     * 生产环境需接入微信支付SDK
-     */
-    private Map<String, Object> createWxPayOrder(VipSubscription subscription, VipPlan plan) {
-        // TODO: 接入微信支付SDK，调用统一下单接口
-        // 参考文档: https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/pay/transactions/chapter3_2.shtml
-        log.info("[支付] 创建微信支付订单: subscriptionId={}, plan={}, amount={}分",
-                subscription.getId(), plan.name, plan.priceCents);
-
-        // 返回模拟的支付参数（实际应从微信支付API获取）
-        return Map.of(
-                "timeStamp", String.valueOf(System.currentTimeMillis() / 1000),
-                "nonceStr", java.util.UUID.randomUUID().toString().replace("-", ""),
-                "package", "prepay_id=wx" + subscription.getId(),
-                "signType", "RSA",
-                "paySign", "mock_sign_value"
-        );
     }
 
     /**

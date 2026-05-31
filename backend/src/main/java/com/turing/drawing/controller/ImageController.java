@@ -5,6 +5,7 @@ import com.turing.drawing.entity.DrawingTask;
 import com.turing.drawing.entity.History;
 import com.turing.drawing.security.UserPrincipal;
 import com.turing.drawing.service.CosService;
+import com.turing.drawing.service.CreditService;
 import com.turing.drawing.service.ImageService;
 import com.turing.drawing.service.PaymentService;
 import com.turing.drawing.service.UserPreferenceService;
@@ -31,6 +32,7 @@ public class ImageController {
     private final CosService cosService;
     private final PaymentService paymentService;
     private final UserPreferenceService userPreferenceService;
+    private final CreditService creditService;
 
     /**
      * 图片分析 — 反推AI绘画提示词
@@ -50,12 +52,13 @@ public class ImageController {
 
         String imageUrl = (String) request.get("imageUrl");
         String provider = (String) request.get("provider");
+        String scene = (String) request.get("scene"); // 场景：ecommerce/avatar/ppt/style-transfer
 
         if (imageUrl == null || imageUrl.isBlank()) {
             return ApiResponse.error("缺少 imageUrl 参数");
         }
 
-        Map<String, Object> result = imageService.analyzeImage(userId, imageUrl, provider);
+        Map<String, Object> result = imageService.analyzeImage(userId, imageUrl, provider, scene);
 
         // 消耗额度
         if (userId > 0) {
@@ -128,16 +131,21 @@ public class ImageController {
 
         // 3. 每日次数限制（VIP 无限）
         if (!paymentService.checkQuota(userId)) {
-            // 额度用完，提示看广告解锁更多
-            if (userPreferenceService.isAdGateEnabled()) {
-                return ApiResponse.success(Map.of(
-                        "needAd", true,
-                        "quotaExhausted", true,
-                        "message", "今日免费额度已用完，观看广告可继续使用",
-                        "adUnitId", userPreferenceService.getAdUnitId()
-                ));
+            // 尝试用积分抵扣
+            if (creditService.trySpendCredit(userId)) {
+                log.info("[额度] 用户 {} 使用1积分替代免费额度", userId);
+            } else {
+                // 额度用完且无积分，提示看广告解锁更多
+                if (userPreferenceService.isAdGateEnabled()) {
+                    return ApiResponse.success(Map.of(
+                            "needAd", true,
+                            "quotaExhausted", true,
+                            "message", "今日免费额度已用完，观看广告可继续使用",
+                            "adUnitId", userPreferenceService.getAdUnitId()
+                    ));
+                }
+                return ApiResponse.error(403, "今日免费额度已用完，升级VIP或充值积分获取更多次数");
             }
-            return ApiResponse.error(403, "今日免费额度已用完，升级VIP获取更多次数");
         }
 
         String prompt = (String) request.get("prompt");

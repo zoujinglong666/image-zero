@@ -12,10 +12,22 @@
 |------|------|
 | `service/AiService.java` | 所有 AI 调用（分析/生成/编辑），支持智谱/OpenAI/SiliconFlow/Gemini |
 | `service/ImageService.java` | 业务逻辑层，协调 AI + 存储 |
-| `controller/ImageController.java` | HTTP 接口，含广告墙 + 防刷逻辑 |
+| `controller/ImageController.java` | HTTP 接口，含广告墙 + 防刷 + 积分抵扣逻辑 |
 | `service/UserPreferenceService.java` | 广告观看记录、每日生成计数 |
+| `service/PaymentService.java` | VIP套餐管理、订单创建、支付回调、额度管理 |
+| `service/InviteService.java` | 邀请码生成、邀请关系记录、裂变奖励 |
+| `service/CreditService.java` | 积分充值、余额管理、积分消费 |
+| `service/DailyTaskService.java` | 每日签到、连续签到奖励 |
 | `resources/application.yml` | 配置，从 `.env` 读取 |
 | `.env`（backend/） | 实际密钥配置文件 |
+
+## 变现系统关键配置
+
+- **WX_AD_UNIT_ID**：`wechat.mini-program-ad-unit-id`，需在微信小程序后台申请
+- **VIP套餐**：basic ¥9.9(50次/天/30天) / pro ¥29.9(200次/天/30天) / ultimate ¥59.9(无限/365天)
+- **积分包**：mini ¥6(60积分) / small ¥18(200积分) / medium ¥39(500积分) / large ¥79(1200积分)
+- **邀请奖励**：双方各得 3 次免费生图
+- **签到奖励**：1天=1次, 3天=2次, 7天=3次（连续递增）
 
 ## 智谱生图配置
 

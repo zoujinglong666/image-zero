@@ -138,6 +138,13 @@
                       @tap.stop="toggleFavorite(item)"
                     />
                     <u-icon
+                      name="download"
+                      size="40"
+                      color="#9A9BAC"
+                      style="margin-left: 16rpx;"
+                      @tap.stop="downloadImage(item.imageUrl)"
+                    />
+                    <u-icon
                       name="trash-fill"
                       size="40"
                       color="#9A9BAC"
@@ -311,6 +318,58 @@ const viewDetail = (item: any) => {
     urls: [item.imageUrl],
     current: item.imageUrl
   })
+}
+
+const downloadImage = (url: string) => {
+  if (!url) return
+
+  // #ifdef H5
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `turing-drawing-${Date.now()}.png`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      uni.showToast({ title: '图片已保存', icon: 'success' })
+    })
+    .catch(() => {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `turing-drawing-${Date.now()}.png`
+      a.click()
+      uni.showToast({ title: '图片已保存', icon: 'success' })
+    })
+  // #endif
+
+  // #ifndef H5
+  uni.showLoading({ title: '保存中...' })
+  uni.downloadFile({
+    url,
+    success: (res) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: res.tempFilePath,
+        success: () => {
+          uni.hideLoading()
+          uni.showToast({ title: '已保存到相册', icon: 'success' })
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (err.errMsg?.includes('auth')) {
+            uni.showModal({ title: '需要授权', content: '请授权访问相册权限后再试', showCancel: false })
+          } else {
+            uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+          }
+        },
+      })
+    },
+    fail: () => {
+      uni.hideLoading()
+      uni.showToast({ title: '下载失败，请重试', icon: 'none' })
+    },
+  })
+  // #endif
 }
 
 const formatTime = (timestamp: number): string => {

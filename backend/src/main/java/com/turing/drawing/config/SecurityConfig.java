@@ -61,8 +61,10 @@ public class SecurityConfig {
                 auth.requestMatchers("/api/admin/**").hasRole("ADMIN")
                     // 认证接口 - 无需认证
                     .requestMatchers("/api/auth/wechat", "/api/auth/wechat-h5", "/api/auth/wechat-h5/url", "/api/auth/token", "/api/auth/guest", "/api/auth/verify", "/api/auth/status").permitAll()
-                    // 提示词公开接口
-                    .requestMatchers("/api/prompt/categories", "/api/prompt/list", "/api/prompt/search", "/api/prompt/{id}").permitAll()
+                    // 提示词公开接口（含详情、互动、收藏、列表）
+                    .requestMatchers("/api/prompt/categories", "/api/prompt/list", "/api/prompt/search", "/api/prompt/{id}",
+                                       "/api/prompt/*/interact", "/api/prompt/*/favorite",
+                                       "/api/prompt/favorites/**", "/api/prompt/mine/**").permitAll()
                     // 社区公开接口
                     .requestMatchers("/api/community/**").permitAll()
                     // 社区分享公开接口
@@ -70,7 +72,14 @@ public class SecurityConfig {
                     // VIP套餐列表（公开浏览）
                     .requestMatchers("/api/payment/plans", "/api/payment/callback").permitAll()
                     // VIP状态查询（公开）
-                    .requestMatchers("/api/payment/status").permitAll()
+                    .requestMatchers("/api/vip/status", "/api/payment/status").permitAll()
+                    // 邀请相关
+                    // /code/{code} 公开（分享链接展示邀请人）
+                    // /info 需登录（查自己的邀请数据）
+                    .requestMatchers("/api/invite/code/**").permitAll()
+                    .requestMatchers("/api/invite/info").authenticated()
+                    // 每日签到（登录后使用，但 status 接口需认证）
+                    .requestMatchers("/api/daily/checkin", "/api/daily/status").authenticated()
                     // AI接口 - 允许匿名访问（未登录用户可试用）
                     .requestMatchers("/api/analyze", "/api/generate", "/api/edit", "/api/upload", "/api/task/**").permitAll()
                     // 数据统计接口（开发环境公开，生产需认证）

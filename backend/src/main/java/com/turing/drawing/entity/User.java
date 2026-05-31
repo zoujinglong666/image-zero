@@ -78,4 +78,10 @@ public class User extends BaseEntity {
 
     /** 上次登录时间 */
     private LocalDateTime lastLoginAt;
+
+    /** 个人邀请码 */
+    private String inviteCode;
+
+    /** 邀请人用户ID */
+    private Long invitedBy;
 }

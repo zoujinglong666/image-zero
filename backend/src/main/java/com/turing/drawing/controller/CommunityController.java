@@ -157,4 +157,55 @@ public class CommunityController {
         communityService.likeSubmission(id);
         return ApiResponse.success();
     }
+
+    // ══════════════════════════════════════════
+    //  内容审核管理（Admin API）
+    // ══════════════════════════════════════════
+
+    /**
+     * 获取待审核内容列表
+     * GET /api/community/admin/pending-reviews
+     */
+    @GetMapping("/admin/pending-reviews")
+    public ApiResponse<Map<String, Object>> getPendingReviews(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int page_size) {
+        return ApiResponse.success(communityService.getPendingReviews(page, page_size));
+    }
+
+    /**
+     * 人工审核 — 社区作品
+     * POST /api/community/admin/review/prompt/{id}
+     */
+    @PostMapping("/admin/review/prompt/{id}")
+    public ApiResponse<Void> reviewPrompt(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String verdict = body.get("verdict");
+        String reason = body.getOrDefault("reason", "");
+        if (!List.of("approved", "rejected").contains(verdict)) {
+            return ApiResponse.error("verdict 必须是 approved 或 rejected");
+        }
+        boolean ok = communityService.reviewUserPrompt(id, verdict, 1L, reason);
+        if (!ok) return ApiResponse.error("审核失败，记录不存在");
+        return ApiResponse.success();
+    }
+
+    /**
+     * 人工审核 — 挑战投稿
+     * POST /api/community/admin/review/submission/{id}
+     */
+    @PostMapping("/admin/review/submission/{id}")
+    public ApiResponse<Void> reviewSubmission(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String verdict = body.get("verdict");
+        String reason = body.getOrDefault("reason", "");
+        if (!List.of("approved", "rejected").contains(verdict)) {
+            return ApiResponse.error("verdict 必须是 approved 或 rejected");
+        }
+        boolean ok = communityService.reviewSubmission(id, verdict, 1L, reason);
+        if (!ok) return ApiResponse.error("审核失败，记录不存在");
+        return ApiResponse.success();
+    }
 }

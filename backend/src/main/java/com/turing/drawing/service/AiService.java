@@ -105,20 +105,24 @@ public class AiService {
      *
      * @param imageUrl 图片URL或base64
      * @param provider 指定服务商(zhipu/openai/gemini)，null则自动选择
+     * @param scene 场景类型（ecommerce/avatar/ppt/style-transfer），用于优化分析策略
      * @return 分析结果 { imageUrl, result: { style, styleConfidence, styleDescription, elements, layout,
      *         layoutDescription, colorScheme, primaryColor, prompt: { chinese, english, keywords } } }
      */
-    public Map<String, Object> analyzeImage(String imageUrl, String provider) {
+    public Map<String, Object> analyzeImage(String imageUrl, String provider, String scene) {
         imageUrl = normalizeImageInput(imageUrl);
         String useProvider = resolveProvider(provider);
-        log.info("[AI分析] 使用 {} 服务, 图片长度={}", useProvider, imageUrl.length());
+        log.info("[AI分析] 使用 {} 服务, 场景={}, 图片长度={}", useProvider, scene, imageUrl.length());
+
+        // 根据场景构建增强版系统提示词
+        String systemPrompt = buildSceneAwarePrompt(scene);
 
         return switch (useProvider) {
-            case "mimo" -> analyzeWithMimo(imageUrl);
-            case "zhipu" -> analyzeWithZhipu(imageUrl);
-            case "siliconflow" -> analyzeWithSiliconFlow(imageUrl);
-            case "gemini" -> analyzeWithGemini(imageUrl);
-            default -> analyzeWithOpenAI(imageUrl);
+            case "mimo" -> analyzeWithMimo(imageUrl, systemPrompt);
+            case "zhipu" -> analyzeWithZhipu(imageUrl, systemPrompt);
+            case "siliconflow" -> analyzeWithSiliconFlow(imageUrl, systemPrompt);
+            case "gemini" -> analyzeWithGemini(imageUrl, systemPrompt);
+            default -> analyzeWithOpenAI(imageUrl, systemPrompt);
         };
     }
 
@@ -126,10 +130,10 @@ public class AiService {
      * 智谱 AI GLM-4.6V-Flash 分析图片（官方 zai-sdk，免费模型）
      * 遇到 429 限流时最多重试 3 次（指数退避），全部失败后 fallback 到 OpenAI 兼容层
      */
-    private Map<String, Object> analyzeWithZhipu(String imageUrl) {
+    private Map<String, Object> analyzeWithZhipu(String imageUrl, String systemPrompt) {
         if (zhipuApiKey == null || zhipuApiKey.isBlank()) {
             log.warn("[ZhipuAI] API Key 未配置，降级到 SiliconFlow（跳过 OpenAI 避免同后端）");
-            return analyzeWithSiliconFlow(imageUrl);
+            return analyzeWithSiliconFlow(imageUrl, systemPrompt);
         }
 
         ZhipuAiClient client = ZhipuAiClient.builder()
@@ -137,7 +141,7 @@ public class AiService {
                 .apiKey(zhipuApiKey)
                 .build();
 
-        String textPrompt = buildAnalyzeSystemPrompt();
+        // 使用传入的场景感知 Prompt（非默认的 buildAnalyzeSystemPrompt）
 
         MessageContent imagePart = MessageContent.builder()
                 .type("image_url")
@@ -146,7 +150,7 @@ public class AiService {
 
         MessageContent textPart = MessageContent.builder()
                 .type("text")
-                .text(textPrompt)
+                .text(systemPrompt)
                 .build();
 
         ChatCompletionCreateParams request = ChatCompletionCreateParams.builder()
@@ -179,7 +183,7 @@ public class AiService {
                     }
                     // 其他错误或重试耗尽 — fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）
                     log.warn("[ZhipuAI] 失败，fallback 到 SiliconFlow");
-                    return analyzeWithSiliconFlow(imageUrl);
+                    return analyzeWithSiliconFlow(imageUrl, systemPrompt);
                 }
 
                 Object messageObj = response.getData().getChoices().get(0).getMessage();
@@ -198,7 +202,7 @@ public class AiService {
 
                 if (content == null || content.isBlank()) {
                     log.error("[ZhipuAI] 响应 content 为空，fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）");
-                    return analyzeWithSiliconFlow(imageUrl);
+                    return analyzeWithSiliconFlow(imageUrl, systemPrompt);
                 }
 
                 log.info("[ZhipuAI] 第{}次成功, content 前100字: {}",
@@ -220,19 +224,19 @@ public class AiService {
                     try { Thread.sleep(delay * 1000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
                 } else {
                     log.error("[ZhipuAI] 异常，fallback 到 SiliconFlow（跳过 OpenAI 避免同后端）: {}", msg);
-                    return analyzeWithSiliconFlow(imageUrl);
+                    return analyzeWithSiliconFlow(imageUrl, systemPrompt);
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
                 log.error("[ZhipuAI] 第{}次未知异常，fallback 到 SiliconFlow: {}", attempt, e.getMessage(), e);
-                return analyzeWithSiliconFlow(imageUrl);
+                return analyzeWithSiliconFlow(imageUrl, systemPrompt);
             }
         }
 
         log.warn("[ZhipuAI] 重试{}次全部失败，最终 fallback 到 SiliconFlow", maxRetries);
-        return analyzeWithSiliconFlow(imageUrl);
+        return analyzeWithSiliconFlow(imageUrl, systemPrompt);
     }
 
     /**
@@ -240,10 +244,10 @@ public class AiService {
      * 模型: mimo-v2.5 / mimo-v2-omni
      * 文档: https://platform.xiaomimimo.com/docs/zh-CN/usage-guide/multimodal-understanding/image-understanding
      */
-    private Map<String, Object> analyzeWithMimo(String imageUrl) {
+    private Map<String, Object> analyzeWithMimo(String imageUrl, String systemPrompt) {
         if (mimoApiKey == null || mimoApiKey.isBlank()) {
             log.warn("[MiMo] API Key 未配置，降级到智谱 AI");
-            return analyzeWithZhipu(imageUrl);
+            return analyzeWithZhipu(imageUrl, systemPrompt);
         }
 
         int maxRetries = 3;
@@ -251,7 +255,6 @@ public class AiService {
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                String systemPrompt = buildAnalyzeSystemPrompt();
                 Object userContent = buildAnalyzeUserContent(imageUrl);
 
                 Map<String, Object> requestBody = Map.of(
@@ -294,24 +297,24 @@ public class AiService {
                     }
                 } else {
                     log.error("[MiMo] 429限流重试耗尽! fallback到智谱AI: {}", e.getResponseBodyAsString());
-                    return analyzeWithZhipu(imageUrl); // 小米限流 → 降级到智谱
+                    return analyzeWithZhipu(imageUrl, systemPrompt); // 小米限流 → 降级到智谱
                 }
             } catch (org.springframework.web.client.HttpStatusCodeException e) {
                 log.error("[MiMo] HTTP错误 {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
-                return analyzeWithZhipu(imageUrl); // 其他错误 → 降级到智谱
+                return analyzeWithZhipu(imageUrl, systemPrompt); // 其他错误 → 降级到智谱
             } catch (Exception e) {
                 log.error("[MiMo] 第{}次异常: {}", attempt, e.getMessage(), e);
-                if (attempt == maxRetries) return analyzeWithZhipu(imageUrl);
+                if (attempt == maxRetries) return analyzeWithZhipu(imageUrl, systemPrompt);
             }
         }
-        return analyzeWithZhipu(imageUrl);
+        return analyzeWithZhipu(imageUrl, systemPrompt);
     }
 
     /**
      * 硅基流动 Qwen2-VL 分析图片（OpenAI 兼容层，免费，并发限制更宽松）
      * 作为智谱 AI 429 限流后的首选 fallback
      */
-    private Map<String, Object> analyzeWithSiliconFlow(String imageUrl) {
+    private Map<String, Object> analyzeWithSiliconFlow(String imageUrl, String systemPrompt) {
         if (siliconflowApiKey == null || siliconflowApiKey.isBlank()) {
             log.warn("[SiliconFlow] API Key 未配置，返回降级分析结果");
             return buildFallbackAnalysis();
@@ -324,11 +327,16 @@ public class AiService {
             try {
                 Object userContent = buildAnalyzeUserContent(imageUrl);
 
+                // 构建消息列表：系统提示 + 用户内容（图片+引导文字）
+                List<Map<String, Object>> messages = new java.util.ArrayList<>();
+                if (systemPrompt != null && !systemPrompt.isBlank()) {
+                    messages.add(Map.of("role", "system", "content", systemPrompt));
+                }
+                messages.add(Map.of("role", "user", "content", userContent));
+
                 Map<String, Object> requestBody = Map.of(
                         "model", siliconflowAnalyzeModel,
-                        "messages", List.of(
-                                Map.of("role", "user", "content", userContent)
-                        ),
+                        "messages", messages,
                         "max_tokens", 2000,
                         "temperature", 0.3
                 );
@@ -375,10 +383,10 @@ public class AiService {
     /**
      * OpenAI Vision 分析图片（含429自动重试）
      */
-    private Map<String, Object> analyzeWithOpenAI(String imageUrl) {
+    private Map<String, Object> analyzeWithOpenAI(String imageUrl, String systemPrompt) {
         if (openaiApiKey == null || openaiApiKey.isBlank()) {
             log.warn("OpenAI API Key 未配置，尝试 SiliconFlow 作为兜底");
-            return analyzeWithSiliconFlow(imageUrl);
+            return analyzeWithSiliconFlow(imageUrl, systemPrompt);
         }
 
         int maxRetries = 3;
@@ -386,7 +394,6 @@ public class AiService {
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                String systemPrompt = buildAnalyzeSystemPrompt();
                 Object userContent = buildAnalyzeUserContent(imageUrl);
 
                 Map<String, Object> requestBody = Map.of(
@@ -431,30 +438,30 @@ public class AiService {
                     }
                 } else {
                     log.error("[AI分析] 429限流! 已重试{}次仍失败: {}", maxRetries, e.getResponseBodyAsString());
-                    return analyzeWithSiliconFlow(imageUrl);
+                    return analyzeWithSiliconFlow(imageUrl, systemPrompt);
                 }
             } catch (org.springframework.web.client.HttpStatusCodeException e) {
                 log.error("OpenAI分析失败, 状态码={}, 响应体={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-                return analyzeWithSiliconFlow(imageUrl); // 非429错误，尝试 SiliconFlow 兜底
+                return analyzeWithSiliconFlow(imageUrl, systemPrompt); // 非429错误，尝试 SiliconFlow 兜底
             } catch (Exception e) {
                 log.error("OpenAI分析失败(第{}次)", attempt, e);
-                if (attempt == maxRetries) return analyzeWithSiliconFlow(imageUrl);
+                if (attempt == maxRetries) return analyzeWithSiliconFlow(imageUrl, systemPrompt);
             }
         }
-        return analyzeWithSiliconFlow(imageUrl);
+        return analyzeWithSiliconFlow(imageUrl, systemPrompt);
     }
 
     /**
      * Gemini 分析图片
      */
-    private Map<String, Object> analyzeWithGemini(String imageUrl) {
+    private Map<String, Object> analyzeWithGemini(String imageUrl, String systemPrompt) {
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
             log.warn("Gemini API Key 未配置，返回降级分析结果");
             return buildFallbackAnalysis();
         }
 
         try {
-            String prompt = buildAnalyzeSystemPrompt();
+            String prompt = systemPrompt != null ? systemPrompt : buildAnalyzeSystemPrompt();
 
             Map<String, Object> imagePart;
             if (imageUrl.startsWith("data:")) {
@@ -739,7 +746,7 @@ public class AiService {
             String enhancedPrompt = originalPrompt;
             if (originalImage != null && !originalImage.isBlank()) {
                 try {
-                    Map<String, Object> analysisResult = analyzeImage(originalImage, null); // 分析走默认最优（MiMo > 智谱 > SiliconFlow），不受生图 provider 影响
+                    Map<String, Object> analysisResult = analyzeImage(originalImage, null, null); // 编辑时无场景，走默认分析
                     @SuppressWarnings("unchecked")
                     Map<String, Object> promptResult = (Map<String, Object>) ((Map<String, Object>) analysisResult.get("result")).get("prompt");
                     if (promptResult != null && promptResult.get("english") != null) {
@@ -810,7 +817,85 @@ public class AiService {
                 """;
     }
 
-    private Object buildAnalyzeUserContent(String imageUrl) {
+    /**
+     * 场景感知提示词构建器 — 根据不同场景优化AI分析策略
+     * 这是「图灵绘境」vs 通用反推工具的核心差异化能力
+     */
+    private String buildSceneAwarePrompt(String scene) {
+        String base = buildAnalyzeSystemPrompt();
+
+        if (scene == null || scene.isBlank()) return base;
+
+        return switch (scene) {
+            case "ecommerce" -> base + """
+
+                ═══════ 场景增强：电商产品图分析 ═══════
+                你现在分析的是一张**电商产品图**。请额外关注：
+                1. 【拍摄角度】俯拍/平拍/45度角/特写？这对复刻很重要
+                2. 【光影布局】自然光/影棚光/侧光/背光？描述光源方向和强度
+                3. 【产品材质】金属/塑料/织物/玻璃/陶瓷？表面处理（磨砂/高光/拉丝）
+                4. 【背景处理】纯色/渐变/场景/ lifestyle？是否需要抠图
+                5. 【构图比例】产品占画面比例，留白策略
+                6. 【适用尺寸】推荐最适合的电商图片尺寸规格
+
+                prompt.chinese 必须包含：产品名称、拍摄角度、光影描述、材质关键词、背景建议
+                prompt.english 必须包含：product photography angle, lighting setup, material texture, background style
+                """;
+
+            case "avatar" -> base + """
+
+                ═══════ 场景增强：社交头像/壁纸风格分析 ═══════
+                你现在分析的是一张**社交头像或壁纸风格的图片**。请额外关注：
+                1. 【画风识别】是哪种艺术风格？（日系/韩系/欧美插画风/赛博朋克/极简/复古等）
+                2. 【色彩情绪】冷暖色调？情绪氛围？（治愈/酷炫/温柔/神秘）
+                3. 【人物特征】如果有脸：发型、表情、妆容特点、视角（正面/侧面）
+                4. 【背景元素】虚化程度、光斑/粒子效果、图案纹理
+                5. 【裁剪建议】哪些区域适合做1:1头像？哪些适合9:16壁纸？
+                6. 【传播属性】为什么这张图适合做头像/壁纸？（记忆点、辨识度）
+
+                prompt.chinese 必须包含：画风标签、色彩情绪词、人物特征描述、背景元素
+                prompt.english 必须包含：art style, color mood, character features, bokeh/background elements
+                """;
+
+            case "ppt" -> base + """
+
+                ═══════ 场景增强：PPT/商务配图风格分析 ═══════
+                你现在分析的是一张**PPT或商务演示配图**。请额外关注：
+                1. 【配色方案】主色+辅色的具体HEX值和占比，是否符合商务规范
+                2. 【插图风格】扁平化2D / 等距isometric / 线性line art / 3D渲染 / 手绘风？
+                3. 【排版布局】信息层级是否清晰？视觉动线如何引导？
+                4. 【图形元素】用了哪些几何形状？图标风格？数据可视化方式？
+                5. 【字体气质】如果含文字：无衬线/衬线？字重？适合什么商务场景？
+                6. 【适配建议】这张风格适合什么类型的PPT页面（封面/目录/内容页/结尾）？
+
+                prompt.chinese 必须包含：配色方案(HEX)、插图风格分类、排版结构、商务适配建议
+                prompt.english 必须包含：color palette (HEX), illustration style, layout structure, business use case
+                """;
+
+            case "style-transfer" -> base + """
+
+                ═══════ 场景增强：风格迁移原图分析 ═══════
+                你现在分析的图片将用于**艺术风格迁移**。请特别关注：
+                1. 【主体识别】画面的核心主体是什么？（人物/风景/物体/建筑）— 迁移时必须保留
+                2. 【当前风格】现在的风格是什么？（照片写实/数字绘画/水彩/素描等）
+                3. 【结构骨架】构图的关键线条和形状 — 风格变换时保持结构不变
+                4. 【色彩分布】整体色调倾向 — 迁移到新风格时可保留或替换
+                5. 【细节层次】哪些细节是重要的（如人脸五官），哪些可以风格化处理
+                6. 【迁移建议】如果转换为以下风格，分别需要注意什么：
+                   - 梵高印象派（笔触感、漩涡状纹理）
+                   - 宫崎骏动漫（清新色彩、柔和线条）
+                   - 赛博朋克（霓虹光效、暗调+亮色对比）
+                   - 水彩（晕染边缘、透明质感）
+
+                prompt.chinese 必须包含：主体描述、当前风格、结构关键点、迁移注意事项
+                prompt.english 必须包含：subject matter, current style, structural keypoints, transfer considerations
+                """;
+
+            default -> base;
+        };
+    }
+
+    Object buildAnalyzeUserContent(String imageUrl) {
         if (imageUrl.startsWith("data:")) {
             // base64图片
             String mimeType = imageUrl.startsWith("data:image/png") ? "image/png" : "image/jpeg";

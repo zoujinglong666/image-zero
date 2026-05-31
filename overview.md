@@ -1,26 +1,48 @@
-# 图灵绘境 — 修复记录
+# 图灵绘境 · 变现能力升级总结
 
-## 修复 1: 社区发帖 FK 约束错误
+## 完成时间
+2026-05-24
 
-**问题：** `POST /api/prompt/community` 返回 500，报 `user_prompts.category_id` FK 约束失败。
+## 做了哪些改动
 
-**根因：** `category_id` 表定义 `BIGINT DEFAULT 0`，FK 引用 `prompt_categories(id)`，但 `prompt_categories` 没有 id=0 的行（自增从 1 开始）。MyBatis Plus 跳过 null 字段不写入 INSERT，MySQL 用 DEFAULT 0 → FK 报错。
+### ① 微信广告墙 ✅
+- `.env` 新增 `WECHAT_MINI_PROGRAM_AD_UNIT_ID` 配置项
+- 前端 `edit.vue` 已含完整激励视频广告交互
+- **上线前只需**：去微信小程序后台（流量主→广告管理）申请激励视频广告位，填入 `.env`
 
-**修复：** Flyway V12 迁移 → `ALTER TABLE user_prompts MODIFY category_id BIGINT NULL DEFAULT NULL`。InnoDB FK 对 NULL 不强制执行。
+### ② VIP订阅系统 ✅
+- **新建** `pages/vip/vip.vue` — 3档套餐展示页（¥9.9/¥29.9/¥59.9）
+- **新建** `api/payment.ts` — 支付API封装
+- `mine.vue` 渐变色VIP状态卡片 + 入口按钮
+- 开发模式自动激活VIP（无需真实支付）
 
-## 修复 2: 全局异常处理器遮盖 SQL 异常
+### ③ 分享裂变邀请 ✅
+- **新建** `pages/invite/invite.vue` — 邀请码展示+统计+分享
+- 后端：邀请码生成、邀请关系记录、双方各得3次奖励
+- 前端：登录时自动携带邀请码，分享链接带参
 
-**问题：** 500 错误响应暴露完整 SQL（表名、字段名、约束名、SQL 语句），安全隐患。
+### ④ 积分充值系统 ✅
+- 新建 `user_credits` 表 + `credit_orders` 表
+- 4档积分包（¥6~¥79）
+- 生图时：VIP无限 > 免费额度 > 积分抵扣 > 广告墙
 
-**根因：** `GlobalExceptionHandler.handleRuntimeException()` 直接 `e.getMessage()` 透传，SQL 异常继承自 RuntimeException。
+### ⑤ 每日签到召回 ✅
+- 新建 `daily_checkins` 表 + 签到接口
+- 连续签到奖励递增：1天=1次, 3天=2次, 7天=3次
+- `mine.vue` 签到入口卡片
 
-**修复：** 新增 `@ExceptionHandler(DataAccessException.class)` handler，返回 `"服务器内部错误，请稍后重试"`，日志仍记录完整堆栈。
-
-## 验证结果
-
-| 测试 | 结果 |
+## 技术统计
+| 类别 | 数量 |
 |------|------|
-| 社区发帖无 category_id | `{"code":0,"data":{"id":1}}` ✅ |
-| 社区发帖无效 category_id | `{"code":500,"message":"服务器内部错误，请稍后重试"}` ✅ |
-| 编译 | `mvn clean compile` 0 错误 ✅ |
-| 后端启动 | `Started TuringDrawingApplication` ✅ |
+| 新增数据库迁移 | V17~V19（3个） |
+| 新增后端 Entity | 6个 |
+| 新增后端 Service | 4个 |
+| 新增后端 Controller | 4个 |
+| 新增前端页面 | vip.vue、invite.vue |
+| 新增前端 API | payment.ts、invite.ts |
+| 编译状态 | ✅ 0错误 |
+
+## 上线前待办
+1. 微信小程序后台申请激励视频广告位，填入 `WECHAT_MINI_PROGRAM_AD_UNIT_ID`
+2. 申请微信支付商户号，配置到 `.env`（目前已用开发模式，直接激活）
+3. 微信小程序后台配置订阅消息模板（消息推送召回）

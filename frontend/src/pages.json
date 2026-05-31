@@ -45,6 +45,20 @@
         "navigationBarTitleText": "分享到社区",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/vip/vip",
+      "style": {
+        "navigationBarTitleText": "VIP 会员",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/invite/invite",
+      "style": {
+        "navigationBarTitleText": "邀请好友",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

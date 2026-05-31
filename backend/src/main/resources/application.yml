@@ -103,6 +103,13 @@ wechat:
   app-secret: ${WECHAT_APP_SECRET:}
   mini-program-app-id: ${WECHAT_MINI_PROGRAM_APP_ID:}
   mini-program-app-secret: ${WECHAT_MINI_PROGRAM_APP_SECRET:}
+  mini-program-ad-unit-id: ${WECHAT_MINI_PROGRAM_AD_UNIT_ID:}
+  pay:
+    mch-id: ${WECHAT_PAY_MCH_ID:}
+    api-v3-key: ${WECHAT_PAY_API_V3_KEY:}
+    serial-no: ${WECHAT_PAY_SERIAL_NO:}
+    private-key: ${WECHAT_PAY_PRIVATE_KEY:}
+    notify-url: ${WECHAT_PAY_NOTIFY_URL:}
 
 # CORS
 cors:

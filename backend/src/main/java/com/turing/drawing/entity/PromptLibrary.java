@@ -34,6 +34,9 @@ public class PromptLibrary extends BaseEntity {
     /** 提示词中文内容 */
     private String contentCn;
 
+    /** 示例图片URL（COS / 网络图） */
+    private String imageUrl;
+
     /** SHA256去重哈希 */
     private String promptHash;
 

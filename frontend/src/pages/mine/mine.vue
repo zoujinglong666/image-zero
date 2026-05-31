@@ -15,9 +15,10 @@
       <view class="user-card" @click="onUserCardTap">
         <view class="user-avatar">
           <u-avatar
+            :key="userStore.avatarUrl"
             :src="userStore.avatarUrl"
             size="96"
-            :text="avatarText"
+            :text="userStore.avatarUrl ? '' : avatarText"
             fontSize="36"
             :bg-color="userStore.isLoggedIn ? '#8B9DC8' : '#9A9BAC'"
           />
@@ -43,11 +44,61 @@
 
         <!-- #ifndef MP-WEIXIN -->
         <button class="dev-login-btn" @click="handleAnonymousLogin" :loading="userStore.isLoggingIn">
-          <text>访客登录（开发模式）</text>
+          <text>访客登录</text>
         </button>
         <!-- #endif -->
 
         <text class="login-hint">登录后可保存历史记录和收藏</text>
+      </view>
+
+      <!-- VIP 状态卡片（暂时隐藏，待微信支付商户号申请完成后开放） -->
+      <!-- <view v-if="userStore.isLoggedIn" class="vip-card" @click="goToVip">
+        <view class="vip-card-left">
+          <u-icon name="crown-fill" size="40" :color="vipStatus.isVip ? '#FFD700' : '#9A9BAC'" />
+          <view class="vip-card-info">
+            <text class="vip-card-title">{{ vipStatus.isVip ? vipLevelName : '升级 VIP' }}</text>
+            <text class="vip-card-desc">{{ vipStatus.isVip ? `剩余 ${remainingDays} 天 · 每日无限次` : '解锁无限生图、免广告、高清下载' }}</text>
+          </view>
+        </view>
+        <view class="vip-card-right">
+          <text class="vip-card-action">{{ vipStatus.isVip ? '续费' : '去开通' }}</text>
+          <u-icon name="arrow-right" size="28" color="#8B9DC8" />
+        </view>
+      </view> -->
+
+      <!-- 邀请好友入口 -->
+      <view v-if="userStore.isLoggedIn" class="invite-card" @click="goToInvite">
+        <view class="invite-card-left">
+          <u-icon name="share-fill" size="40" color="#8B9DC8" />
+          <view class="invite-card-info">
+            <text class="invite-card-title">邀请好友</text>
+            <text class="invite-card-desc">各得 3 次免费生图</text>
+          </view>
+        </view>
+        <view class="invite-card-right">
+          <u-icon name="arrow-right" size="28" color="#8B9DC8" />
+        </view>
+      </view>
+
+      <!-- 每日签到 -->
+      <view v-if="userStore.isLoggedIn" class="checkin-card" @click="doCheckin">
+        <view class="checkin-card-left">
+          <u-icon name="calendar-fill" size="40" :color="checkinStatus.checkedIn ? '#E8C97A' : '#8B9DC8'" />
+          <view class="checkin-card-info">
+            <text class="checkin-card-title">{{ checkinStatus.checkedIn ? '今日已签到' : '每日签到' }}</text>
+            <text class="checkin-card-desc">
+              {{ checkinStatus.checkedIn
+                ? `已连续 ${checkinStatus.streakDays} 天`
+                : `连续 ${checkinStatus.streakDays + 1} 天可获 ${checkinStatus.nextReward} 次` }}
+            </text>
+          </view>
+        </view>
+        <view class="checkin-card-right">
+          <view v-if="checkinStatus.checkedIn" class="checkin-done">
+            <u-icon name="checkmark-circle-fill" size="36" color="#E8C97A" />
+          </view>
+          <text v-else class="checkin-btn-text">签到</text>
+        </view>
       </view>
 
       <!-- 统计网格 -->
@@ -223,9 +274,10 @@
             <!-- #ifdef MP-WEIXIN -->
             <button class="avatar-choose-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
               <u-avatar
+                :key="userStore.avatarUrl"
                 :src="userStore.avatarUrl"
                 size="80"
-                :text="avatarText"
+                :text="userStore.avatarUrl ? '' : avatarText"
                 fontSize="30"
                 bg-color="#8B9DC8"
               />
@@ -237,9 +289,10 @@
             <!-- #ifndef MP-WEIXIN -->
             <view @click="onChooseAvatarFallback">
               <u-avatar
+                :key="userStore.avatarUrl"
                 :src="userStore.avatarUrl"
                 size="80"
-                :text="avatarText"
+                :text="userStore.avatarUrl ? '' : avatarText"
                 fontSize="30"
                 bg-color="#8B9DC8"
               />
@@ -356,11 +409,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onShow } from 'vue'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'
 import { useTheme } from 'uview-pro'
+import { getVipStatus, getRemainingDays } from '@/api/payment'
+import type { VipStatus } from '@/api/payment'
 
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
@@ -387,10 +442,73 @@ const loginDesc = computed(() => {
 // 版本
 const appVersion = '1.2.0'
 
+// VIP 状态
+const vipStatus = ref<VipStatus>({ vipLevel: 0, isVip: false, expireAt: 0, dailyQuota: 10 })
+const vipLevelName = computed(() => {
+  const names = ['免费', '基础版', '专业版', '旗舰版']
+  return names[vipStatus.value.vipLevel] || '免费'
+})
+const remainingDays = computed(() => getRemainingDays(vipStatus.value.expireAt))
+
+// 签到状态
+const checkinStatus = ref({ checkedIn: false, streakDays: 0, nextReward: 1 })
+
 // 统计
 const favoriteCount = computed(() => (historyStore?.history || []).filter(h => h.favorite).length)
 const savedPrompts = computed(() => [])
 const generatedCount = ref(0)
+
+// 每次页面显示时刷新最新资料（头像、昵称等）
+onShow(() => {
+  if (userStore.isLoggedIn) {
+    userStore.loadProfile()
+  }
+})
+
+// 加载 VIP 状态和签到状态
+onMounted(async () => {
+  if (userStore.isLoggedIn) {
+    try {
+      vipStatus.value = await getVipStatus()
+    } catch (err) {
+      console.error('[Mine] 获取VIP状态失败:', err)
+    }
+    try {
+      const res: any = await uni.request({
+        url: '/api/daily/status',
+        header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
+      })
+      if (res.data?.code === 0) {
+        checkinStatus.value = res.data.data || checkinStatus.value
+      }
+    } catch (err) {
+      console.error('[Mine] 获取签到状态失败:', err)
+    }
+  }
+})
+
+async function doCheckin() {
+  if (checkinStatus.value.checkedIn) return
+  uni.showLoading({ title: '签到中...', mask: true })
+  try {
+    const res: any = await uni.request({
+      url: '/api/daily/checkin',
+      method: 'POST',
+      header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
+    })
+    if (res.data?.code === 0 && res.data?.data) {
+      const d = res.data.data
+      checkinStatus.value = { checkedIn: true, streakDays: d.streakDays, nextReward: 0 }
+      uni.showToast({ title: d.message || '签到成功！', icon: 'success' })
+    } else {
+      uni.showToast({ title: res.data?.data?.message || res.data?.message || '签到失败', icon: 'none' })
+    }
+  } catch (err) {
+    uni.showToast({ title: '签到失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
 
 // 设置选项
 const qualityOptions = ['标准', '高清', '超清', '原图']
@@ -419,6 +537,14 @@ const goToNotifications = () => {
 
 const goToSettings = () => {
   uni.navigateTo({ url: '/pages/about/settings' })
+}
+
+const goToVip = () => {
+  uni.navigateTo({ url: '/pages/vip/vip' })
+}
+
+const goToInvite = () => {
+  uni.navigateTo({ url: '/pages/invite/invite' })
 }
 
 const showFavorites = () => {
@@ -528,11 +654,13 @@ const onChooseAvatar = async (e: any) => {
   const tempUrl = e.detail?.avatarUrl
   if (!tempUrl) return
 
+  console.log('[Mine] 选择头像临时路径:', tempUrl)
   uni.showLoading({ title: '上传头像中...', mask: true })
   const success = await userStore.updateAvatar(tempUrl)
   uni.hideLoading()
 
   if (success) {
+    console.log('[Mine] 头像更新成功, avatarUrl =', userStore.avatarUrl)
     uni.showToast({ title: '头像已更新', icon: 'success' })
   }
 }
@@ -654,6 +782,73 @@ $danger:     #E8947A;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
 .cell-value-text { font-size: 24rpx; color: $text-3; }
+
+// ── VIP Card ──
+.vip-card {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 20rpx 24rpx 0; padding: 28rpx 32rpx;
+  background: linear-gradient(135deg, #8B9DC8 0%, #C4B5E0 100%);
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.25);
+
+  &:active { opacity: 0.9; }
+}
+.vip-card-left {
+  display: flex; align-items: center; gap: 20rpx;
+}
+.vip-card-info {
+  display: flex; flex-direction: column; gap: 6rpx;
+}
+.vip-card-title {
+  font-size: 30rpx; font-weight: 700; color: #FFFFFF;
+}
+.vip-card-desc {
+  font-size: 22rpx; color: rgba(255,255,255,0.85);
+}
+.vip-card-right {
+  display: flex; align-items: center; gap: 8rpx;
+}
+.vip-card-action {
+  font-size: 26rpx; color: #FFFFFF; font-weight: 600;
+}
+
+// ── Invite Card ──
+.invite-card {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 16rpx 24rpx 0; padding: 28rpx 32rpx;
+  background: $bg-card; border-radius: 20rpx;
+  border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+
+  &:active { opacity: 0.7; }
+}
+.invite-card-left { display: flex; align-items: center; gap: 20rpx; }
+.invite-card-info { display: flex; flex-direction: column; gap: 6rpx; }
+.invite-card-title { font-size: 28rpx; font-weight: 600; color: $text-1; }
+.invite-card-desc { font-size: 22rpx; color: $text-3; }
+.invite-card-right { display: flex; align-items: center; }
+
+// ── Checkin Card ──
+.checkin-card {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 16rpx 24rpx 0; padding: 28rpx 32rpx;
+  background: $bg-card; border-radius: 20rpx;
+  border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+
+  &:active { opacity: 0.7; }
+}
+.checkin-card-left { display: flex; align-items: center; gap: 20rpx; }
+.checkin-card-info { display: flex; flex-direction: column; gap: 6rpx; flex: 1; }
+.checkin-card-title { font-size: 28rpx; font-weight: 600; color: $text-1; }
+.checkin-card-desc { font-size: 22rpx; color: $text-3; }
+.checkin-card-right { display: flex; align-items: center; }
+.checkin-btn-text {
+  font-size: 26rpx; color: $primary; font-weight: 600;
+  padding: 12rpx 28rpx; background: rgba(139,157,200,0.1);
+  border-radius: 999rpx;
+}
+.checkin-done {}
 
 // ── Version ──
 .version-info {

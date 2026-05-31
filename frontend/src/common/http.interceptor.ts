@@ -107,7 +107,7 @@ const httpInterceptor: RequestInterceptor = {
     return config
   },
 
-  response: async (response: any) => {
+  response: (response: any) => {
     const meta: RequestMeta = response.config?.meta || {}
 
     // 隐藏 Loading
