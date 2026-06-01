@@ -29,21 +29,22 @@
     >
 
       <!-- ====== 搜索框 ====== -->
-      <view class="search-bar" @click="goToSearch">
+      <view class="search-bar animate-item" @click="goToSearch">
         <u-icon name="search" size="36" color="#9A9BAC" />
         <text class="search-placeholder">搜索提示词、风格、标签...</text>
       </view>
 
       <!-- ====== 核心功能区：上传图片获取提示词 ====== -->
-      <view class="hero-upload" @click="triggerUpload">
+      <view class="hero-upload animate-item" @click="triggerUpload">
         <view class="upload-area">
           <view class="upload-icon-wrap">
-            <u-icon name="plus" size="72" color="#8B9DC8" />
+            <view class="upload-ring" />
+            <u-icon name="plus" size="56" color="#8B9DC8" />
           </view>
           <text class="upload-title">{{ sceneUploadTitle }}</text>
           <text class="upload-desc">{{ sceneUploadDesc }}</text>
           <view v-if="selectedScene" class="scene-badge">
-            <text>📌 {{ sceneConfig[selectedScene]?.name || '' }}</text>
+            <text>{{ sceneConfig[selectedScene]?.name || '' }}</text>
           </view>
         </view>
         <view class="hero-glow" />
@@ -61,8 +62,8 @@
 
         <view class="scene-grid">
           <!-- 场景1: 电商主图 -->
-          <view class="scene-card" :class="{ active: selectedScene === 'ecommerce' }" @click="selectScene('ecommerce')">
-            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #FFE5B4, #FFD700);">
+          <view class="scene-card animate-item" :class="{ active: selectedScene === 'ecommerce' }" @click="selectScene('ecommerce')">
+            <view class="scene-icon-wrap scene-icon-gold">
               <text class="scene-emoji">🛒</text>
             </view>
             <view class="scene-body">
@@ -80,8 +81,8 @@
           </view>
 
           <!-- 场景2: 社交头像 -->
-          <view class="scene-card" :class="{ active: selectedScene === 'avatar' }" @click="selectScene('avatar')">
-            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #E8B4F0, #FF69B4);">
+          <view class="scene-card animate-item" :class="{ active: selectedScene === 'avatar' }" @click="selectScene('avatar')">
+            <view class="scene-icon-wrap scene-icon-pink">
               <text class="scene-emoji">📱</text>
             </view>
             <view class="scene-body">
@@ -99,8 +100,8 @@
           </view>
 
           <!-- 场景3: PPT配图 -->
-          <view class="scene-card" :class="{ active: selectedScene === 'ppt' }" @click="selectScene('ppt')">
-            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #A8E6CF, #56AB91);">
+          <view class="scene-card animate-item" :class="{ active: selectedScene === 'ppt' }" @click="selectScene('ppt')">
+            <view class="scene-icon-wrap scene-icon-green">
               <text class="scene-emoji">📊</text>
             </view>
             <view class="scene-body">
@@ -118,8 +119,8 @@
           </view>
 
           <!-- 场景4: 风格迁移 -->
-          <view class="scene-card" :class="{ active: selectedScene === 'style-transfer' }" @click="selectScene('style-transfer')">
-            <view class="scene-icon-wrap" style="background: linear-gradient(135deg, #8B9DC8, #C4B5E0);">
+          <view class="scene-card animate-item" :class="{ active: selectedScene === 'style-transfer' }" @click="selectScene('style-transfer')">
+            <view class="scene-icon-wrap scene-icon-purple">
               <text class="scene-emoji">🎨</text>
             </view>
             <view class="scene-body">
@@ -138,8 +139,85 @@
         </view>
       </view>
 
+      <!-- ====== 🔥 热门词库模板（精选 Prompt）====== -->
+      <!-- 骨架屏 -->
+      <view v-if="!dataReady" class="section tmpl-section">
+        <view class="section-header">
+          <view class="skeleton-line" style="width: 280rpx; height: 34rpx;" />
+        </view>
+        <scroll-view scroll-x :show-scrollbar="false" class="tmpl-scroll">
+          <view class="tmpl-row">
+            <view v-for="i in 3" :key="'sk-tmpl-'+i" class="skeleton-card tmpl-mini-card">
+              <view class="skeleton-shimmer" style="height: 200rpx;" />
+              <view style="padding: 16rpx 18rpx;">
+                <view class="skeleton-line" style="width: 70%; height: 24rpx; margin-bottom: 10rpx;" />
+                <view class="skeleton-line" style="width: 90%; height: 20rpx;" />
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view v-else-if="hotTemplates.length > 0" class="section tmpl-section">
+        <view class="section-header">
+          <view class="section-title-row">
+            <text class="section-emoji">🔥</text>
+            <text class="section-title">不会写提示词？先试这几个</text>
+          </view>
+          <text class="section-more" @click="goToPromptLib">更多 ›</text>
+        </view>
+        <text class="section-sub-hint">选一个效果，上传图片就能生成同款</text>
+
+        <scroll-view scroll-x :show-scrollbar="false" class="tmpl-scroll">
+          <view class="tmpl-row">
+            <view
+              v-for="(tmpl, tIdx) in hotTemplates"
+              :key="'tmpl' + tmpl.id"
+              class="tmpl-mini-card animate-item"
+              @click="generateFromTemplate(tmpl)"
+            >
+              <!-- 封面 -->
+              <view class="tmpl-cover" :style="tmplCoverStyle(tmpl, tIdx)">
+                <image
+                  v-if="tmpl.image_url"
+                  class="tmpl-img"
+                  :src="tmpl.image_url"
+                  mode="aspectFill"
+                />
+                <text v-else class="tmpl-emoji">{{ getTmplEmoji(tmpl) }}</text>
+                <view v-if="isTmplHot(tmpl)" class="tmpl-hot"><text>🔥</text></view>
+              </view>
+              <!-- 信息 -->
+              <view class="tmpl-info">
+                <text class="tmpl-name">{{ tmpl.title }}</text>
+                <text class="tmpl-desc">{{ truncateTmpl(tmpl.content_cn || tmpl.prompt_text, 36) }}</text>
+                <view class="tmpl-gen-btn">
+                  <text>生成同款</text>
+                  <u-icon name="arrow-right" size="24" color="#FFF" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
       <!-- ====== 每日精选（横向滑动）====== -->
-      <view class="section">
+      <!-- 骨架屏 -->
+      <view v-if="!dataReady" class="section">
+        <view class="section-header">
+          <view class="skeleton-line" style="width: 200rpx; height: 34rpx;" />
+        </view>
+        <view class="picks-row" style="padding-left: 24rpx;">
+          <view v-for="i in 3" :key="'sk-pick-'+i" class="skeleton-card pick-card">
+            <view class="skeleton-shimmer" style="height: 340rpx;" />
+            <view style="padding: 16rpx 18rpx;">
+              <view class="skeleton-line" style="width: 80%; height: 24rpx;" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-else class="section">
         <view class="section-header">
           <view class="section-title-row">
             <view class="section-dot" />
@@ -178,7 +256,7 @@
       </view>
 
       <!-- ====== 本周挑战 ====== -->
-      <view v-if="activeChallenge" class="section">
+      <view v-if="activeChallenge" class="section animate-item">
         <view class="section-header">
           <view class="section-title-row">
             <view class="section-dot" />
@@ -188,7 +266,7 @@
         <view class="challenge-card" @click="goToChallenge(activeChallenge)">
           <view class="challenge-content">
             <view class="challenge-badge">
-              <u-icon name="fire" size="32" color="#D4B896" />
+              <u-icon name="fire" size="32" color="#C4B5E0" />
               <text>进行中</text>
             </view>
             <text class="challenge-title">{{ activeChallenge.title }}</text>
@@ -214,7 +292,32 @@
       </view>
 
       <!-- ====== 热门推荐（瀑布流）====== -->
-      <view class="section">
+      <!-- 骨架屏 -->
+      <view v-if="!dataReady" class="section">
+        <view class="section-header">
+          <view class="skeleton-line" style="width: 200rpx; height: 34rpx;" />
+        </view>
+        <view class="waterfall">
+          <view class="waterfall-col">
+            <view v-for="i in 2" :key="'sk-wl-'+i" class="skeleton-card work-card">
+              <view class="skeleton-shimmer" :style="{ height: (240 + i * 40) + 'rpx' }" />
+              <view style="padding: 16rpx 18rpx;">
+                <view class="skeleton-line" style="width: 70%; height: 24rpx;" />
+              </view>
+            </view>
+          </view>
+          <view class="waterfall-col">
+            <view v-for="i in 2" :key="'sk-wr-'+i" class="skeleton-card work-card">
+              <view class="skeleton-shimmer" :style="{ height: (260 + i * 30) + 'rpx' }" />
+              <view style="padding: 16rpx 18rpx;">
+                <view class="skeleton-line" style="width: 70%; height: 24rpx;" />
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-else class="section">
         <view class="section-header">
           <view class="section-title-row">
             <view class="section-dot" />
@@ -241,7 +344,7 @@
               <view class="work-info">
                 <text class="work-title">{{ item.title || 'AI创作' }}</text>
                 <view class="work-meta">
-                  <view class="work-likes" @click.stop="likeWork(item)">
+                  <view class="work-likes" :class="{ 'liking': likingId === item.id }" @click.stop="likeWork(item)">
                     <u-icon
                       :name="item._liked ? 'heart-fill' : 'heart'"
                       size="24"
@@ -272,7 +375,7 @@
               <view class="work-info">
                 <text class="work-title">{{ item.title || 'AI创作' }}</text>
                 <view class="work-meta">
-                  <view class="work-likes" @click.stop="likeWork(item)">
+                  <view class="work-likes" :class="{ 'liking': likingId === item.id }" @click.stop="likeWork(item)">
                     <u-icon
                       :name="item._liked ? 'heart-fill' : 'heart'"
                       size="24"
@@ -311,7 +414,7 @@ import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { analyzeImage as apiAnalyze, generateImage as apiGenerate, uploadImage as apiUpload, checkNetwork, watchNetworkChange } from '@/api/image'
 import { getHomeData, getLatestPosts, likeSubmission } from '@/api/community'
-import { toggleCommunityLike } from '@/api/prompt'
+import { toggleCommunityLike, getPromptList, type PromptItem } from '@/api/prompt'
 import type { CommunityWork, Challenge, HomeData } from '@/api/community'
 import { getFriendlyError } from '@/common/http.interceptor'
 import type { ImageAnalysisResult } from '@/types'
@@ -324,11 +427,16 @@ const dailyPicks = ref<CommunityWork[]>([])
 const weeklyHot = ref<CommunityWork[]>([])
 const activeChallenge = ref<Challenge | null>(null)
 const latestPostsList = ref<CommunityWork[]>([])
+
+// ─── 热门词库模板（首页展示）──────────────────
+const hotTemplates = ref<PromptItem[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
 const loadingMore = ref(false)
 const noMorePosts = ref(false)
 const refreshing = ref(false)
+const dataReady = ref(false)
+const likingId = ref<number | null>(null)
 
 // ─── 瀑布流布局 ──────────────────────────────
 const leftCol = computed(() => {
@@ -493,9 +601,17 @@ async function loadHomeData() {
       currentPage.value = data.latest_posts.pagination?.page || 1
       totalPages.value = data.latest_posts.pagination?.total_pages || 1
     }
+
+    // 加载热门词库模板（首页展示用）
+    try {
+      const tmplResult = await getPromptList({ sort: 'popular', page: 1, page_size: 8 })
+      hotTemplates.value = (tmplResult.list || []).slice(0, 8)
+    } catch { /* 模板加载失败不阻断 */ }
+
+    dataReady.value = true
   } catch (err) {
     console.warn('首页数据加载失败:', err)
-    // 降级：使用空数据，不阻断页面
+    dataReady.value = true // 即使失败也停止骨架屏
   }
 }
 
@@ -529,11 +645,14 @@ async function loadMorePosts() {
 async function likeWork(item: CommunityWork & { _liked?: boolean }) {
   if (item._liked) return
   try {
+    likingId.value = item.id
     await toggleCommunityLike(item.id)
     item._liked = true
     item.like_count = (item.like_count || 0) + 1
   } catch (err) {
     console.warn('点赞失败:', err)
+  } finally {
+    setTimeout(() => { likingId.value = null }, 400)
   }
 }
 
@@ -716,9 +835,55 @@ const onAddToFavorites = () => {
 // 处理邀请码（从分享链接携带）
 function handleInviteCode(code: string) {
   if (!code) return
-  // 存储邀请码，登录时携带
   uni.setStorageSync('pending_invite_code', code)
   console.log('[邀请] 收到邀请码:', code)
+}
+
+// ─── 热门词库模板辅助函数 ──────────────────────
+
+const tmplGradients = [
+  'none',
+  'none',
+  'none',
+  'none',
+  'none',
+  'none',
+  'none',
+  'none',
+]
+
+function tmplCoverStyle(item: PromptItem, idx: number): Record<string, string> {
+  if (item?.image_url) return {}
+  // 无图时用淡灰素底 + emoji，不显示彩色渐变占位
+  return { background: '#F0F1F5' }
+}
+
+function getTmplEmoji(item: PromptItem): string {
+  const t = (item.title + '|' + (item.tags || '')).toLowerCase()
+  if (/portrait|头像|headshot/i.test(t)) return '👤'
+  if (/poster|海报|电影|movie/i.test(t)) return '🎬'
+  if (/cyber|赛博|punk|科幻/i.test(t)) return '🤖'
+  if (/fantasy|奇幻|龙|dragon/i.test(t)) return '🐉'
+  if (/landscape|风景|自然|森林/i.test(t)) return '🏔️'
+  if (/product|产品|电商|珠宝|ring/i.test(t)) return '💍'
+  if (/sneaker|鞋|运动/i.test(t)) return '👟'
+  if (/character|角色|rpg|game/i.test(t)) return '🎮'
+  if (/cozy|可爱|cute|萌|动物/i.test(t)) return '🧸'
+  if (/illustration|插画|flat|商务|ppt/i.test(t)) return '📊'
+  return '✨'
+}
+
+function isTmplHot(item: PromptItem): boolean { return (item.view_count || 0) > 5000 }
+
+function truncateTmpl(text: string, max: number): string {
+  return text?.length > max ? text.substring(0, max) + '...' : (text || '')
+}
+
+/** 从首页模板卡片跳转编辑页 */
+function generateFromTemplate(tmpl: PromptItem) {
+  uni.navigateTo({
+    url: `/pages/edit/edit?promptText=${encodeURIComponent(tmpl.prompt_text)}&tmplId=${tmpl.id}`,
+  })
 }
 
 // 暴露分享方法（uni-app 页面生命周期要求）
@@ -755,17 +920,64 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
 .page {
   min-height: 100vh;
   background: $bg-page;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(139,157,200,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(196,181,224,0.05) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(163,184,165,0.03) 0%, transparent 50%);
 }
 
 .main-scroll { height: calc(100vh - 44px); }
 .bottom-spacer { height: calc(env(safe-area-inset-bottom) + 120rpx); }
+
+// ── Skeleton / Shimmer ──
+.skeleton-card {
+  background: $bg-card;
+  border: 1rpx solid $border;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    $bg-raised 25%,
+    rgba(196,181,224,0.15) 50%,
+    $bg-raised 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+.skeleton-line {
+  background: $bg-raised;
+  border-radius: 8rpx;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ── Entrance Animations ──
+.animate-item {
+  opacity: 0;
+  transform: translateY(24rpx);
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@for $i from 1 through 12 {
+  .animate-item:nth-child(#{$i}) {
+    animation-delay: #{$i * 0.06}s;
+  }
+}
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 // ── Offline Banner ──
 .offline-banner {
   display: flex; align-items: center; justify-content: center; gap: 10rpx;
   padding: 12rpx 24rpx;
   background: linear-gradient(135deg, #E8947A, #D16B50);
-  position: sticky; top: 0; z-index: 10;
+  position: relative; z-index: 1;
   text { font-size: 24rpx; color: #FFF; font-weight: 500; }
 }
 
@@ -778,6 +990,8 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   border-radius: 999rpx;
   border: 1rpx solid $border;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+  transition: box-shadow 0.2s;
+  &:active { box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.12); }
 }
 .search-placeholder { font-size: 28rpx; color: $text-3; }
 
@@ -809,28 +1023,19 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   background: rgba(139,157,200,0.08);
   display: flex; align-items: center; justify-content: center;
   border: 1rpx solid rgba(139,157,200,0.18);
+  position: relative;
+}
+.upload-ring {
+  position: absolute; inset: -8rpx; border-radius: 50%;
+  border: 2rpx solid rgba(139,157,200,0.12);
+  animation: ringPulse 2.4s ease-in-out infinite;
+}
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.12); opacity: 0.15; }
 }
 .upload-title { font-size: 34rpx; font-weight: 700; color: $text-1; }
 .upload-desc  { font-size: 24rpx; color: $text-3; }
-
-// ── Quick Tools ──
-.quick-tools {
-  display: flex; justify-content: space-between;
-  padding: 32rpx 24rpx 16rpx; gap: 16rpx;
-}
-.tool-item {
-  display: flex; flex-direction: column; align-items: center; gap: 12rpx; flex: 1;
-}
-.tool-icon {
-  width: 100rpx; height: 100rpx; border-radius: 24rpx;
-  display: flex; align-items: center; justify-content: center;
-  background: $bg-card;
-  border: 1rpx solid $border;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
-  transition: box-shadow 0.2s, transform 0.15s;
-  &:active { transform: scale(0.95); box-shadow: 0 1rpx 6rpx rgba(0,0,0,0.06); }
-}
-.tool-label { font-size: 24rpx; color: $text-2; font-weight: 500; }
 
 // ── Section ──
 .section { margin-top: 40rpx; }
@@ -856,7 +1061,8 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   background: $bg-card; border-radius: 20rpx; overflow: hidden;
   border: 1rpx solid $border;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
-  &:active { transform: scale(0.97); }
+  transition: transform 0.15s, box-shadow 0.2s;
+  &:active { transform: scale(0.97); box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08); }
 }
 .pick-img { width: 260rpx; height: 340rpx; background: $bg-raised; }
 .pick-info { padding: 16rpx 18rpx; }
@@ -915,7 +1121,8 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   background: $bg-card; border-radius: 20rpx; overflow: hidden;
   border: 1rpx solid $border;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
-  &:active { transform: scale(0.97); }
+  transition: transform 0.15s, box-shadow 0.2s;
+  &:active { transform: scale(0.97); box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08); }
 }
 .work-img { width: 100%; min-height: 200rpx; background: $bg-raised; }
 .work-info { padding: 16rpx 18rpx; }
@@ -952,7 +1159,8 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   display: flex; align-items: center; gap: 20rpx;
   background: $bg-card; border-radius: 20rpx; padding: 24rpx;
   border: 2rpx solid transparent;
-  transition: all 0.2s ease; position: relative;
+  transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.15s;
+  position: relative;
   &:active { transform: scale(0.98); }
   &.active {
     border-color: #D4A017; background: #FFFBF0;
@@ -964,12 +1172,16 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   .scene-emoji { font-size: 40rpx; }
 }
+.scene-icon-gold  { background: linear-gradient(135deg, #FFE5B4, #FFD700); }
+.scene-icon-pink  { background: linear-gradient(135deg, #F0C8E0, #E8A8CC); }
+.scene-icon-green { background: linear-gradient(135deg, #A8E6CF, #56AB91); }
+.scene-icon-purple { background: linear-gradient(135deg, #8B9DC8, #C4B5E0); }
 .scene-body { flex: 1; min-width: 0; }
 .scene-name { font-size: 30rpx; font-weight: 700; color: $text-1; display: block; }
 .scene-desc { font-size: 22rpx; color: $text-3; margin-top: 6rpx; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scene-tags { display: flex; gap: 10rpx; margin-top: 10rpx; flex-wrap: wrap; }
 .scene-tag {
-  font-size: 18rpx; color: #D4A017; background: rgba(212, 160, 23, 0.1);
+  font-size: 18rpx; color: $primary; background: rgba(139,157,200,0.1);
   padding: 4rpx 14rpx; border-radius: 8rpx; line-height: 1.4;
 }
 .scene-check { flex-shrink: 0; }
@@ -978,8 +1190,106 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
 .scene-badge {
   display: inline-flex; align-items: center; gap: 6rpx;
   margin-top: 12rpx; padding: 8rpx 20rpx;
-  background: linear-gradient(135deg, #FFF8E1, #FFECB3);
-  border-radius: 20rpx; border: 1rpx solid rgba(212, 160, 23, 0.3);
-  text { font-size: 22rpx; color: #B8860B; font-weight: 600; }
+  background: linear-gradient(135deg, rgba(139,157,200,0.08), rgba(196,181,224,0.1));
+  border-radius: 20rpx; border: 1rpx solid rgba(139,157,200,0.2);
+  text { font-size: 22rpx; color: $primary; font-weight: 600; }
+}
+
+// ══════════════════════════════
+//  🔥 热门词库模板（首页横滑区）
+// ══════════════════════════════
+
+.tmpl-section { margin-top: 48rpx; }
+.section-emoji { font-size: 34rpx; margin-right: 4rpx; }
+.section-sub-hint {
+  font-size: 24rpx; color: $text-3;
+  padding: 0 28rpx; margin-top: -12rpx; margin-bottom: 16rpx;
+  display: block;
+}
+
+.tmpl-scroll {
+  white-space: nowrap; padding-left: 24rpx;
+}
+.tmpl-row {
+  display: inline-flex; gap: 16rpx;
+  padding-right: 24rpx;
+}
+
+.tmpl-mini-card {
+  display: inline-flex; flex-direction: column;
+  width: 280rpx;
+  background: $bg-card;
+  border-radius: 20rpx;
+  overflow: hidden;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 18rpx rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.08);
+  }
+}
+
+.tmpl-cover {
+  width: 100%; height: 200rpx;
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.tmpl-img { width: 100%; height: 100%; object-fit: cover; }
+.tmpl-emoji { font-size: 64rpx; filter: drop-shadow(0 4rpx 12rpx rgba(0,0,0,0.15)); }
+.tmpl-hot {
+  position: absolute; top: 10rpx; left: 10rpx;
+  text { font-size: 28rpx; }
+}
+
+.tmpl-info { padding: 16rpx 18rpx 18rpx; }
+.tmpl-name {
+  font-size: 27rpx; font-weight: 800; color: $text-1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: block;
+}
+.tmpl-desc {
+  font-size: 22rpx; color: $text-3; line-height: 1.4;
+  margin-top: 6rpx;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tmpl-gen-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6rpx;
+  margin-top: 14rpx; padding: 12rpx 0;
+  background: $primary-grad;
+  border-radius: 999rpx;
+  box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.25);
+  transition: transform 0.15s, box-shadow 0.2s;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 2rpx 8rpx rgba(139,157,200,0.3);
+  }
+
+  text {
+    font-size: 24rpx; color: #FFF; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+}
+
+// ── Like Heart Animation ──
+.work-likes.liking {
+  .u-icon { animation: heartBeat 0.4s ease; }
+  text { animation: countPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+}
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes countPop {
+  0% { transform: scale(1); color: $text-3; }
+  50% { transform: scale(1.4); color: $danger; }
+  100% { transform: scale(1); color: $danger; }
 }
 </style>

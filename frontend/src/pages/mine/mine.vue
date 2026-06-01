@@ -409,7 +409,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onShow } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'

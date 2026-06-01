@@ -521,6 +521,31 @@ onLoad((options) => {
     }
   }
 
+  // 🆕 从词库模板「生成同款」跳转过来 —— 直接预填 Prompt
+  if (options?.promptText) {
+    const tmplPrompt = decodeURIComponent(options.promptText)
+    console.log(`[Edit] 从词库模板加载 prompt, tmplId=${options.tmplId || '无'}`)
+
+    // 构造一个基于模板的 editData，让编辑器直接可用
+    editData.value = {
+      style: '词库模板',
+      styleConfidence: 0.95,
+      styleDescription: '来自「图灵绘境」精选词库模板，可直接使用或微调后生成图片',
+      elements: [],
+      layout: '自由构图',
+      layoutDescription: '',
+      colorScheme: [],
+      primaryColor: '#8B9DC8',
+      prompt: {
+        english: tmplPrompt,
+        chinese: options?.tmplId ? `（模板 #${options.tmplId}）点击上方英文提示词可编辑` : '来自词库模板的提示词，可自由编辑',
+        keywords: extractKeywords(tmplPrompt),
+      },
+    }
+    sourceImageUrl.value = ''
+    return // 模板模式下不需要再分析图片
+  }
+
   if (options?.imageUrl) {
     const imageUrl = decodeURIComponent(options.imageUrl)
     sourceImageUrl.value = imageUrl
@@ -545,6 +570,23 @@ onUnmounted(() => {
 // ── 激励视频广告 ──
 // 微信小程序激励视频广告
 // 文档：https://uniapp.dcloud.net.cn/api/pages/adbideo.html
+
+/** 从英文 prompt 中提取关键词（用于模板模式预填） */
+function extractKeywords(text: string): { keyword: string; weight: number; category: string }[] {
+  if (!text) return []
+  // 按逗号分割，取前8个有意义的词
+  const words = text.split(/[,;]/)
+    .map(w => w.trim())
+    .filter(w => w.length > 2 && w.length < 50 && !/^(a|an|the|of|in|on|at|to|for|with|and|or|by|from|is|are|was|were|be|been|being|have|has|had|do|does|did|can|could|will|would|should|may|might|must)$/i.test(w))
+    .slice(0, 8)
+
+  return words.map((w, i) => ({
+    keyword: w,
+    weight: Math.max(0.5, 1 - i * 0.08),
+    category: i < 3 ? 'style' : i < 5 ? 'subject' : 'detail',
+  }))
+}
+
 function initRewardedAd() {
   // 仅微信小程序环境需要初始化
   // #ifdef MP-WEIXIN
