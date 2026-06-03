@@ -1,92 +1,75 @@
-# 图灵绘境 (Turing Drawing Realm)
+# 🎨 画风提取器 (Style Extractor)
 
-> AI驱动的智能绘图平台，结合Spring Boot 3和现代化前端技术栈
+> 上传一张图 → AI 3秒识别画风 → 可视化编辑 → 一键出图
 
-## 🎯 项目简介
+**小程序 AppID**: `wx844c572f78370d68` | **架构**: Spring Boot 3.4 + uni-app Vue3 + MySQL 8
 
-图灵绘境是一个基于AI技术的智能绘图平台，提供文本到图像生成、图像编辑、风格转换等功能。项目采用现代化的微服务架构，支持高并发和可扩展的部署方案。
+## 🎯 核心功能
 
-## 🏗️ 技术架构
+- 🔍 **AI 风格反推** — 上传图片自动识别画风、构图、配色、提取英文提示词
+- ✏️ **可视化编辑器** — 调整色彩/元素/布局/风格强度，所见即所得
+- 🎭 **四大垂直场景** — 🛒电商主图 / 📱社交头像 / 📊PPT配图 / 🎭风格迁移
+- 📚 **热门词库模板** — 50+ 精选 Prompt，一键「生成同款」
+- 🛡️ **内容审核系统** — AI + 人工双层风控
 
-### 后端技术栈
-- **框架**: Spring Boot 3.x
-- **数据库**: MySQL 8.0
-- **ORM**: Spring Data JPA + Hibernate
-- **安全**: Spring Security + JWT
-- **缓存**: Caffeine
-- **AI服务**: OpenAI GPT-4, Google Gemini
-- **文件存储**: 腾讯云COS
-- **监控**: Spring Boot Actuator + Prometheus
+## 🏗️ 技术栈
 
-### 前端技术栈
-- **框架**: Vue 3 + TypeScript
-- **构建工具**: Vite
-- **UI组件**: Element Plus
-- **状态管理**: Pinia
-- **构建目标**: H5 + 微信小程序
+| 层 | 技术 |
+|----|------|
+| **后端** | Java Spring Boot 3.4 + MyBatis-Plus 3.5.9 |
+| **数据库** | MySQL 8 (Flyway 自动迁移 V22) |
+| **AI 引擎** | 小米 MiMo (首选) → 智谱 GLM-4.6V-Flash (降级) |
+| **前端** | uni-app Vue3 + uView Pro + TypeScript + Pinia |
+| **文件存储** | 腾讯云 COS |
+| **安全** | Spring Security + JWT + 敏感词过滤 |
 
 ## 🚀 快速开始
 
+详细部署指南 → [**DEPLOYMENT.md**](./DEPLOYMENT.md)
+
 ### 环境要求
-- Java 17+
-- Maven 3.6+
-- Node.js 18+
+- Java 22+ / JDK 21+
+- Maven 3.8+
+- Node.js 20+ (pnpm 或 npm)
 - MySQL 8.0+
-- Docker & Docker Compose (可选)
+- 微信开发者工具（仅小程序开发）
 
-### 一键部署
+### 本地开发
 
 ```bash
-# 使用部署脚本
-./deploy/scripts/deploy.sh -m docker -e prod
+# 1. 启动后端
+cd backend
+cp .env.example .env   # 首次：编辑填入 API Key
+mvn spring-boot:run -DskipTests   # → http://localhost:8080
 
-# Windows系统
-deploy\scripts\deploy.bat -m docker -e prod
-```
+# 2. 启动前端 H5（另一个终端）
+cd frontend
+pnpm install          # 首次安装依赖
+pnpm dev:h5           # → http://localhost:5173
 
-### 手动部署
-
-#### 1. 环境配置
-```bash
-# 生成环境配置
-./config/scripts/setup-env.sh prod
-```
-
-#### 2. Docker部署
-```bash
-# 启动所有服务
-docker compose up -d
-
-# 查看日志
-docker compose logs -f backend
-```
-
-#### 3. 原生部署
-```bash
-# 构建后端
-cd backend && ./mvnw clean package -DskipTests
-
-# 构建前端
-cd frontend && npm run build
-
-# 启动服务
-java -jar backend/target/*.jar --spring.profiles.active=prod
+# 3. 微信小程序模式
+pnpm dev:mp-weixin    # → 用微信开发者工具导入 dist/dev/mp-weixin
 ```
 
 ## 📁 项目结构
 
 ```
-turing-drawing/
-├── backend/                  # Spring Boot后端
-│   ├── src/                  # 源代码
-│   ├── Dockerfile            # 生产Dockerfile
-│   ├── Dockerfile.optimized  # 优化版Dockerfile
-│   └── pom.xml              # Maven配置
-├── frontend/                 # 前端代码
-│   ├── src/                  # 源代码
-│   ├── dist/                 # 构建产物
-│   └── package.json         # 依赖配置
-├── deploy/                   # 部署相关
+img-prompt-starter/
+├── backend/                  # Spring Boot 后端 (Java)
+│   ├── src/main/java/...     # Controller / Service / Mapper / Config
+│   ├── src/main/resources/
+│   │   ├── application.yml   # Spring Boot 配置
+│   │   └── db/migration/     # Flyway 迁移 (V1~V22)
+│   ├── .env                  # 🔑 环境变量（不提交 Git）
+│   └── pom.xml
+├── frontend/                 # uni-app 前端 (Vue3)
+│   ├── src/pages/            # index / edit / prompt / history / mine
+│   ├── manifest.json         # ⚙️ uni-app + 微信 AppID 配置
+│   └── pages.json            # 路由 & TabBar
+├── deploy/                   # Docker 部署配置
+├── DEPLOYMENT.md             # 📖 完整部署指南
+└── README.md                 # 你在这里
+```
 │   ├── scripts/              # 部署脚本
 │   ├── configs/              # 配置文件模板
 │   └── docs/                 # 部署文档
