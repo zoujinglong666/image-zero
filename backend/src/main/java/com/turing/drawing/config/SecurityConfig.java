@@ -84,8 +84,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/analyze", "/api/generate", "/api/edit", "/api/upload", "/api/task/**").permitAll()
                     // 数据统计接口（开发环境公开，生产需认证）
                     .requestMatchers("/api/data/**").permitAll()
-                    // Actuator - 仅 health 公开
-                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                    // 健康检查 - 公开（用于负载均衡、监控探活）
+                    .requestMatchers("/api/health", "/actuator/health", "/actuator/info").permitAll()
                     .requestMatchers("/actuator/**").authenticated();
 
                 // Swagger文档 - 生产需要ADMIN权限，开发公开
