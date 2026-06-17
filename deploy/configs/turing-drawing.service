@@ -1,6 +1,6 @@
 [Unit]
-Description=图灵绘境应用服务
-Documentation=https://github.com/your-org/turing-drawing
+Description=画风提取器后端服务
+Documentation=https://github.com/your-org/img-prompt-starter
 After=network.target mysql.service
 Wants=mysql.service
 
@@ -10,35 +10,29 @@ User=spring
 Group=spring
 WorkingDirectory=/opt/turing-drawing/backend
 EnvironmentFile=/opt/turing-drawing/config/.env
-ExecStart=/usr/bin/java -jar app.jar --spring.profiles.active=prod
+ExecStart=/usr/bin/java -Xms256m -Xmx768m \
+  -XX:+UseG1GC -XX:MaxGCPauseMillis=100 \
+  -Djava.security.egd=file:/dev/./urandom \
+  -jar app.jar --spring.profiles.active=prod
 ExecReload=/bin/kill -HUP $MAINPID
-ExecStop=/bin/kill -TERM $MAINPID
 Restart=always
 RestartSec=10
 StartLimitInterval=60
 StartLimitBurst=3
 
-# 日志配置
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=turing-drawing
 
-# 安全限制
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/opt/turing-drawing
-
-# 资源限制
 LimitNOFILE=65536
-LimitNPROC=4096
-MemoryLimit=2G
-CPUQuota=50%
-
-# 健康检查
-TimeoutStartSec=300
-TimeoutStopSec=60
+MemoryMax=1.5G
+TimeoutStartSec=120
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
