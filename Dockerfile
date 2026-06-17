@@ -1,43 +1,75 @@
-# 图灵绘境后端 - 仓库根目录 Dockerfile
-# Railway 从根目录构建时使用此文件
-# 构建Spring Boot后端
+# ════════════════════════════════════════════════════
+#  画风提取器 - 根目录 Dockerfile
+#  用于 Railway / Render 等平台从仓库根目录构建
+#  自动构建 backend + frontend
+# ════════════════════════════════════════════════════
 
-# 阶段1: Maven构建
-FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /app
+# 阶段1: 构建前端 H5
+FROM node:20-alpine AS frontend-build
+WORKDIR /app/frontend
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY frontend/package.json ./
+RUN pnpm install || npm install
+COPY frontend/ .
+RUN pnpm build:h5 || npx uni build -p h5
 
-# 配置Maven阿里云镜像加速
-RUN mkdir -p /root/.m2 && echo '<?xml version="1.0" encoding="UTF-8"?>\n<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"\n  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">\n  <mirrors>\n    <mirror>\n      <id>aliyunmaven</id>\n      <mirrorOf>*</mirrorOf>\n      <name>阿里云公共仓库</name>\n      <url>https://maven.aliyun.com/repository/public</url>\n    </mirror>\n  </mirrors>\n</settings>' > /root/.m2/settings.xml
-
-# 先复制pom.xml，利用Docker缓存
+# 阶段2: 构建后端 Spring Boot
+FROM maven:3.9-eclipse-temurin-21 AS backend-build
+WORKDIR /app/backend
+RUN mkdir -p /root/.m2 && \
+    echo '<?xml version="1.0"?>\
+<settings><mirrors><mirror><id>aliyun</id><mirrorOf>*</mirrorOf>\
+<url>https://maven.aliyun.com/repository/public</url></mirror></mirrors></settings>' \
+    > /root/.m2/settings.xml
 COPY backend/pom.xml .
-RUN mvn dependency:go-offline -B
-
-# 复制源码并构建
+RUN mvn dependency:go-offline -B -q
 COPY backend/src ./src
-RUN mvn package -DskipTests -B
+RUN mvn package -DskipTests -B -q
 
-# 阶段2: 生产镜像
-FROM eclipse-temurin:17-jre-alpine
+# 阶段3: 生产镜像（后端 + Nginx 托管前端）
+FROM eclipse-temurin:21-jre-alpine
+
+RUN apk add --no-cache curl nginx tzdata && \
+    ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    addgroup -S app && adduser -S app -u 1001 -G app && \
+    mkdir -p /app/logs /app/static && \
+    chown -R app:app /app
+
 WORKDIR /app
 
-# 安全: 使用非root用户
-RUN addgroup -g 1001 -S spring && adduser -S spring -u 1001
+# 复制后端 JAR
+COPY --from=backend-build --chown=app:app /app/backend/target/*.jar app.jar
 
-# 创建必要目录
-RUN mkdir -p logs && chown -R spring:spring /app
+# 复制前端 H5 构建产物到 Nginx 静态目录
+COPY --from=frontend-build /app/frontend/dist/build/h5 /usr/share/nginx/html
 
-USER spring
+# Nginx 配置（内嵌：API 反代 + 前端静态托管）
+COPY <<'EOF' /etc/nginx/conf.d/default.conf
+server {
+    listen 8081;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
 
-# 从构建阶段复制JAR
-COPY --from=build --chown=spring:spring /app/target/*.jar app.jar
+    location / {
+        try_files $uri $uri/ /index.html;
+        expires -1;
+    }
 
-# 暴露端口
-EXPOSE 8080
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+EOF
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+USER app
 
-# 启动 — 默认激活 prod profile，可通过 SPRING_PROFILES_ACTIVE 环境变量覆盖
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod}"]
+EXPOSE 8080 8081
+
+HEALTHCHECK --interval=30s --timeout=5s --start_period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+
+# 启动脚本：同时运行 Spring Boot(8080) 和 Nginx(8081)
+ENTRYPOINT ["sh", "-c", "nginx && java -jar app.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod}"]

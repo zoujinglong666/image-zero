@@ -1,70 +1,67 @@
-# 图灵绘境后端 - Spring Boot Dockerfile (优化版)
-# 多阶段构建，最小化镜像体积
+# ════════════════════════════════════════════════════
+#  画风提取器后端 - Dockerfile（优化版 ⭐ 推荐）
+#  三阶段构建: 依赖下载 → 编译 → 运行时
+#  特性: JVM 调优 / G1GC / 时区 / 最小镜像体积
+# ════════════════════════════════════════════════════
 
-# 阶段1: 依赖下载（利用缓存）
-FROM maven:3.9-eclipse-temurin-17 AS deps
+# 阶段1: Maven 依赖下载（独立缓存层，源码变更不重新下载依赖）
+FROM maven:3.9-eclipse-temurin-21 AS deps
 WORKDIR /app
 
-# 配置Maven阿里云镜像加速
 RUN mkdir -p /root/.m2 && \
-    echo '<?xml version="1.0" encoding="UTF-8"?>\n<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"\n  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">\n  <mirrors>\n    <mirror>\n      <id>aliyunmaven</id>\n      <mirrorOf>*</mirrorOf>\n      <name>阿里云公共仓库</name>\n      <url>https://maven.aliyun.com/repository/public</url>\n    </mirror>\n  </mirrors>\n</settings>' > /root/.m2/settings.xml
+    echo '<?xml version="1.0" encoding="UTF-8"?>\
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"\
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">\
+  <mirrors>\
+    <mirror><id>aliyun</id><mirrorOf>*</mirrorOf><name>Aliyun</name>\
+      <url>https://maven.aliyun.com/repository/public</url></mirror>\
+  </mirrors>\
+</settings>' > /root/.m2/settings.xml
 
-# 复制pom.xml并下载依赖（利用Docker层缓存）
 COPY pom.xml .
 RUN mvn dependency:go-offline -B -q
 
-# 阶段2: 构建应用
-FROM maven:3.9-eclipse-temurin-17 AS build
+# 阶段2: 编译构建（复用阶段1的依赖缓存）
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# 复制下载好的依赖
 COPY --from=deps /root/.m2 /root/.m2
-
-# 复制源码
 COPY src ./src
 COPY pom.xml .
-
-# 构建应用（跳过测试以加快构建速度）
 RUN mvn clean package -DskipTests -B -q
 
 # 阶段3: 生产运行时
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
 
-# 安装必要的工具
-RUN apk add --no-cache \
-    curl \
-    wget \
-    tzdata
+# 基础工具 + 时区
+RUN apk add --no-cache curl tzdata && \
+    ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
 
-# 设置时区
 ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 创建非root用户
-RUN addgroup -g 1001 -S spring && \
-    adduser -S spring -u 1001
+# 非 root 用户
+RUN addgroup -g 1001 -S app && \
+    adduser -S app -u 1001 -G app && \
+    mkdir -p logs uploads && \
+    chown -R app:app /app
 
 WORKDIR /app
 
-# 创建必要的目录
-RUN mkdir -p logs uploads && \
-    chown -R spring:spring /app
+# 复制 JAR
+COPY --from=build --chown=app:app /app/target/*.jar app.jar
 
-# 复制JAR文件
-COPY --from=build --chown=spring:spring /app/target/*.jar app.jar
+USER app
 
-# 切换到非root用户
-USER spring
+# JVM 生产级调参（1GB 内存容器适配）
+ENV JAVA_OPTS="-Xms256m -Xmx768m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=100 -Djava.security.egd=file:/dev/./urandom"
 
-# JVM优化参数
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom"
+EXPOSE 8080
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
-# 暴露端口
-EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start_period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
 
 # 启动命令
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod}"]
