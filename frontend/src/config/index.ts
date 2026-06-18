@@ -126,27 +126,27 @@ const getApiBaseUrl = (): string => {
   // 微信小程序必须使用HTTPS和备案域名
   switch (env) {
     case 'development':
-      return 'https://dev-api.image-zero.art/api'
+      return 'https://www.image-zero.art/api'
     case 'test':
-      return 'https://test-api.image-zero.art/api'
+      return 'https://www.image-zero.art/api'
     default:
-      return 'https://api.image-zero.art/api'
-  }
-  // #endif
+      return 'https://www.image-zero.art/api'
+    }
+    // #endif
   
-  // #ifdef H5
-  // H5生产环境根据域名
-  switch (env) {
+    // #ifdef H5
+    // H5生产环境根据域名
+    switch (env) {
     case 'development':
-      return 'https://dev-api.image-zero.art/api'
+      return 'https://www.image-zero.art/api'
     case 'test':
-      return 'https://test-api.image-zero.art/api'
+      return 'https://www.image-zero.art/api'
     default:
-      return 'https://api.image-zero.art/api'
-  }
-  // #endif
+      return 'https://www.image-zero.art/api'
+    }
+    // #endif
   
-  return 'https://api.image-zero.art/api'
+    return 'https://www.image-zero.art/api'
 }
 
 // 获取微信小程序AppId

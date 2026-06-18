@@ -1,6 +1,7 @@
 package com.turing.drawing.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.turing.drawing.entity.User;
 import com.turing.drawing.enums.UserRole;
 import com.turing.drawing.mapper.UserMapper;
@@ -49,6 +50,8 @@ public class AuthService {
     private String officialAppSecret;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // ══════════════════════════════════════════════════════
     //  微信小程序登录
@@ -151,7 +154,9 @@ public class AuthService {
 
         Map<String, Object> tokenResp;
         try {
-            tokenResp = restTemplate.getForObject(tokenUrl, Map.class);
+            // 微信接口可能返回 application/json 或 text/plain，用 String 接住再手动解析
+            String rawResp = restTemplate.getForObject(tokenUrl, String.class);
+            tokenResp = rawResp == null ? null : objectMapper.readValue(rawResp, Map.class);
         } catch (Exception e) {
             log.error("调用微信网页授权token接口异常", e);
             throw new RuntimeException("微信授权失败，请重试");
@@ -319,7 +324,10 @@ public class AuthService {
             String url = String.format(
                     "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
                     miniProgramAppId, miniProgramAppSecret, code);
-            Map<String, Object> resp = restTemplate.getForObject(url, Map.class);
+            // 微信接口可能返回 application/json 或 text/plain，用 String 接住再手动解析
+            String rawResp = restTemplate.getForObject(url, String.class);
+            Map<String, Object> resp = rawResp == null ? null
+                    : objectMapper.readValue(rawResp, Map.class);
             if (resp != null && resp.containsKey("openid")) {
                 return (String) resp.get("openid");
             }
