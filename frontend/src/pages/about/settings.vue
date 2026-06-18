@@ -1,0 +1,357 @@
+<script setup lang="ts">
+import { useLocale, useTheme } from 'uview-pro'
+import { computed, ref } from 'vue'
+import { useLang } from '@/composables'
+
+const { t, locales, currentLocale } = useLocale()
+
+const {
+  getDarkMode,
+  setDarkMode,
+  currentTheme: currentThemeValue,
+  setTheme,
+  getAvailableThemes,
+} = useTheme()
+const uToastRef = ref()
+const { switchLang } = useLang()
+
+const showThemePicker = ref(false)
+const showLocalePicker = ref(false)
+
+// 深色模式状态
+const darkModeEnabled = computed({
+  get: () => getDarkMode() === 'dark',
+  set: (value: boolean) => {
+    setDarkMode(value ? 'dark' : 'light')
+  },
+})
+
+// 主题列表
+const themes = computed(() => {
+  return getAvailableThemes().map(theme => ({
+    name: theme.name,
+    label: theme.label || theme.name,
+    color: theme?.color?.primary || '#4A3AFF',
+  }))
+})
+
+// 当前主题名称
+const currentTheme = computed(() => {
+  return currentThemeValue.value?.name || 'uviewpro'
+})
+
+// 处理深色模式切换
+function handleDarkModeChange(value: boolean) {
+  setDarkMode(value ? 'dark' : 'light')
+  showToast(value ? t('about.settingsPage.darkModeEnabled') : t('about.settingsPage.darkModeDisabled'))
+}
+
+// 选择主题
+function selectTheme(themeName: string) {
+  setTheme(themeName)
+  showThemePicker.value = false
+  showToast(t('about.settingsPage.themeSwitched', { theme: currentThemeValue.value?.label || themeName }))
+}
+function selectLocale(lang: string, locale?: string) {
+  switchLang(lang, locale)
+  showLocalePicker.value = false
+  showToast(t('about.settingsPage.langSwitched', { lang: currentLocale.value.label }))
+}
+
+// 清除缓存
+function handleClearCache() {
+  uni.showModal({
+    title: t('about.settingsPage.clearCacheTitle'),
+    content: t('about.settingsPage.clearCacheContent'),
+    success: (res) => {
+      if (res.confirm) {
+        try {
+          uni.clearStorageSync()
+          showToast(t('about.settingsPage.cacheCleared'))
+        }
+        catch {
+          showToast(t('about.settingsPage.clearCacheFailed'), 'error')
+        }
+      }
+    },
+  })
+}
+
+// 导航
+function navigateTo(path: string) {
+  uni.navigateTo({
+    url: path,
+  })
+}
+
+// 显示 Toast
+function showToast(title: string, type: 'success' | 'error' = 'success') {
+  uToastRef.value?.show({
+    title,
+    type,
+  })
+}
+</script>
+
+<template>
+  <app-page :nav-title="t('about.settingsPage.title')">
+    <view class="settings-page">
+      <view class="section-card">
+        <view class="section-card__header">
+          <u-icon name="setting" size="40" color="var(--u-type-primary)" />
+          <text class="section-card__title">
+            {{ t('about.settingsPage.themeSettings') }}
+          </text>
+        </view>
+        <view class="section-card__body">
+          <view class="setting-item">
+            <view class="setting-item__label">
+              {{ t('about.settingsPage.darkMode') }}
+            </view>
+            <u-switch v-model="darkModeEnabled" @change="handleDarkModeChange" />
+          </view>
+          <view class="setting-item">
+            <view class="setting-item__label">
+              {{ t('about.settingsPage.themeColor') }}
+            </view>
+            <view class="setting-item__value" @tap="showThemePicker = true">
+              {{ t(`theme.${currentThemeValue?.name}`) || currentThemeValue?.label || currentTheme }}
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <view class="section-card__header">
+          <u-icon name="info-circle" size="40" color="var(--u-type-success)" />
+          <text class="section-card__title">
+            {{ t('about.settingsPage.appSettings') }}
+          </text>
+        </view>
+        <view class="section-card__body">
+          <view class="setting-item">
+            <view class="setting-item__label">
+              {{ t('about.settingsPage.language') }}
+            </view>
+            <view class="setting-item__value" @tap="showLocalePicker = true">
+              {{ currentLocale.label }}
+              <u-icon name="arrow-right" color="#c0c4cc" size="40" />
+            </view>
+          </view>
+          <view class="setting-item" @tap="handleClearCache">
+            <view class="setting-item__label">
+              {{ t('about.settingsPage.clearCache') }}
+            </view>
+            <u-icon name="arrow-right" color="#c0c4cc" size="40" />
+          </view>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <view class="section-card__header">
+          <u-icon name="more-circle" size="40" color="var(--u-type-warning)" />
+          <text class="section-card__title">
+            {{ t('about.settingsPage.other') }}
+          </text>
+        </view>
+        <view class="section-card__body">
+          <view class="setting-item" @tap="navigateTo('/pages/about/faq')">
+            <view class="setting-item__label">
+              {{ t('about.faq') }}
+            </view>
+            <u-icon name="arrow-right" color="#c0c4cc" size="40" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 主题选择器 -->
+      <u-popup v-model="showThemePicker" mode="bottom" border-radius="20">
+        <view class="theme-picker">
+          <view class="theme-picker__header">
+            <text class="theme-picker__title">
+              {{ t('about.settingsPage.selectTheme') }}
+            </text>
+            <u-icon name="close" size="40" @tap="showThemePicker = false" />
+          </view>
+          <view class="theme-picker__body">
+            <view
+              v-for="theme in themes" :key="theme.name" class="theme-item"
+              :class="{ 'theme-item--active': currentTheme === theme.name }" @tap="selectTheme(theme.name)"
+            >
+              <view class="theme-item__color" :style="{ background: theme.color }" />
+              <view class="theme-item__name">
+                {{ t(`theme.${theme.name}`) }}
+              </view>
+              <u-icon
+                v-if="currentTheme === theme.name" name="checkmark-circle" size="40"
+                color="var(--u-type-primary)"
+              />
+            </view>
+          </view>
+        </view>
+      </u-popup>
+
+      <!-- 多语言选择器 -->
+      <u-popup v-model="showLocalePicker" mode="bottom" border-radius="20">
+        <view class="theme-picker">
+          <view class="theme-picker__header">
+            <text class="theme-picker__title">
+              {{ t('about.settingsPage.selectLanguage') }}
+            </text>
+            <u-icon name="close" size="40" @tap="showLocalePicker = false" />
+          </view>
+          <view class="theme-picker__body">
+            <view
+              v-for="locale in locales" :key="locale.name" class="theme-item"
+              :class="{ 'theme-item--active': currentLocale.name === locale.name }" @tap="selectLocale(locale.name, locale.locale)"
+            >
+              <view class="theme-item__name">
+                {{ locale.label }}
+              </view>
+              <u-icon
+                v-if="currentLocale.name === locale.name" name="checkmark-circle" size="40"
+                color="var(--u-type-primary)"
+              />
+            </view>
+          </view>
+        </view>
+      </u-popup>
+
+      <u-toast ref="uToastRef" />
+    </view>
+  </app-page>
+</template>
+
+<style lang="scss" scoped>
+.settings-page {
+    padding: 24rpx;
+    background: linear-gradient(180deg, rgba(41, 121, 255, 0.03) 0%, transparent 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 24rpx;
+}
+
+.section-card {
+    background: $u-bg-gray-light;
+    border-radius: 20rpx;
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+
+    &__header {
+        padding: 28rpx 32rpx;
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+        background: linear-gradient(135deg, rgba(41, 121, 255, 0.05), rgba(25, 190, 107, 0.05));
+        border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+    }
+
+    &__title {
+        font-size: 32rpx;
+        font-weight: 700;
+        color: $u-main-color;
+        letter-spacing: 1rpx;
+    }
+
+    &__body {
+        padding: 24rpx 32rpx 32rpx;
+    }
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 32rpx 0;
+    border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:active {
+        opacity: 0.7;
+    }
+
+    &__label {
+        font-size: 28rpx;
+        color: $u-main-color;
+    }
+
+    &__value {
+        display: flex;
+        align-items: center;
+        gap: 12rpx;
+        font-size: 26rpx;
+        color: $u-content-color;
+    }
+
+    &__version {
+        font-size: 24rpx;
+        color: $u-tips-color;
+    }
+}
+
+.theme-picker {
+    padding: 40rpx 32rpx;
+    background: $u-bg-gray-light;
+    border-radius: 20rpx 20rpx 0 0;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32rpx;
+    }
+
+    &__title {
+        font-size: 36rpx;
+        font-weight: 700;
+        color: $u-main-color;
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: 16rpx;
+    }
+}
+
+.theme-item {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 24rpx;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 16rpx;
+    border: 2rpx solid transparent;
+    transition: all 0.3s ease;
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &--active {
+        border-color: var(--u-type-primary);
+        background: rgba(41, 121, 255, 0.08);
+    }
+
+    &__color {
+        width: 48rpx;
+        height: 48rpx;
+        border-radius: 12rpx;
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+    }
+
+    &__name {
+        flex: 1;
+        font-size: 28rpx;
+        color: $u-main-color;
+        font-weight: 500;
+    }
+}
+</style>

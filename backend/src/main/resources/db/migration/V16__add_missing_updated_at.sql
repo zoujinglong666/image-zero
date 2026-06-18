@@ -1,0 +1,25 @@
+-- ── 给所有继承 BaseEntity 但缺少 updated_at 的业务表补字段 ──
+
+-- prompt_interactions
+ALTER TABLE prompt_interactions
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- prompt_favorites
+ALTER TABLE prompt_favorites
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- prompt_categories
+ALTER TABLE prompt_categories
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- vip_subscriptions
+ALTER TABLE vip_subscriptions
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- challenge_submissions
+ALTER TABLE challenge_submissions
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- community_reports
+ALTER TABLE community_reports
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

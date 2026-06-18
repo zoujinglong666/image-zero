@@ -1,0 +1,36 @@
+// 图灵绘境 - 统一UI变量
+// 灵动紫主题色系 (参考微信大厂风格)
+
+// ====== 主色 ======
+$color-primary: #7C4DFF;           // 灵动紫 - 主色
+$color-primary-dark: #6200EA;     // 深紫 - 渐变起点、强调
+$color-primary-light: #B388FF;    // 浅紫 - hover、次要强调
+$color-primary-bg: #EDE7F6;        // 淡紫底 - badge、标签底色
+$color-primary-border: #E8DEF8;   // 紫色边框
+
+// ====== 功能色 ======
+$color-success: #00C853;           // 成功绿
+$color-warning: #FF9100;           // 提示橙
+$color-error: #FF5252;             // 错误红
+$color-info: #78909C;              // 信息灰
+
+// ====== 文字色 ======
+$color-text-primary: #1C1C1C;      // 主要文字
+$color-text-secondary: #666666;    // 次要文字
+$color-text-tertiary: #999999;     // 辅助文字
+$color-text-placeholder: #CCCCCC;  // 占位文字
+$color-text-inverse: #FFFFFF;      // 反色文字
+
+// ====== 背景色 ======
+$color-bg-page: #F5F6F7;          // 页面背景
+$color-bg-card: #FFFFFF;           // 卡片背景
+$color-bg-grey: #FAFAFA;          // 浅灰背景
+$color-bg-hover: #F7F8FA;         // 悬停背景
+
+// ====== 边框色 ======
+$color-border: #E8E8E8;           // 通用边框
+$color-border-light: #F0F0F0;     // 浅色边框
+
+// ====== 渐变 ======
+$gradient-primary: linear-gradient(135deg, #6200EA, #7C4DFF);  // 主渐变
+$gradient-primary-soft: linear-gradient(135deg, #7C4DFF, #B388FF); // 柔和渐变

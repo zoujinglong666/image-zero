@@ -1,0 +1,38 @@
+[Unit]
+Description=画风提取器后端服务
+Documentation=https://github.com/your-org/img-prompt-starter
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=spring
+Group=spring
+WorkingDirectory=/opt/turing-drawing/backend
+EnvironmentFile=/opt/turing-drawing/config/.env
+ExecStart=/usr/bin/java -Xms256m -Xmx768m \
+  -XX:+UseG1GC -XX:MaxGCPauseMillis=100 \
+  -Djava.security.egd=file:/dev/./urandom \
+  -jar app.jar --spring.profiles.active=prod
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=turing-drawing
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/turing-drawing
+LimitNOFILE=65536
+MemoryMax=1.5G
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,45 @@
+# Node.js
+node_modules/
+dist/
+.unpackage/
+
+# 环境变量
+*.local
+.env
+.env.*
+!.env.example
+
+# 系统文件
+.DS_Store
+*.log
+logs/
+
+# 上传目录
+uploads/
+data/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Java
+backend/target/
+backend/logs/
+backend/*.jar
+backend/*.war
+
+# Maven
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# 前端构建
+frontend/dist/
+frontend/.unpackage/
+
+# 临时文件
+*.tmp
+*.bak

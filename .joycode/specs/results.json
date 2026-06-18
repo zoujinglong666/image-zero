@@ -1,0 +1,271 @@
+{
+  "task-5d802338-7873-4653-a067-edc313fb32e4": [
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "PENDING",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779089401265
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-1-1779089401276",
+      "_t": 1779089403004,
+      "symbolSpecTaskKey": "spec-springboot-migration-1-1779089401276",
+      "content": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "specTaskKey": "spec-springboot-migration-1-1779089401276"
+    },
+    {
+      "message": "创建前后端分离目录结构",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_from": "specTask",
+      "_t": 1779089408448
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "STOPPED",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-1-1779089401276",
+      "_t": 1779089520715,
+      "symbolSpecTaskKey": "spec-springboot-migration-1-1779089401276",
+      "content": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "specTaskKey": "spec-springboot-migration-1-1779089401276"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "STOPPED",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-1-1779089401276",
+      "_t": 1779089545971,
+      "symbolSpecTaskKey": "spec-springboot-migration-1-1779089401276",
+      "content": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "specTaskKey": "spec-springboot-migration-1-1779089401276"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-1-1779089401276",
+      "_t": 1779089555515,
+      "symbolSpecTaskKey": "spec-springboot-migration-1-1779089401276",
+      "content": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "specTaskKey": "spec-springboot-migration-1-1779089401276"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-1-1779089401276",
+      "_t": 1779090859865,
+      "symbolSpecTaskKey": "spec-springboot-migration-1-1779089401276",
+      "content": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "specTaskKey": "spec-springboot-migration-1-1779089401276"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "status": "PENDING",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779090985406
+    },
+    {
+      "message": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-2-1779090985474",
+      "_t": 1779090986605,
+      "symbolSpecTaskKey": "spec-springboot-migration-2-1779090985474",
+      "content": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "specTaskKey": "spec-springboot-migration-2-1779090985474"
+    },
+    {
+      "message": "初始化Spring Boot 3项目",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_from": "specTask",
+      "_t": 1779091010316
+    },
+    {
+      "message": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "status": "PENDING",
+      "specName": "springboot-migration",
+      "specTaskId": "3",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779091910009
+    },
+    {
+      "message": "执行任务（springboot-migration）: 4. 实现Spring Data JPA实体和Repository",
+      "status": "PENDING",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779091928348
+    },
+    {
+      "message": "初始化Spring Boot 3项目",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_from": "specTask",
+      "_t": 1779091933432
+    },
+    {
+      "message": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-2-1779090985474",
+      "_t": 1779091933636,
+      "symbolSpecTaskKey": "spec-springboot-migration-2-1779090985474",
+      "content": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "specTaskKey": "spec-springboot-migration-2-1779090985474"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "3",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-3-1779091910114",
+      "_t": 1779091934739,
+      "symbolSpecTaskKey": "spec-springboot-migration-3-1779091910114",
+      "content": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "specTaskKey": "spec-springboot-migration-3-1779091910114"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "3",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-3-1779091910114",
+      "_t": 1779092949313,
+      "symbolSpecTaskKey": "spec-springboot-migration-3-1779091910114",
+      "content": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "specTaskKey": "spec-springboot-migration-3-1779091910114"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 4. 实现Spring Data JPA实体和Repository",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "id": "spec-springboot-migration-4-1779091928656",
+      "_t": 1779092951375,
+      "symbolSpecTaskKey": "spec-springboot-migration-4-1779091928656",
+      "content": "执行任务（springboot-migration）: 4. 实现Spring Data JPA实体和Repository",
+      "specTaskKey": "spec-springboot-migration-4-1779091928656"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 1. 创建前后端分离目录结构",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "1",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779093606534,
+      "_from": "list"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 2. 初始化Spring Boot 3项目",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "2",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779093606534,
+      "_from": "list"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 3. 设计并实现MySQL数据库表结构",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "3",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779093606534,
+      "_from": "list"
+    },
+    {
+      "message": "执行任务（springboot-migration）: 4. 实现Spring Data JPA实体和Repository",
+      "status": "STOPPED",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-5d802338-7873-4653-a067-edc313fb32e4",
+      "_t": 1779093606534,
+      "_from": "list"
+    }
+  ],
+  "task-074c2ee9-cbc7-480f-adbd-d81e871cb556": [
+    {
+      "message": "执行任务（springboot-migration）: 4. 迁移现有 Repository 方法到 Mapper",
+      "status": "PENDING",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-074c2ee9-cbc7-480f-adbd-d81e871cb556",
+      "_t": 1779093897580
+    },
+    {
+      "message": "执行任务（springboot-migration）: 4. 迁移现有 Repository 方法到 Mapper",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-074c2ee9-cbc7-480f-adbd-d81e871cb556",
+      "id": "spec-springboot-migration-4-1779093897591",
+      "_t": 1779093898703,
+      "symbolSpecTaskKey": "spec-springboot-migration-4-1779093897591",
+      "content": "执行任务（springboot-migration）: 4. 迁移现有 Repository 方法到 Mapper",
+      "specTaskKey": "spec-springboot-migration-4-1779093897591"
+    },
+    {
+      "message": "迁移现有 Repository 方法到 Mapper",
+      "status": "IN_PROGRESS",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-074c2ee9-cbc7-480f-adbd-d81e871cb556",
+      "_from": "specTask",
+      "_t": 1779093907996
+    },
+    {
+      "message": "迁移现有 Repository 方法到 Mapper",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-074c2ee9-cbc7-480f-adbd-d81e871cb556",
+      "_from": "specTask",
+      "_t": 1779094313266
+    },
+    {
+      "message": "执行任务（springboot-migration）: 4. 迁移现有 Repository 方法到 Mapper",
+      "status": "FINISHED",
+      "specName": "springboot-migration",
+      "specTaskId": "4",
+      "chatId": "task-074c2ee9-cbc7-480f-adbd-d81e871cb556",
+      "id": "spec-springboot-migration-4-1779093897591",
+      "_t": 1779094313480,
+      "symbolSpecTaskKey": "spec-springboot-migration-4-1779093897591",
+      "content": "执行任务（springboot-migration）: 4. 迁移现有 Repository 方法到 Mapper",
+      "specTaskKey": "spec-springboot-migration-4-1779093897591"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# 图灵绘境 - Docker Compose 开发环境覆盖配置
+# 生成时间: 2026-05-19 10:30:00
+
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    volumes:
+      - ./config/environments/dev/.env:/app/.env:ro
+      - ./backend/src:/app/src
+      - ./backend/target:/app/target
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # 调试端口
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+        java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+        -jar app.jar --spring.profiles.active=dev
+      "
+
+  mysql:
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

@@ -1,0 +1,181 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+env:
+  JAVA_VERSION: '17'
+  MAVEN_OPTS: '-Xmx512m'
+
+jobs:
+  # ══════════════════════════════════════════════════════
+  #  后端: Spring Boot 构建 + 测试
+  # ══════════════════════════════════════════════════════
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Maven 编译
+        run: mvn compile -B
+
+      - name: Maven 测试
+        run: mvn test -B
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: turing_drawing_test
+          DB_USERNAME: root
+          DB_PASSWORD: test_password
+          JWT_SECRET: ci-test-secret-key-at-least-32-characters-long
+
+      - name: Maven 打包
+        run: mvn package -DskipTests -B
+
+      - name: 检查 JAR 文件
+        run: |
+          JAR_FILE=$(ls target/*.jar | head -1)
+          echo "JAR: $JAR_FILE"
+          ls -lh "$JAR_FILE"
+
+      - name: 测试覆盖率报告
+        if: github.event_name == 'push'
+        run: mvn jacoco:report -B || true
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          retention-days: 5
+
+  # ══════════════════════════════════════════════════════
+  #  前端: uni-app 构建 + 检查
+  # ══════════════════════════════════════════════════════
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint || true
+
+      - name: Build H5
+        run: pnpm build:h5 || true
+        env:
+          VITE_API_BASE_URL: https://www.image-zero.art/api
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: frontend-dist
+          path: frontend/dist/build/h5
+          retention-days: 5
+
+  # ══════════════════════════════════════════════════════
+  #  Docker 构建 + 推送（仅 main 分支）
+  # ══════════════════════════════════════════════════════
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下载后端 JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - name: 下载前端构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/build/h5
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 Docker Hub（如有配置）
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+      - name: 构建后端 Docker 镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME || 'turing' }}/turing-drawing-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME || 'turing' }}/turing-drawing-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ══════════════════════════════════════════════════════
+  #  自动部署（仅 main 分支，需要服务器 SSH 密钥）
+  # ══════════════════════════════════════════════════════
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.DEPLOY_SSH_KEY != ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 部署到生产服务器
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            cd /opt/turing-drawing
+            git pull origin main
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker compose ps
+            echo "✅ 部署完成: $(date)"
