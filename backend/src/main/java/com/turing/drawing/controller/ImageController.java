@@ -153,7 +153,12 @@ public class ImageController {
             return ApiResponse.error("缺少 prompt 参数");
         }
 
-        Map<String, Object> result = imageService.generateImage(userId, prompt, width, height, model, provider);
+        Map<String, Object> result = imageService.submitGenerateTask(userId, prompt, width, height, model, provider);
+
+        // 后台异步执行生图
+        imageService.processGenerateTask(
+                ((Number) result.get("task_id")).longValue(),
+                prompt, width, height, model, provider);
 
         // 消耗额度 + 更新今日生成计数
         paymentService.consumeQuota(userId);
@@ -208,6 +213,21 @@ public class ImageController {
         DrawingTask task = imageService.getTaskStatus(id);
         if (task == null) return ApiResponse.error("任务不存在");
         return ApiResponse.success(task);
+    }
+
+    /**
+     * 查询用户的生图任务列表
+     * GET /api/tasks?limit=20
+     */
+    @GetMapping("/tasks")
+    public ApiResponse<List<DrawingTask>> listTasks(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(defaultValue = "20") int limit) {
+        Long userId = principal != null ? principal.getId() : 0L;
+        if (userId == 0) {
+            return ApiResponse.error(401, "请先登录");
+        }
+        return ApiResponse.success(imageService.listUserTasks(userId, limit));
     }
 
     /**

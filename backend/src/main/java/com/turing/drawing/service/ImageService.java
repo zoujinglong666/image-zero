@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import org.springframework.scheduling.annotation.Async;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -76,14 +78,14 @@ public class ImageService {
     }
 
     // ══════════════════════════════════════════════════════
-    //  图片生成
+    //  图片生成（异步任务模式）
     // ══════════════════════════════════════════════════════
 
     /**
-     * 根据提示词生成图片
+     * 提交生图任务（同步）—— 立即返回 task_id
      */
-    public Map<String, Object> generateImage(Long userId, String prompt, Integer width, Integer height,
-                                              String model, String provider) {
+    public Map<String, Object> submitGenerateTask(Long userId, String prompt, Integer width, Integer height,
+                                                    String model, String provider) {
         DrawingTask task = DrawingTask.builder()
                 .userId(userId)
                 .type("generate")
@@ -91,29 +93,53 @@ public class ImageService {
                 .width(width != null ? width : 1024)
                 .height(height != null ? height : 1024)
                 .model(model != null ? model : "flux")
-                .status("processing")
+                .status("pending")
                 .provider(provider != null ? provider : "zhipu")
                 .build();
         drawingTaskMapper.insert(task);
+
+        log.info("[生图] 任务已提交: taskId={}, userId={}, provider={}", task.getId(), userId, provider);
+        return Map.of(
+                "task_id", task.getId(),
+                "status", "pending"
+        );
+    }
+
+    /**
+     * 后台执行生图任务（异步）
+     */
+    @Async
+    public void processGenerateTask(Long taskId, String prompt, Integer width, Integer height,
+                                     String model, String provider) {
+        DrawingTask task = drawingTaskMapper.selectById(taskId);
+        if (task == null) {
+            log.error("[生图] 任务不存在: taskId={}", taskId);
+            return;
+        }
+
+        task.setStatus("processing");
+        drawingTaskMapper.updateById(task);
 
         try {
             Map<String, Object> genResult = aiService.generateImage(prompt, width, height, model, provider);
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> images = (List<Map<String, Object>>) genResult.get("images");
 
+            String resultUrl = "";
+            if (images != null && !images.isEmpty()) {
+                resultUrl = (String) images.get(0).getOrDefault("url", "");
+            }
+
+            task.setResultUrl(resultUrl);
             task.setStatus("completed");
             drawingTaskMapper.updateById(task);
 
-            return Map.of(
-                    "task_id", task.getId(),
-                    "images", images
-            );
+            log.info("[生图] 任务完成: taskId={}, url={}", taskId, resultUrl.length() > 80 ? resultUrl.substring(0, 80) : resultUrl);
         } catch (Exception e) {
-            log.error("图片生成失败: taskId={}, error={}", task.getId(), e.getMessage());
+            log.error("[生图] 任务失败: taskId={}, error={}", taskId, e.getMessage());
             task.setStatus("failed");
             task.setErrorMessage(e.getMessage());
             drawingTaskMapper.updateById(task);
-            throw new RuntimeException("图片生成失败: " + e.getMessage(), e);
         }
     }
 
@@ -167,6 +193,18 @@ public class ImageService {
 
     public DrawingTask getTaskStatus(Long taskId) {
         return drawingTaskMapper.selectById(taskId);
+    }
+
+    /**
+     * 查询用户的生图任务列表（按时间倒序）
+     */
+    public List<DrawingTask> listUserTasks(Long userId, int limit) {
+        LambdaQueryWrapper<DrawingTask> wrapper = new LambdaQueryWrapper<DrawingTask>()
+                .eq(DrawingTask::getUserId, userId)
+                .eq(DrawingTask::getType, "generate")
+                .orderByDesc(DrawingTask::getCreatedAt)
+                .last("LIMIT " + limit);
+        return drawingTaskMapper.selectList(wrapper);
     }
 
     public List<History> listUserHistory(Long userId, int limit) {

@@ -28,7 +28,7 @@
           <text class="user-desc">{{ userStore.isLoggedIn ? loginDesc : '点击登录，解锁更多功能' }}</text>
         </view>
         <!-- 未登录时显示登录箭头 -->
-        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="40" color="rgba(255,255,255,0.5)" />
+        <u-icon v-if="!userStore.isLoggedIn" name="arrow-right" size="40" color="#9A9BAC" />
         <!-- 已登录时显示微信标识 -->
         <u-tag v-else-if="userStore.isWechatUser" text="微信" type="success" size="mini" plain />
       </view>
@@ -109,16 +109,6 @@
           <text class="grid-label">解析记录</text>
         </view>
         <view class="grid-item">
-          <u-icon name="star-fill" size="40" color="#8B9DC8" />
-          <text class="grid-num">{{ favoriteCount }}</text>
-          <text class="grid-label">我的收藏</text>
-        </view>
-        <view class="grid-item">
-          <u-icon name="bookmark-fill" size="40" color="#A3B0CC" />
-          <text class="grid-num">{{ savedPrompts.length }}</text>
-          <text class="grid-label">保存提示词</text>
-        </view>
-        <view class="grid-item">
           <u-icon name="photo-fill" size="40" color="#C4B5E0" />
           <text class="grid-num">{{ generatedCount }}</text>
           <text class="grid-label">生成图片</text>
@@ -145,20 +135,6 @@
             :value="(historyStore?.history || []).length + ' 条'"
             icon="clock"
             @click="goToHistory"
-          />
-          <!-- 我的收藏 -->
-          <u-cell-item
-            title="我的收藏"
-            :value="favoriteCount + ' 条'"
-            icon="star"
-            @click="showFavorites"
-          />
-          <!-- 保存的提示词 -->
-          <u-cell-item
-            title="保存的提示词"
-            :value="savedPrompts.length + ' 条'"
-            icon="bookmark"
-            @click="showSavedPrompts"
           />
         </u-cell-group>
       </view>
@@ -860,6 +836,7 @@ $danger:     #E8947A;
   background: $bg-card; border-radius: 24rpx;
   padding: 32rpx 0; border: 1rpx solid $border;
   box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
+  position: relative; z-index: 2;
 }
 .grid-item {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8rpx;

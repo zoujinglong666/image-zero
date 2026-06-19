@@ -52,7 +52,7 @@
 
       <!-- ====== 场景选择（四大垂直场景）====== -->
       <view class="scene-section">
-        <view class="section-header">
+        <view class="section-header section-header-col">
           <view class="section-title-row">
             <view class="section-dot" />
             <text class="section-title">你想做什么？</text>
@@ -756,14 +756,17 @@ const triggerUpload = () => {
       const tempUrl = URL.createObjectURL(files[0])
       uploadedImage.value = tempUrl
 
+      uni.showLoading({ title: '上传中...', mask: true })
       // 先上传拿 URL，再跳转分析（不再传 base64！）
       const serverUrl = await apiUpload(tempUrl)
+      uni.hideLoading()
       console.log(`✅ [首页] 上传成功，跳转编辑页... scene=${selectedScene.value || 'none'}`)
       const sceneParam = selectedScene.value ? `&scene=${selectedScene.value}` : ''
       uni.navigateTo({
         url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}${sceneParam}`
       })
     } catch (err: any) {
+      uni.hideLoading()
       console.error('❌ [上传]', err)
       uni.showToast({ title: '上传失败，请重试', icon: 'none' })
     }
@@ -782,12 +785,15 @@ const triggerUpload = () => {
     success: async (res) => {
       uploadedImage.value = res.tempFilePaths[0]
       try {
+        uni.showLoading({ title: '上传中...', mask: true })
         const serverUrl = await apiUpload(res.tempFilePaths[0])
+        uni.hideLoading()
         const sceneParam = selectedScene.value ? `&scene=${selectedScene.value}` : ''
         uni.navigateTo({
           url: `/pages/edit/edit?imageUrl=${encodeURIComponent(serverUrl)}${sceneParam}`
         })
       } catch (err: any) {
+        uni.hideLoading()
         uni.showToast({ title: '上传失败，请重试', icon: 'none' })
       }
     }
@@ -1062,6 +1068,13 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   font-size: 34rpx; font-weight: 800; color: $text-1; letter-spacing: 0.5rpx;
 }
 .section-more { font-size: 26rpx; color: $primary; font-weight: 600; }
+.section-header-col {
+  flex-direction: column; align-items: flex-start; gap: 10rpx;
+}
+.section-sub-title {
+  font-size: 24rpx; color: $text-3; line-height: 1.5;
+  padding-left: 20rpx;  // 与 section-dot(6rpx) + gap(14rpx) 对齐
+}
 
 // ── Daily Picks ──
 .picks-scroll { white-space: nowrap; padding-left: 24rpx; }

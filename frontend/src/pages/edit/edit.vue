@@ -333,8 +333,8 @@
 
       <view v-if="currentStep === 3" class="panel">
         <view class="panel-head">
-          <text class="panel-title">预览并生成</text>
-          <text class="panel-sub">确认修改摘要后再生成，避免重复等待。</text>
+          <text class="panel-title">确认并生成</text>
+          <text class="panel-sub">检查以下信息，确认无误后提交 AI 生图任务。</text>
         </view>
 
         <view class="summary-card">
@@ -356,25 +356,9 @@
           </view>
         </view>
 
-        <view class="preview-card">
-          <image
-            v-if="previewImageUrl"
-            class="preview-image"
-            :src="previewImageUrl"
-            mode="aspectFill"
-            @click="previewGeneratedImage"
-          />
-          <view v-else class="preview-empty">
-            <u-icon name="photo" size="56" color="#9A9BAC" />
-            <text>还没有预览图，点击下方按钮生成看看。</text>
-          </view>
-          <!-- 下载按钮 -->
-          <view v-if="previewImageUrl" class="preview-actions">
-            <button class="download-btn" @click="downloadGeneratedImage">
-              <u-icon name="download" size="34" color="#fff" />
-              <text>保存图片</text>
-            </button>
-          </view>
+        <view class="confirm-hint">
+          <u-icon name="info-circle" size="34" color="#8B9DC8" />
+          <text>提交后可在「历史记录」页查看生成进度和结果，无需在此等待。</text>
         </view>
       </view>
 
@@ -397,7 +381,7 @@ import { computed, ref, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { http } from 'uview-pro'
 import type { GenerationProvider, ImageAnalysisResult } from '@/types'
-import { analyzeImage, editImage } from '@/api/image'
+import { analyzeImage, editImage, submitGenerateTask } from '@/api/image'
 
 const editData = ref<ImageAnalysisResult | null>(null)
 const originalDataStr = ref('')
@@ -504,10 +488,10 @@ const currentProviderLabel = computed(() => {
 })
 
 const primaryButtonText = computed(() => {
-  if (running.value) return '生成中...'
+  if (running.value) return '提交中...'
   if (currentStep.value === 1) return '下一步'
   if (currentStep.value === 2) return '去预览'
-  return '生成新图'
+  return '提交生成任务'
 })
 
 onLoad((options) => {
@@ -688,38 +672,39 @@ async function handlePrimaryAction() {
 async function runGeneration() {
   if (!editData.value) return
   running.value = true
-  uni.showLoading({ title: 'AI 正在生成新图...', mask: true })
 
-  const params = {
-    originalPrompt: editData.value.prompt.english,
-    originalImage: sourceImageUrl.value,
-    colorScheme: editData.value.colorScheme,
-    elementStyle: editData.value.elements,
-    layout: editData.value.layout,
-    text: editData.value.prompt.chinese,
-    style: editData.value.style,
-    provider: selectedProvider.value,
-  }
+  // 构建生图提示词（合并编辑后的参数）
+  const promptText = editData.value.prompt.english || editData.value.prompt.chinese
 
   try {
-    const res = await editImage(params)
-    // editImage 返回 { imageUrl, prompt }
-    previewImageUrl.value = res.imageUrl
-    uni.showToast({ title: '生成完成', icon: 'success' })
+    await submitGenerateTask({
+      prompt: promptText,
+      width: 1024,
+      height: 1024,
+      model: 'flux',
+      provider: selectedProvider.value,
+    })
+
+    uni.showToast({ title: '已提交生成任务', icon: 'success' })
+
+    // 1.5s 后跳转到历史页查看结果
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/history/history' })
+    }, 1500)
   } catch (err: any) {
-    // HTTP 业务逻辑：后端可能通过 HTTP 200 + 特殊 code 返回 needAd
-    // 或者 HTTP 403 配合 needAd 字段
+    // 广告墙拦截
     const data = err?.data || err
     if (data?.needAd) {
-      pendingGenerateParams.value = params
-      uni.hideLoading()
+      pendingGenerateParams.value = {
+        prompt: promptText,
+        provider: selectedProvider.value,
+      }
       showRewardedAd(data.adUnitId)
       return
     }
-    uni.showToast({ title: err.message || '生成失败', icon: 'none' })
+    uni.showToast({ title: err.message || '提交失败', icon: 'none' })
   } finally {
     running.value = false
-    uni.hideLoading()
   }
 }
 
@@ -782,19 +767,25 @@ function showRewardedAd(adUnitId?: string) {
   // #endif
 }
 
-// 真正调后端生图（跳过广告检查）
+// 真正调后端生图（广告观看后调用，跳过广告检查）
 async function doGenerate(params: any) {
   running.value = true
-  uni.showLoading({ title: 'AI 正在生成新图...', mask: true })
   try {
-    const res: any = await editImage(params)
-    previewImageUrl.value = res.data?.imageUrl || res.imageUrl
-    uni.showToast({ title: '生成完成', icon: 'success' })
+    await submitGenerateTask({
+      prompt: params.prompt,
+      width: 1024,
+      height: 1024,
+      model: 'flux',
+      provider: params.provider,
+    })
+    uni.showToast({ title: '已提交生成任务', icon: 'success' })
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/history/history' })
+    }, 1500)
   } catch (err: any) {
-    uni.showToast({ title: err.message || '生成失败', icon: 'none' })
+    uni.showToast({ title: err.message || '提交失败', icon: 'none' })
   } finally {
     running.value = false
-    uni.hideLoading()
   }
 }
 
@@ -1052,10 +1043,12 @@ $danger:     #E8947A;
 .provider-tag { font-size: 22rpx; color: $primary; }
 .provider-model { font-size: 22rpx; color: $text-3; }
 
-.hint-card, .summary-card { padding: 20rpx 22rpx; border-radius: 22rpx;
+.hint-card, .summary-card, .confirm-hint { padding: 20rpx 22rpx; border-radius: 22rpx;
   background: rgba(139,157,200,0.05); display: flex; gap: 12rpx;
 }
-.hint-card text { flex: 1; font-size: 23rpx; line-height: 1.6; color: $text-2; }
+.hint-card, .confirm-hint { align-items: flex-start; }
+.hint-card text, .confirm-hint text { flex: 1; font-size: 23rpx; line-height: 1.6; color: $text-2; }
+.confirm-hint { margin-top: 20rpx; }
 
 // ── Editor Tabs / Chips ──
 .editor-tabs, .chip-row, .color-row { display: flex; flex-wrap: wrap; gap: 14rpx; }

@@ -333,3 +333,63 @@ export async function editImage(params: EditParams): Promise<{ imageUrl: string;
   console.log('✅ [API] 编辑完成')
   return data
 }
+
+// ══════════════════════════════════════════════
+//  生图任务（异步任务模式）
+// ══════════════════════════════════════════════
+
+/** 生图任务类型 */
+export interface DrawingTask {
+  id: number
+  userId: number
+  prompt: string
+  model: string
+  width: number
+  height: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  resultUrl?: string
+  errorMessage?: string
+  type: string
+  provider: string
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * 提交生图任务（异步，立即返回 task_id）
+ */
+export async function submitGenerateTask(params: ImageGenerationParams): Promise<{ task_id: number; status: string }> {
+  console.log(`🎨 [API] 提交生图任务...`)
+
+  const data = await http.post<{ task_id: number; status: string }>('/generate', {
+    prompt: params.prompt,
+    width: params.width || 1024,
+    height: params.height || 1024,
+    model: params.model || 'flux',
+    provider: params.provider,
+  })
+
+  // 广告墙拦截
+  if ((data as any)?.needAd) {
+    const err: any = new Error((data as any).message || '请先观看广告')
+    err.data = data
+    throw err
+  }
+
+  console.log('✅ [API] 任务已提交, taskId:', (data as any).task_id)
+  return data
+}
+
+/**
+ * 查询用户的生图任务列表
+ */
+export async function getTaskList(limit: number = 20): Promise<DrawingTask[]> {
+  return http.get<DrawingTask[]>('/tasks', { limit })
+}
+
+/**
+ * 查询单个任务状态
+ */
+export async function getTaskStatus(taskId: number): Promise<DrawingTask> {
+  return http.get<DrawingTask>(`/task/${taskId}`)
+}

@@ -26,6 +26,9 @@
       class="main-scroll"
       @scrolltolower="loadMore"
       :lower-threshold="200"
+      :refresher-enabled="true"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onPullRefresh"
     >
       
       <!-- 统计栏 -->
@@ -34,15 +37,83 @@
           <text class="stat-num">{{ historyStore?.history?.length ?? 0 }}</text>
           <text class="stat-label">总记录</text>
         </view>
-        <u-line direction="col" color="rgba(255,255,255,0.06)" :length="40" />
+        <u-line direction="col" color="rgba(0,0,0,0.06)" :length="40" />
         <view class="stat-item">
           <text class="stat-num">{{ favoriteCount }}</text>
           <text class="stat-label">已收藏</text>
         </view>
-        <u-line direction="col" color="rgba(255,255,255,0.06)" :length="40" />
+        <u-line direction="col" color="rgba(0,0,0,0.06)" :length="40" />
         <view class="stat-item">
           <text class="stat-num">{{ todayCount }}</text>
           <text class="stat-label">今日</text>
+        </view>
+      </view>
+
+      <!-- 生成任务区域 -->
+      <view v-if="generateTasks.length > 0" class="task-section">
+        <view class="section-header">
+          <text class="section-title">生成任务</text>
+          <text class="section-count">{{ generateTasks.length }} 个</text>
+        </view>
+
+        <view class="task-list">
+          <view
+            v-for="task in generateTasks"
+            :key="task.id"
+            class="task-card"
+            :class="'task-' + task.status"
+          >
+            <!-- 处理中状态 -->
+            <view v-if="task.status === 'pending' || task.status === 'processing'" class="task-processing">
+              <view class="task-thumb-placeholder">
+                <view class="task-spinner" />
+                <text class="task-status-text">{{ task.status === 'pending' ? '等待中...' : 'AI 生成中...' }}</text>
+              </view>
+              <view class="task-body">
+                <view class="task-prompt">{{ task.prompt }}</view>
+                <view class="task-meta">
+                  <text class="task-model">{{ task.provider }} · {{ task.model }}</text>
+                  <text class="task-time">{{ formatTaskTime(task.createdAt) }}</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 已完成状态 -->
+            <view v-else-if="task.status === 'completed'" class="task-completed" @tap="previewTaskImage(task)">
+              <view class="task-thumb">
+                <!-- #ifdef H5 -->
+                <img class="task-thumb-img" :src="task.resultUrl" loading="lazy" />
+                <!-- #endif -->
+                <!-- #ifndef H5 -->
+                <image class="task-thumb-img" :src="task.resultUrl" mode="aspectFill" />
+                <!-- #endif -->
+              </view>
+              <view class="task-body">
+                <view class="task-prompt">{{ task.prompt }}</view>
+                <view class="task-meta">
+                  <text class="task-model">{{ task.provider }} · {{ task.model }}</text>
+                  <view class="task-actions">
+                    <u-icon name="reload" size="36" color="#9A9BAC" @tap.stop="regenerateFromTask(task)" />
+                    <u-icon name="download" size="36" color="#9A9BAC" @tap.stop="downloadImage(task.resultUrl)" />
+                  </view>
+                </view>
+              </view>
+            </view>
+
+            <!-- 失败状态 -->
+            <view v-else-if="task.status === 'failed'" class="task-failed">
+              <view class="task-thumb-placeholder">
+                <u-icon name="error-circle" size="48" color="#E8947A" />
+                <text class="task-status-text task-error">生成失败</text>
+              </view>
+              <view class="task-body">
+                <view class="task-prompt">{{ task.prompt }}</view>
+                <view class="task-meta">
+                  <text class="task-error-msg">{{ task.errorMessage || '未知错误' }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
         </view>
       </view>
 
@@ -52,7 +123,7 @@
           v-model="searchKeyword"
           placeholder="搜索提示词..."
           shape="round"
-          bg-color="#1A1A36"
+          bg-color="#F0F1F5"
           :showAction="false"
           @search="onSearch"
           @custom="onSearch"
@@ -177,15 +248,89 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
+import { getTaskList, type DrawingTask } from '@/api/image'
 
 const historyStore = useHistoryStore()
+
+// ─── 生成任务 ────────────────────────
+const generateTasks = ref<DrawingTask[]>([])
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+/** 加载生图任务列表 */
+async function loadTasks() {
+  try {
+    const tasks = await getTaskList(20)
+    generateTasks.value = tasks || []
+    startPollingIfNeeded()
+  } catch (err) {
+    console.warn('[History] 加载生成任务失败:', err)
+  }
+}
+
+/** 如果有 processing/pending 任务，开启 3s 轮询 */
+function startPollingIfNeeded() {
+  const hasProcessing = generateTasks.value.some(t => t.status === 'pending' || t.status === 'processing')
+  if (hasProcessing && !pollingTimer) {
+    pollingTimer = setInterval(async () => {
+      try {
+        const tasks = await getTaskList(20)
+        generateTasks.value = tasks || []
+        // 全部完成则停止轮询
+        const still = generateTasks.value.some(t => t.status === 'pending' || t.status === 'processing')
+        if (!still) {
+          stopPolling()
+        }
+      } catch {}
+    }, 3000)
+  }
+}
+
+function stopPolling() {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+// 每次页面显示时刷新
+onShow(() => {
+  loadTasks()
+})
+
+onUnmounted(() => {
+  stopPolling()
+})
+
+// 预览任务图片
+function previewTaskImage(task: DrawingTask) {
+  if (!task.resultUrl) return
+  uni.previewImage({ urls: [task.resultUrl], current: task.resultUrl })
+}
+
+// 用已有任务的 prompt 重新生成
+function regenerateFromTask(task: DrawingTask) {
+  if (!task.prompt) return
+  uni.navigateTo({
+    url: `/pages/edit/edit?promptText=${encodeURIComponent(task.prompt)}`,
+  })
+}
+
+function formatTaskTime(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
 
 // ─── 分页配置 ──────────────────────────
 const PAGE_SIZE = 10
 const currentPage = ref(1)
 const loadingMore = ref(false)
+const isRefreshing = ref(false)
 
 // 搜索
 const searchKeyword = ref('')
@@ -382,6 +527,15 @@ const formatTime = (timestamp: number): string => {
 const goHome = () => {
   uni.switchTab({ url: '/pages/index/index' })
 }
+
+// 下拉刷新
+async function onPullRefresh() {
+  isRefreshing.value = true
+  try {
+    await loadTasks()
+  } catch {}
+  isRefreshing.value = false
+}
 </script>
 
 <style lang="scss" scoped>
@@ -415,7 +569,6 @@ $danger:     #E8947A;
   background: $bg-card;
   border-bottom: 1rpx solid $border;
   gap: 48rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
 .stat-num {
@@ -427,7 +580,6 @@ $danger:     #E8947A;
 // ── Search ──
 .search-wrap { padding: 20rpx 24rpx; background: $bg-card;
   border-bottom: 1rpx solid $border;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
 }
 
 // ── Empty ──
@@ -483,5 +635,87 @@ $danger:     #E8947A;
 @keyframes spin { to { transform: rotate(360deg); } }
 .load-end { text-align: center; padding: 28rpx 0;
   text { font-size: 24rpx; color: $text-3; }
+}
+
+// ── Task Section ──
+.task-section {
+  padding: 24rpx 24rpx 0;
+}
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4rpx 16rpx;
+}
+.section-title {
+  font-size: 30rpx; font-weight: 700; color: $text-1;
+}
+.section-count {
+  font-size: 24rpx; color: $text-3;
+}
+.task-list {
+  display: flex; flex-direction: column; gap: 20rpx;
+}
+
+// ── Task Card ──
+.task-card {
+  background: $bg-card; border-radius: 20rpx; overflow: hidden;
+  border: 1rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  &:active { transform: scale(0.98); }
+}
+.task-processing, .task-completed, .task-failed {
+  display: flex; flex-direction: row; align-items: stretch;
+}
+
+// 缩略图占位（pending / failed）
+.task-thumb-placeholder {
+  width: 200rpx; min-height: 200rpx; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: $bg-raised; gap: 12rpx;
+}
+.task-spinner {
+  width: 48rpx; height: 48rpx;
+  border: 4rpx solid $bg-card; border-top-color: $primary; border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.task-status-text {
+  font-size: 22rpx; color: $text-3;
+}
+
+// 已完成缩略图
+.task-thumb {
+  width: 200rpx; min-height: 200rpx; flex-shrink: 0; overflow: hidden;
+}
+.task-thumb-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+// 信息区
+.task-body {
+  flex: 1; padding: 20rpx 24rpx;
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-width: 0;
+}
+.task-prompt {
+  font-size: 26rpx; color: $text-1; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.task-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx solid $border;
+}
+.task-model {
+  font-size: 22rpx; color: $text-3;
+}
+.task-time {
+  font-size: 22rpx; color: $text-3;
+}
+.task-actions {
+  display: flex; align-items: center; gap: 16rpx;
+}
+.task-error {
+  color: $danger;
+}
+.task-error-msg {
+  font-size: 22rpx; color: $danger;
 }
 </style>
