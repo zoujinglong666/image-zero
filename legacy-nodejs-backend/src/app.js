@@ -34,7 +34,7 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https://image.pollinations.ai', 'https:'],
-      connectSrc: ["'self'", 'https://openrouter.ai', 'https://*.myqcloud.com', 'https://www.image-zero.art'],
+      connectSrc: ["'self'", 'https://openrouter.ai', 'https://static.image-zero.art', 'https://www.image-zero.art'],
     },
   },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
