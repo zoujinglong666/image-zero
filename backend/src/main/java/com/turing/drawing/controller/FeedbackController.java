@@ -4,11 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.turing.drawing.dto.response.ApiResponse;
 import com.turing.drawing.entity.Feedback;
 import com.turing.drawing.mapper.FeedbackMapper;
+import com.turing.drawing.security.UserPrincipal;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -31,7 +31,8 @@ public class FeedbackController {
      * { type: "suggestion"|"bug_report", content: "...", contact?: "..." }
      */
     @PostMapping
-    public ApiResponse<?> submit(@RequestBody FeedbackRequest req, HttpServletRequest httpReq) {
+    public ApiResponse<?> submit(@RequestBody FeedbackRequest req,
+                                  @AuthenticationPrincipal UserPrincipal principal) {
         if (req.getContent() == null || req.getContent().trim().length() < 5) {
             return ApiResponse.error("反馈内容至少需要5个字");
         }
@@ -48,13 +49,8 @@ public class FeedbackController {
         feedback.setUpdatedAt(LocalDateTime.now());
 
         // 尝试从 JWT 获取 userId，未登录则为 null
-        try {
-            Authentication auth = httpReq.getUserPrincipal();
-            if (auth != null && auth.getName() != null) {
-                feedback.setUserId(Long.parseLong(auth.getName()));
-            }
-        } catch (Exception e) {
-            // 游客提交，不设置 userId
+        if (principal != null) {
+            feedback.setUserId(principal.getId());
         }
 
         feedbackMapper.insert(feedback);
@@ -68,18 +64,11 @@ public class FeedbackController {
      * GET /api/feedback/mine
      */
     @GetMapping("/mine")
-    public ApiResponse<List<Feedback>> mine(HttpServletRequest httpReq) {
-        Long userId = null;
-        try {
-            Authentication auth = httpReq.getUserPrincipal();
-            if (auth != null && auth.getName() != null) {
-                userId = Long.parseLong(auth.getName());
-            }
-        } catch (Exception ignored) {}
-
-        if (userId == null) {
+    public ApiResponse<List<Feedback>> mine(@AuthenticationPrincipal UserPrincipal principal) {
+        if (principal == null) {
             return ApiResponse.success(List.of());
         }
+        Long userId = principal.getId();
 
         List<Feedback> list = feedbackMapper.selectList(
             new LambdaQueryWrapper<Feedback>()

@@ -395,6 +395,7 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { http } from 'uview-pro'
 import type { GenerationProvider, ImageAnalysisResult } from '@/types'
 import { analyzeImage, editImage } from '@/api/image'
 
@@ -596,11 +597,7 @@ function initRewardedAd() {
 
 async function markAdWatchedThenGenerate() {
   try {
-    await uni.request({
-      url: '/api/ad/reward',
-      method: 'POST',
-      header: getAuthHeader(),
-    })
+    await http.post('/ad/reward')
   } catch {
     // 标记失败不阻塞生成，后端会自己判断
   }

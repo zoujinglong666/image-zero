@@ -15,7 +15,10 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
 import java.time.Instant;
 import java.util.*;
 
@@ -57,6 +60,9 @@ public class WechatPayService {
 
     @Value("${wechat.mini-program-app-id:}")
     private String miniProgramAppId;
+
+    @Value("${wechat.pay.platform-cert-path:}")
+    private String platformCertPath;  // 微信支付平台证书路径（PEM 格式）
 
     private static final String JSAPI_URL =
             "https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi";
@@ -289,7 +295,7 @@ public class WechatPayService {
 
     /**
      * JSAPI 支付参数签名（前端 wx.requestPayment 用）
-     * 签名串：appId\n时间戳\n随机串\nprepay_id=xxx\n
+     * 签名串: appId + 时间戳 + 随机串 + prepay_id=xxx
      */
     private Map<String, String> buildJSAPIPayParams(String prepayId) {
         String appId = miniProgramAppId;
@@ -330,20 +336,82 @@ public class WechatPayService {
         return Base64.getEncoder().encodeToString(signatureBytes);
     }
 
+    private X509Certificate cachedPlatformCert = null;
+
     private boolean verifySignature(String body, String signature, String timestamp, String nonce) {
-        // V3 验签：用微信平台公钥验签（生产环境应从微信接口下载公钥）
-        // 签名串：timestamp + "\n" + nonce + "\n" + body + "\n"
-        // 这里简化：记录日志，依赖 HTTPS + notifyUrl 校验
-        // 生产环境应使用微信支付平台证书验签
         log.info("[微信支付回调] 收到回调: timestamp={}, nonce={}", timestamp, nonce);
         if (signature == null || signature.isBlank()) {
             log.warn("[微信支付回调] 缺少签名头");
             return false;
         }
-        // TODO: 用微信平台公钥完整验签（需下载 platform certificate）
-        // 详见：https://pay.weixin.qq.com/wiki/doc/apiv3/wechatpay/wechatpay6_0.shtml
-        log.info("[微信支付回调] 签名验证通过（简化模式，生产环境请启用完整验签）");
-        return true;
+        if (timestamp == null || nonce == null) {
+            log.warn("[微信支付回调] 缺少 timestamp 或 nonce");
+            return false;
+        }
+
+        // 校验时间戳，防止重放攻击（允许 5 分钟偏差）
+        try {
+            long ts = Long.parseLong(timestamp);
+            long now = Instant.now().getEpochSecond();
+            if (Math.abs(now - ts) > 300) {
+                log.warn("[微信支付回调] 时间戳过期: timestamp={}, now={}", timestamp, now);
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            log.warn("[微信支付回调] 时间戳格式错误: {}", timestamp);
+            return false;
+        }
+
+        // 构造验签消息：timestamp + "\n" + nonce + "\n" + body + "\n"
+        String message = timestamp + "\n" + nonce + "\n" + body + "\n";
+
+        try {
+            PublicKey publicKey = getPlatformPublicKey();
+            Signature verifier = Signature.getInstance("SHA256withRSA");
+            verifier.initVerify(publicKey);
+            verifier.update(message.getBytes(StandardCharsets.UTF_8));
+
+            byte[] signatureBytes = Base64.getDecoder().decode(signature);
+            boolean valid = verifier.verify(signatureBytes);
+
+            if (valid) {
+                log.info("[微信支付回调] 签名验证通过");
+            } else {
+                log.warn("[微信支付回调] 签名验证失败！可能为伪造请求");
+            }
+            return valid;
+        } catch (Exception e) {
+            log.error("[微信支付回调] 验签异常", e);
+            return false;
+        }
+    }
+
+    private PublicKey getPlatformPublicKey() throws Exception {
+        if (cachedPlatformCert != null) {
+            return cachedPlatformCert.getPublicKey();
+        }
+        if (platformCertPath == null || platformCertPath.isBlank()) {
+            throw new IllegalStateException(
+                "微信支付平台证书未配置！请在 .env 中设置 WECHAT_PAY_PLATFORM_CERT_PATH，"
+                + "详见: https://pay.weixin.qq.com/wiki/doc/apiv3/wechatpay/wechatpay6_0.shtml");
+        }
+        // 支持 classpath: 前缀和文件系统路径
+        java.io.InputStream is;
+        if (platformCertPath.startsWith("classpath:")) {
+            org.springframework.core.io.Resource res =
+                    new org.springframework.core.io.ClassPathResource(platformCertPath.substring(10));
+            is = res.getInputStream();
+        } else {
+            is = new java.io.FileInputStream(platformCertPath);
+        }
+        try (is) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            cachedPlatformCert = (X509Certificate) cf.generateCertificate(is);
+            log.info("[微信支付] 平台证书加载成功, subject={}, serial={}",
+                    cachedPlatformCert.getSubjectX500Principal(),
+                    cachedPlatformCert.getSerialNumber().toString(16));
+            return cachedPlatformCert.getPublicKey();
+        }
     }
 
     private String decryptResource(String cipherText, String associatedData, String nonce)

@@ -1,4 +1,4 @@
-import { http } from '@/common/http.interceptor'
+import { http } from 'uview-pro'
 
 /**
  * 提交反馈建议
@@ -10,7 +10,7 @@ export async function submitFeedback(payload: {
   content: string
   contact?: string
 }): Promise<{ message: string }> {
-  return http.post('/api/feedback', payload)
+  return http.post('/feedback', payload)
 }
 
 /**
@@ -18,5 +18,5 @@ export async function submitFeedback(payload: {
  * GET /api/feedback/mine
  */
 export async function getMyFeedback(): Promise<any[]> {
-  return http.get('/api/feedback/mine')
+  return http.get('/feedback/mine')
 }

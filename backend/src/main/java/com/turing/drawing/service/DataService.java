@@ -137,7 +137,7 @@ public class DataService {
         profile.put("type", user.getType());
         profile.put("vip", Map.of(
                 "level", user.getVipLevel() != null ? user.getVipLevel() : 0,
-                "active", user.getVipExpireAt() != null && user.getVipExpireAt() > System.currentTimeMillis(),
+                "active", user.getVipExpireAt() != null && user.getVipExpireAt() > System.currentTimeMillis() / 1000,
                 "expireAt", user.getVipExpireAt() != null ? user.getVipExpireAt() : 0
         ));
         profile.put("dailyQuota", user.getDailyQuota());

@@ -652,7 +652,12 @@ async function copyPrompt(item: PromptItem | CommunityPost) {
     data: item.prompt_text,
     success: () => uni.showToast({ title: '已复制 ✅', icon: 'success' }),
   })
-  try { await interactPrompt(item.id, 'copy') } catch {}
+  // 仅对官方提示词调用互动 API，社区帖子不记录 copy 统计
+  try {
+    if ('source' in item) {
+      await interactPrompt(item.id, 'copy')
+    }
+  } catch {}
   item.copy_count = (item.copy_count || 0) + 1
 }
 

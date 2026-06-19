@@ -465,7 +465,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'
-import { useTheme } from 'uview-pro'
+import { useTheme, http } from 'uview-pro'
 import { getVipStatus, getRemainingDays } from '@/api/payment'
 import type { VipStatus } from '@/api/payment'
 
@@ -526,12 +526,9 @@ onMounted(async () => {
       console.error('[Mine] 获取VIP状态失败:', err)
     }
     try {
-      const res: any = await uni.request({
-        url: '/api/daily/status',
-        header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
-      })
-      if (res.data?.code === 0) {
-        checkinStatus.value = res.data.data || checkinStatus.value
+      const data: any = await http.get('/daily/status')
+      if (data) {
+        checkinStatus.value = data || checkinStatus.value
       }
     } catch (err) {
       console.error('[Mine] 获取签到状态失败:', err)
@@ -543,13 +540,8 @@ async function doCheckin() {
   if (checkinStatus.value.checkedIn) return
   uni.showLoading({ title: '签到中...', mask: true })
   try {
-    const res: any = await uni.request({
-      url: '/api/daily/checkin',
-      method: 'POST',
-      header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
-    })
-    if (res.data?.code === 0 && res.data?.data) {
-      const d = res.data.data
+    const d: any = await http.post('/daily/checkin')
+    if (d) {
       checkinStatus.value = { checkedIn: true, streakDays: d.streakDays || checkinStatus.value.streakDays + 1, nextReward: 0 }
       uni.hideLoading()
       setTimeout(() => {
@@ -558,13 +550,13 @@ async function doCheckin() {
     } else {
       uni.hideLoading()
       setTimeout(() => {
-        uni.showToast({ title: res.data?.data?.message || res.data?.message || '签到失败', icon: 'none' })
+        uni.showToast({ title: '签到失败', icon: 'none' })
       }, 50)
     }
-  } catch (err) {
+  } catch (err: any) {
     uni.hideLoading()
     setTimeout(() => {
-      uni.showToast({ title: '签到失败，请检查网络', icon: 'none' })
+      uni.showToast({ title: err?.message || '签到失败，请检查网络', icon: 'none' })
     }, 50)
   }
 }

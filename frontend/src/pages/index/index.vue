@@ -560,20 +560,22 @@ onLoad((options?: any) => {
   // #endif
 })
 
+let unwatchNetwork: (() => void) | null = null
+
 onMounted(async () => {
   isOnline.value = await checkNetwork()
-  const unwatch = watchNetworkChange((online) => {
+  unwatchNetwork = watchNetworkChange((online) => {
     isOnline.value = online
     if (!online) uni.showToast({ title: '网络已断开', icon: 'none' })
   })
 
   // 加载首页数据
   await loadHomeData()
+})
 
-  onUnmounted(() => {
-    unwatch()
-    if (analyzeTimer) clearInterval(analyzeTimer)
-  })
+onUnmounted(() => {
+  unwatchNetwork?.()
+  if (analyzeTimer) clearInterval(analyzeTimer)
 })
 
 // ─── 下拉刷新 ──────────────────────────────

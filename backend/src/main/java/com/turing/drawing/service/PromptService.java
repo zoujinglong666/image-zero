@@ -77,6 +77,8 @@ public class PromptService {
     // ══════════════════════════════════════════
 
     public void interact(Long promptId, Long userId, String action) {
+        if (action == null || action.isBlank()) return;
+
         // 未登录用户：只增加计数，不写互动记录（避免 user_id=0 FK 约束失败）
         boolean isGuest = (userId == null || userId == 0L);
 

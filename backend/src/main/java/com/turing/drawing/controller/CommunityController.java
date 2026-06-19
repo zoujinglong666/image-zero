@@ -181,13 +181,15 @@ public class CommunityController {
     @PostMapping("/admin/review/prompt/{id}")
     public ApiResponse<Void> reviewPrompt(
             @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal UserPrincipal principal) {
         String verdict = body.get("verdict");
         String reason = body.getOrDefault("reason", "");
         if (!List.of("approved", "rejected").contains(verdict)) {
             return ApiResponse.error("verdict 必须是 approved 或 rejected");
         }
-        boolean ok = communityService.reviewUserPrompt(id, verdict, 1L, reason);
+        Long reviewerId = principal != null ? principal.getId() : 0L;
+        boolean ok = communityService.reviewUserPrompt(id, verdict, reviewerId, reason);
         if (!ok) return ApiResponse.error("审核失败，记录不存在");
         return ApiResponse.success();
     }
@@ -199,13 +201,15 @@ public class CommunityController {
     @PostMapping("/admin/review/submission/{id}")
     public ApiResponse<Void> reviewSubmission(
             @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal UserPrincipal principal) {
         String verdict = body.get("verdict");
         String reason = body.getOrDefault("reason", "");
         if (!List.of("approved", "rejected").contains(verdict)) {
             return ApiResponse.error("verdict 必须是 approved 或 rejected");
         }
-        boolean ok = communityService.reviewSubmission(id, verdict, 1L, reason);
+        Long reviewerId = principal != null ? principal.getId() : 0L;
+        boolean ok = communityService.reviewSubmission(id, verdict, reviewerId, reason);
         if (!ok) return ApiResponse.error("审核失败，记录不存在");
         return ApiResponse.success();
     }

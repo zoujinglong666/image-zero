@@ -213,6 +213,9 @@ public class PromptController {
     public ApiResponse<Void> deleteCommunityPost(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
+        if (principal == null) {
+            return ApiResponse.error(401, "请先登录");
+        }
         promptService.deleteUserPrompt(id, principal.getId());
         return ApiResponse.success();
     }
