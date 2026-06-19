@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>提示词侦探 - Logo 草图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #E8EAED;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    padding: 40px;
+  }
+  h1 { color: #1C1C1C; margin-bottom: 8px; font-size: 24px; }
+  .subtitle { color: #5A5D66; margin-bottom: 40px; font-size: 14px; }
+
+  .logo-grid { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; }
+
+  .logo-card {
+    background: #FFF;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .logo-card h3 { color: #1C1C1C; margin-top: 16px; font-size: 14px; font-weight: 600; }
+
+  /* 小程序图标尺寸 */
+  .mp-icon { width: 120px; height: 120px; border-radius: 28px; overflow: hidden; }
+  /* 大版预览 */
+  .lg-preview { width: 280px; height: 280px; border-radius: 56px; }
+  /* 纯白底 */
+  .white-bg { background: #FFFFFF; }
+  /* 深色底（深色模式预览） */
+  .dark-bg { background: #1C1C1C; }
+</style>
+</head>
+<body>
+
+<h1>🕵️ 提示词侦探 — Logo 草图</h1>
+<p class="subtitle">TL 字母 IP + 琥珀星 ✦ | 焦墨 #1C1C1C + 琥珀金 #D4A017</p>
+
+<div class="logo-grid">
+
+  <!-- ══ 版本 A：小程序图标尺寸（白底）══ -->
+  <div class="logo-card">
+    <div class="mp-icon white-bg">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+        <defs>
+          <!-- 琥珀星渐变 -->
+          <radialGradient id="starGlowA" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE066"/>
+            <stop offset="60%" stop-color="#D4A017"/>
+            <stop offset="100%" stop-color="#B8860B"/>
+          </radialGradient>
+          <!-- 星星光晕 -->
+          <radialGradient id="starHaloA" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.3)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T 字母 -->
+        <path d="M30 28 L66 28 L66 36 L51 36 L51 86 L43 86 L43 36 L30 36 Z"
+              fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M56 46 L56 86 L84 86 L84 94 L48 94 L48 46 Z"
+              fill="#1C1C1C"/>
+
+        <!-- 琥珀星 ✦ (四角星) -->
+        <g transform="translate(82, 22)">
+          <!-- 光晕 -->
+          <circle cx="10" cy="10" r="14" fill="url(#starHaloA)"/>
+          <!-- 星体 -->
+          <path d="M10 0 L12 7 L19 9 L12 11 L10 18 L8 11 L1 9 L8 7 Z"
+                fill="url(#starGlowA)"
+                transform="scale(0.85) translate(1.8, 1.8)"/>
+        </g>
+      </svg>
+    </div>
+    <h3>小程序图标（白底 · 120×120）</h3>
+  </div>
+
+  <!-- ══ 版本 B：大版预览（白底）══ -->
+  <div class="logo-card">
+    <div class="lg-preview white-bg">
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" width="280" height="280">
+        <defs>
+          <radialGradient id="starGlowB" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE066"/>
+            <stop offset="55%" stop-color="#D4A017"/>
+            <stop offset="100%" stop-color="#B8860B"/>
+          </radialGradient>
+          <radialGradient id="starHaloB" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.25)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T 字母（粗体感） -->
+        <path d="M64 58 L148 58 L148 78 L114 78 L114 186 L90 186 L90 78 L64 78 Z"
+              fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M122 98 L122 186 L202 186 L202 206 L98 206 L98 98 Z"
+              fill="#1C1C1C"/>
+
+        <!-- 琥珀星 ✦ -->
+        <g transform="translate(192, 44)">
+          <circle cx="22" cy="22" r="32" fill="url(#starHaloB)"/>
+          <path d="M22 0 L26.5 15 L42 18 L29 29 L32 45 L22 37 L12 45 L15 29 L2 18 L17.5 15 Z"
+                fill="url(#starGlowB)"
+                transform="scale(0.85) translate(3.3, 3.3)"/>
+        </g>
+      </svg>
+    </div>
+    <h3>大版预览（白底 · 280×280）</h3>
+  </div>
+
+  <!-- ══ 版本 C：深色模式预览 ═══ -->
+  <div class="logo-card">
+    <div class="lg-preview dark-bg">
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" width="280" height="280">
+        <defs>
+          <radialGradient id="starGlowC" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE066"/>
+            <stop offset="55%" stop-color="#D4A017"/>
+            <stop offset="100%" stop-color="#B8860B"/>
+          </radialGradient>
+          <radialGradient id="starHaloC" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.35)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T 字母（深色底用白色） -->
+        <path d="M64 58 L148 58 L148 78 L114 78 L114 186 L90 186 L90 78 L64 78 Z"
+              fill="#FFFFFF"/>
+
+        <!-- L 字母 -->
+        <path d="M122 98 L122 186 L202 186 L202 206 L98 206 L98 98 Z"
+              fill="#FFFFFF"/>
+
+        <!-- 琥珀星 ✦ -->
+        <g transform="translate(192, 44)">
+          <circle cx="22" cy="22" r="32" fill="url(#starHaloC)"/>
+          <path d="M22 0 L26.5 15 L42 18 L29 29 L32 45 L22 37 L12 45 L15 29 L2 18 L17.5 15 Z"
+                fill="url(#starGlowC)"
+                transform="scale(0.85) translate(3.3, 3.3)"/>
+        </g>
+      </svg>
+    </div>
+    <h3>深色模式预览（黑底 · 280×280）</h3>
+  </div>
+
+  <!-- ══ 版本 D：纯图标无背景（透明）══ -->
+  <div class="logo-card">
+    <div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;
+                background: repeating-conic-gradient(#F0F0F0 0% 25%, #FAFAFA 0% 50%) 50% / 20px 20px;
+                border-radius: 16px;">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="160" height="160">
+        <defs>
+          <radialGradient id="starGlowD" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE066"/>
+            <stop offset="55%" stop-color="#D4A017"/>
+            <stop offset="100%" stop-color="#B8860B"/>
+          </radialGradient>
+          <radialGradient id="starHaloD" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.3)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T -->
+        <path d="M44 38 L108 38 L108 54 L83 54 L83 138 L65 138 L65 54 L44 54 Z"
+              fill="#1C1C1C"/>
+        <!-- L -->
+        <path d="M74 68 L74 138 L146 138 L146 154 L60 154 L60 68 Z"
+              fill="#1C1C1C"/>
+        <!-- 琥珀星 -->
+        <g transform="translate(140, 26)">
+          <circle cx="16" cy="16" r="24" fill="url(#starHaloD)"/>
+          <path d="M16 0 L19.2 11 L30 13 L21 21 L23 33 L16 27 L9 33 L11 21 L2 13 L12.8 11 Z"
+                fill="url(#starGlowD)" transform="scale(0.85) translate(2.4, 2.4)"/>
+        </g>
+      </svg>
+    </div>
+    <h3>透明底（棋盘格 · 160×160）</h3>
+  </div>
+
+</div>
+
+<!-- 底部说明 -->
+<p style="margin-top:40px;color:#9BA0AD;font-size:12px;text-align:center;max-width:500px;line-height:1.8;">
+  设计规范：思源黑体 Heavy 风格粗体 TL + 右上角琥珀金四角星 ✦<br>
+  配色：焦墨 #1C1C1C + 琥珀金 #D4A017（星体带径向渐变光晕）<br>
+  用途：微信小程序图标 / 启动页 / 分享卡片 / TabBar 品牌水印
+</p>
+
+</body>
+</html>

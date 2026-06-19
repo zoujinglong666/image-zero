@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>画风提取器 - Logo 草图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #E8EAED;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    padding: 40px;
+  }
+  h1 { color: #1C1C1C; margin-bottom: 8px; font-size: 24px; }
+  .subtitle { color: #5A5D66; margin-bottom: 40px; font-size: 14px; }
+
+  .logo-grid { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; }
+
+  .logo-card {
+    background: #FFF;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .logo-card h3 { color: #1C1C1C; margin-top: 16px; font-size: 14px; font-weight: 600; max-width: 180px; text-align: center; line-height: 1.5; }
+
+  .mp-icon { width: 120px; height: 120px; border-radius: 28px; overflow: hidden; }
+  .lg-preview { width: 280px; height: 280px; border-radius: 56px; }
+  .white-bg { background: #FFFFFF; }
+  .dark-bg { background: #1C1C1C; }
+</style>
+</head>
+<body>
+
+<h1>🎨 画风提取器 — Logo 草图</h1>
+<p class="subtitle">TL 字母 IP + 吸管/提取动效 | 焦墨 #1C1C1C + 琥珀金 #D4A017</p>
+
+<div class="logo-grid">
+
+  <!-- ═══ 版本 A：吸管提取风（核心推荐）═════ -->
+  <div class="logo-card">
+    <div class="mp-icon white-bg">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+        <defs>
+          <linearGradient id="extractGradA" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1C1C1C"/>
+            <stop offset="70%" stop-color="#1C1C1C"/>
+            <stop offset="100%" stop-color="#D4A017"/>
+          </linearGradient>
+          <radialGradient id="dropGlowA" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.4)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T 字母 -->
+        <path d="M22 30 L58 30 L58 38 L43 38 L43 82 L35 82 L35 38 L22 38 Z" fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M48 46 L48 82 L76 82 L76 90 L40 90 L40 46 Z" fill="#1C1C1C"/>
+
+        <!-- ══ 吸管（从 TL 右侧伸出）══ -->
+        <g transform="translate(64, 24) rotate(25)">
+          <!-- 吸管杆 -->
+          <rect x="14" y="2" width="4" height="28" rx="2" fill="url(#extractGradA)" transform="rotate(-20, 16, 16)"/>
+          <!-- 吸管头（橡胶套）-->
+          <rect x="12" y="0" width="8" height="6" rx="2" fill="#D4A017" opacity="0.8"
+                transform="rotate(-20, 16, 3)"/>
+          <!-- 吸管尖 -->
+          <polygon points="15,28 17,36 19,28" fill="#D4A017"
+                   transform="rotate(-20, 17, 32)"/>
+
+          <!-- ══ 被吸出的颜色滴（琥珀色光晕）══ -->
+          <circle cx="26" cy="42" r="10" fill="url(#dropGlowA)"/>
+          <ellipse cx="27" cy="43" rx="4" ry="5" fill="#D4A017" opacity="0.9">
+            <animate attributeName="cy" values="43;47;43" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.9;0.5;0.9" dur="2s" repeatCount="indefinite"/>
+          </ellipse>
+        </g>
+
+        <!-- 小装饰：飘散的色彩粒子 -->
+        <circle cx="98" cy="68" r="2" fill="#D4A017" opacity="0.6">
+          <animate attributeName="cx" values="98;104;98" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="102" cy="78" r="1.5" fill="#E8947A" opacity="0.5">
+          <animate attributeName="cy" values="78;84;78" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+    <h3>A · 吸管提取<br><span style="color:#9BA0AD;font-weight:400;font-size:12px">TL + 动态取色滴</span></h3>
+  </div>
+
+  <!-- ═══ 版本 B：漏斗/管道风 ═════ -->
+  <div class="logo-card">
+    <div class="mp-icon white-bg">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+        <defs>
+          <linearGradient id="funnelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1C1C1C" stop-opacity="0.15"/>
+            <stop offset="50%" stop-color="#D4A017" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#D4A017" stop-opacity="0.8"/>
+          </linearGradient>
+        </defs>
+
+        <!-- T 字母 -->
+        <path d="M18 28 L54 28 L54 36 L39 36 L39 80 L31 80 L31 36 L18 36 Z" fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M44 44 L44 80 L72 80 L72 88 L36 88 L36 44 Z" fill="#1C1C1C"/>
+
+        <!-- ══ 漏斗（在 TL 右上方，像在"提炼"风格）══ -->
+        <g transform="translate(62, 18)">
+          <!-- 漏斗口（宽口朝上）-->
+          <path d="M4 0 L36 0 L24 28 L16 28 Z" fill="none" stroke="#1C1C1C" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- 漏斗颈 -->
+          <line x1="18" y1="28" x2="18" y2="38" stroke="#1C1C1C" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- 漏斗里流动的"画风"（渐变色带）-->
+          <path d="M7 4 L33 4 L23 24 L17 24 Z" fill="url(#funnelGrad)" opacity="0.7">
+            <animate attributeName="opacity" values="0.7;0.4;0.7" dur="1.5s" repeatCount="indefinite"/>
+          </path>
+          <!-- 滴落的精华（琥珀星）-->
+          <circle cx="18" cy="44" r="4" fill="#D4A017">
+            <animate attributeName="cy" values="44;52;44" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="4;3;4" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <!-- 光晕 -->
+          <circle cx="18" cy="46" r="7" fill="rgba(212,160,23,0.2)">
+            <animate attributeName="r" values="7;10;7" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.2;0.05;0.2" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+      </svg>
+    </div>
+    <h3>B · 漏斗提炼<br><span style="color:#9BA0AD;font-weight:400;font-size:12px">TL + 风格浓缩滴</span></h3>
+  </div>
+
+  <!-- ═══ 版本 C：箭头搬运风 ═════ -->
+  <div class="logo-card">
+    <div class="mp-icon white-bg">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+        <defs>
+          <marker id="arrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#D4A017"/>
+          </marker>
+          <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1C1C1C"/>
+            <stop offset="100%" stop-color="#D4A017"/>
+          </linearGradient>
+        </defs>
+
+        <!-- T 字母 -->
+        <path d="M16 30 L52 30 L52 38 L37 38 L37 82 L29 82 L29 38 L16 38 Z" fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M42 46 L42 82 L70 82 L70 90 L34 90 L34 46 Z" fill="#1C1C1C"/>
+
+        <!-- ══ 弧形搬运箭头（从 T 绕到 L 右侧 = "画风转移"）══ -->
+        <path d="M54 30 Q86 20, 92 50 Q96 74, 72 88"
+              fill="none" stroke="url(#arrowGrad)" stroke-width="2.5" stroke-linecap="round"
+              marker-end="url(#arrowHead)"
+              stroke-dasharray="6,3">
+          <animate attributeName="stroke-dashoffset" from="9" to="0" dur="0.8s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- 箭头中间的小星星（代表被搬运的"画风灵魂"）-->
+        <g transform="translate(88, 42)">
+          <path d="M6 0 L7.2 4 L11 4.5 L8 7.5 L8.8 11.5 L6 9.5 L3.2 11.5 L4 7.5 L1 4.5 L4.8 4 Z"
+                fill="#D4A017" transform="scale(0.7)">
+            <animateTransform attributeName="transform" type="translate"
+                              values="0,0; 2,-3; 0,0" dur="2s" repeatCount="indefinite"/>
+          </path>
+        </g>
+      </svg>
+    </div>
+    <h3>C · 弧线搬运<br><span style="color:#9BA0AD;font-weight:400;font-size:12px">TL + 流动箭头</span></h3>
+  </div>
+
+  <!-- ═══ 版本 D：大版 — 吸管版（白底）═════ -->
+  <div class="logo-card">
+    <div class="lg-preview white-bg">
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" width="280" height="280">
+        <defs>
+          <linearGradient id="extractGradLg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1C1C1C"/>
+            <stop offset="65%" stop-color="#1C1C1C"/>
+            <stop offset="100%" stop-color="#D4A017"/>
+          </linearGradient>
+          <radialGradient id="dropGlowLg" cx="45%" cy="55%" r="40%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.35)"/>
+            <stop offset="60%" stop-color="rgba(212,160,23,0.12)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+          <radialGradient id="starGlowLg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE066"/>
+            <stop offset="55%" stop-color="#D4A017"/>
+            <stop offset="100%" stop-color="#B8860B"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T 字母（大号粗体）-->
+        <path d="M52 64 L136 64 L136 86 L106 86 L106 178 L82 178 L82 86 L52 86 Z" fill="#1C1C1C"/>
+
+        <!-- L 字母 -->
+        <path d="M100 108 L100 178 L196 178 L196 200 L80 200 L80 108 Z" fill="#1C1C1C"/>
+
+        <!-- ══ 吸管（放大版，更精致）══ -->
+        <g transform="translate(148, 48) rotate(22)">
+          <!-- 吸管金属杆 -->
+          <rect x="22" y="4" width="6" height="52" rx="3" fill="url(#extractGradLg)" transform="rotate(-22, 25, 30)"/>
+          <!-- 橡胶吸头 -->
+          <rect x="18" y="0" width="14" height="10" rx="4" fill="#D4A017" opacity="0.75"
+                transform="rotate(-22, 25, 5)"/>
+          <!-- 高光 -->
+          <rect x="20" y="1" width="3" height="7" rx="1.5" fill="#FFF" opacity="0.3"
+                transform="rotate(-22, 21, 4)"/>
+          <!-- 吸管尖锥 -->
+          <polygon points="23,54 25,66 27,54" fill="#D4A017"
+                   transform="rotate(-22, 25, 60)"/>
+
+          <!-- ══ 被提取出的"画风精华"—— 大光晕 + 主色滴 ═══ -->
+          <circle cx="42" cy="78" r="28" fill="url(#dropGlowLg)"/>
+          <!-- 主色滴（琥珀色液体感）-->
+          <ellipse cx="44" cy="80" rx="10" ry="13" fill="#D4A017" opacity="0.85">
+            <animate attributeName="cy" values="80;90;80" dur="2.2s" repeatCount="indefinite"/>
+            <animate attributeName="rx" values="10;8;10" dur="2.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.85;0.6;0.85" dur="2.2s" repeatCount="indefinite"/>
+          </ellipse>
+          <!-- 高光点 -->
+          <ellipse cx="41" cy="76" rx="3" ry="4" fill="#FFF" opacity="0.4" transform="rotate(-15, 41, 76)"/>
+        </g>
+
+        <!-- ══ 飘散的色彩粒子（氛围感）══ -->
+        <circle cx="218" cy="128" r="3" fill="#D4A017" opacity="0.5">
+          <animate attributeName="cx" values="218;228;218" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.15;0.5" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="225" cy="146" r="2.2" fill="#E8947A" opacity="0.45">
+          <animate attributeName="cy" values="146;156;146" dur="2.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="212" cy="158" r="1.8" fill="#8B9DC8" opacity="0.4">
+          <animate attributeName="cx" values="212;220;212" dur="3.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="232" cy="138" r="1.5" fill="#4ECB71" opacity="0.35">
+          <animate attributeName="cy" values="138;146;138" dur="2.2s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- 底部小字标注 -->
+        <text x="140" y="256" text-anchor="middle" fill="#9BA0AD" font-size="13" font-family="-apple-system,'PingFang SC',sans-serif" letter-spacing="1">
+          Style Extractor
+        </text>
+      </svg>
+    </div>
+    <h3>D · 大版预览 · 吸管提取<br><span style="color:#9BA0AD;font-weight:400;font-size:12px">完整细节 + 动效粒子</span></h3>
+  </div>
+
+  <!-- ═══ 版本 E：深色模式 — 吸管版 ═════ -->
+  <div class="logo-card">
+    <div class="lg-preview dark-bg">
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" width="280" height="280">
+        <defs>
+          <linearGradient id="extractDark" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="65%" stop-color="#FFFFFF"/>
+            <stop offset="100%" stop-color="#D4A017"/>
+          </linearGradient>
+          <radialGradient id="dropGlowDark" cx="45%" cy="55%" r="40%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.4)"/>
+            <stop offset="60%" stop-color="rgba(212,160,23,0.15)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T（白色）-->
+        <path d="M52 64 L136 64 L136 86 L106 86 L106 178 L82 178 L82 86 L52 86 Z" fill="#FFFFFF"/>
+        <!-- L（白色）-->
+        <path d="M100 108 L100 178 L196 178 L196 200 L80 200 L80 108 Z" fill="#FFFFFF"/>
+
+        <!-- 吸管 -->
+        <g transform="translate(148, 48) rotate(22)">
+          <rect x="22" y="4" width="6" height="52" rx="3" fill="url(#extractDark)" transform="rotate(-22, 25, 30)"/>
+          <rect x="18" y="0" width="14" height="10" rx="4" fill="#D4A017" opacity="0.8"
+                transform="rotate(-22, 25, 5)"/>
+          <polygon points="23,54 25,66 27,54" fill="#D4A017"
+                   transform="rotate(-22, 25, 60)"/>
+          <circle cx="42" cy="78" r="28" fill="url(#dropGlowDark)"/>
+          <ellipse cx="44" cy="80" rx="10" ry="13" fill="#D4A017" opacity="0.85">
+            <animate attributeName="cy" values="80;90;80" dur="2.2s" repeatCount="indefinite"/>
+          </ellipse>
+        </div>
+
+        <!-- 粒子 -->
+        <circle cx="218" cy="128" r="3" fill="#D4A017" opacity="0.5">
+          <animate attributeName="cx" values="218;228;218" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="225" cy="146" r="2.2" fill="#E8947A" opacity="0.45">
+          <animate attributeName="cy" values="146;156;146" dur="2.6s" repeatCount="indefinite"/>
+        </circle>
+
+        <text x="140" y="256" text-anchor="middle" fill="#5A5D66" font-size="13" font-family="-apple-system,'PingFang SC',sans-serif" letter-spacing="1">
+          Style Extractor
+        </text>
+      </svg>
+    </div>
+    <h3>E · 深色模式 · 吸管版</h3>
+  </div>
+
+  <!-- ═══ 版本 F：纯图标透明底（可直接导出 PNG）═════ -->
+  <div class="logo-card">
+    <div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;
+                background: repeating-conic-gradient(#F0F0F0 0% 25%, #FAFAFA 0% 50%) 50% / 20px 20px;
+                border-radius: 16px;">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="160" height="160">
+        <defs>
+          <linearGradient id="extPng" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1C1C1C"/>
+            <stop offset="65%" stop-color="#1C1C1C"/>
+            <stop offset="100%" stop-color="#D4A017"/>
+          </linearGradient>
+          <radialGradient id="dropPng" cx="48%" cy="56%" r="36%">
+            <stop offset="0%" stop-color="rgba(212,160,23,0.3)"/>
+            <stop offset="100%" stop-color="rgba(212,160,23,0)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- T -->
+        <path d="M36 44 L96 44 L96 58 L74 58 L74 128 L56 128 L56 58 L36 58 Z" fill="#1C1C1C"/>
+        <!-- L -->
+        <path d="M68 76 L68 128 L152 128 L152 144 L52 144 L52 76 Z" fill="#1C1C1C"/>
+
+        <!-- 吸管 -->
+        <g transform="translate(112, 32) rotate(22)">
+          <rect x="18" y="3" width="5" height="40" rx="2.5" fill="url(#extPng)" transform="rotate(-22, 20.5, 23)"/>
+          <rect x="15" y="0" width="11" height="8" rx="3.5" fill="#D4A017" opacity="0.75"
+                transform="rotate(-22, 20.5, 4)"/>
+          <polygon points="19,42 21,51 23,42" fill="#D4A017"
+                   transform="rotate(-22, 21, 46.5)"/>
+          <circle cx="34" cy="60" r="22" fill="url(#dropPng)"/>
+          <ellipse cx="35" cy="61.5" rx="7.5" ry="10" fill="#D4A017" opacity="0.8">
+            <animate attributeName="cy" values="61.5;69;61.5" dur="2s" repeatCount="indefinite"/>
+          </ellipse>
+        </g>
+
+        <!-- 粒子点缀 -->
+        <circle cx="158" cy="94" r="2.5" fill="#D4A017" opacity="0.45">
+          <animate attributeName="cx" values="158;166;158" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="164" cy="110" r="1.8" fill="#E8947A" opacity="0.35">
+          <animate attributeName="cy" values="110;118;110" dur="2.4s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+    <h3>F · 透明底可导出<br><span style="color:#9BA0AD;font-weight:400;font-size:12px">160×160 SVG / 可转 PNG</span></h3>
+  </div>
+
+</div>
+
+<!-- 底部说明 -->
+<p style="margin-top:40px;color:#9BA0AD;font-size:12px;text-align:center;max-width:520px;line-height:1.8;">
+  🎨 <b>画风提取器</b> 设计理念：<br>
+  「吸管」= 从图片中吸取风格精髓（PS 取色工具的通用语言，小白一看就懂）<br>
+  「滴落的光晕」= 被提取出的画风精华（琥珀色 = AI 的魔法价值）<br>
+  「飘散粒子」= 风格是多元的（红/蓝/绿 = 不同风格的色彩维度）<br><br>
+  ⚡ 页面上的动画都是实时渲染的 —— 吸管会"滴出"颜色、粒子会飘浮、箭头会流动 ✨
+</p>
+
+</body>
+</html>

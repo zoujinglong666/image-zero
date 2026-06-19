@@ -112,20 +112,15 @@ public class ImageController {
             return ApiResponse.error(401, "请先登录后再生成图片");
         }
 
-        // 2. 广告墙检查（预留口子，可通过配置关闭）
+        // 2. 广告墙检查（可通过配置关闭）
         if (userPreferenceService.isAdGateEnabled()) {
             boolean watched = userPreferenceService.hasWatchedAdToday(userId);
             if (!watched) {
-                // 测试模式：前端传 X-Skip-Ad: 1 头可跳过（正式上线后可删除此判断）
-                boolean skipAd = request.get("skipAd") != null
-                        || (principal != null && "dev".equals(principal.getUsername()));
-                if (!skipAd) {
-                    return ApiResponse.success(Map.of(
-                            "needAd", true,
-                            "message", "请观看激励视频后继续使用生图功能",
-                            "adUnitId", userPreferenceService.getAdUnitId()
-                    ));
-                }
+                return ApiResponse.success(Map.of(
+                        "needAd", true,
+                        "message", "请观看激励视频后继续使用生图功能",
+                        "adUnitId", userPreferenceService.getAdUnitId()
+                ));
             }
         }
 

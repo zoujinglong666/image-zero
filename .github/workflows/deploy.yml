@@ -1,0 +1,83 @@
+# ══════════════════════════════════════════════════════════
+#  画风提取器 - GitHub Actions 自动部署
+#  触发条件: push 到 main 分支
+#  流程: 构建 → Docker 部署到服务器
+#
+#  启用前需要配置 Secrets:
+#    SERVER_HOST     = 服务器 IP (如 43.138.156.217)
+#    SERVER_USER     = SSH 用户名 (如 root)
+#    SERVER_SSH_KEY  = SSH 私钥 (完整内容，含 -----BEGIN OPENSSH-----)
+# ══════════════════════════════════════════════════════════
+
+name: 🚀 部署到生产环境
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ━━ 1. 拉代码 ━━
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ━━ 2. 配置 SSH ━━
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      # ━━ 3. 同步代码到服务器 ━━
+      - name: Sync code to server
+        run: |
+          rsync -avz --delete \
+            --exclude 'node_modules/' \
+            --exclude '.git/' \
+            --exclude 'target/' \
+            --exclude 'dist/' \
+            --exclude '.env' \
+            --exclude '.env.production' \
+            -e "ssh -i ~/.ssh/id_rsa" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/turing-drawing/
+
+      # ━━ 4. 远程执行部署脚本 ━━
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'DEPLOY'
+            set -e
+            cd /opt/turing-drawing
+            echo "🚀 [GitHub Actions] 开始自动部署..."
+            
+            # 停旧容器
+            docker compose down --remove-orphans || true
+            
+            # 构建并启动
+            docker compose up -d --build
+            
+            # 等待健康检查
+            echo "⏳ 等待服务就绪..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
+                echo "✅ 部署成功！API 健康"
+                docker compose ps
+                exit 0
+              fi
+              sleep 3
+            done
+            
+            echo "❌ 启动超时"
+            docker compose logs --tail=50 backend
+            exit 1
+          DEPLOY
+
+      # ━━ 5. 清理 SSH 密钥（安全）━━━
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_rsa

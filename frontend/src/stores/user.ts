@@ -41,6 +41,7 @@ export const useUserStore = defineStore('user', () => {
   // 计算属性
   const isWechatUser = computed(() => userInfo.value?.type === 'wechat')
   const isAnonymousUser = computed(() => userInfo.value?.type === 'anonymous')
+  const isGuestUser = computed(() => userInfo.value?.type === 'guest')
   const isGuest = computed(() => !isLoggedIn.value)
   const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
   const userDisplayName = computed(() => {
@@ -519,6 +520,7 @@ export const useUserStore = defineStore('user', () => {
     // 计算属性
     isWechatUser,
     isAnonymousUser,
+    isGuestUser,
     isGuest,
     userDisplayName,
     isAdmin,

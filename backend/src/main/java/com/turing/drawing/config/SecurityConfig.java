@@ -58,15 +58,15 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 请求授权配置
             .authorizeHttpRequests(auth -> {
-                // 管理后台接口 - 需要ADMIN角色
-                auth.requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // 管理后台接口 - 需要ADMIN角色（必须放在 /api/community/** 之前！）
+                auth.requestMatchers("/api/admin/**", "/api/community/admin/**").hasRole("ADMIN")
                     // 认证接口 - 无需认证
                     .requestMatchers("/api/auth/wechat", "/api/auth/wechat-h5", "/api/auth/wechat-h5/url", "/api/auth/token", "/api/auth/guest", "/api/auth/verify", "/api/auth/status").permitAll()
                     // 提示词公开接口（含详情、互动、收藏、列表）
                     .requestMatchers("/api/prompt/categories", "/api/prompt/list", "/api/prompt/search", "/api/prompt/{id}",
                                        "/api/prompt/*/interact", "/api/prompt/*/favorite",
                                        "/api/prompt/favorites/**", "/api/prompt/mine/**").permitAll()
-                    // 社区公开接口
+                    // 社区公开接口（不含 admin 子路径，admin 已由上面拦截）
                     .requestMatchers("/api/community/**").permitAll()
                     // 社区分享公开接口
                     .requestMatchers("/api/prompt/community", "/api/prompt/community/**").permitAll()
@@ -83,6 +83,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/daily/checkin", "/api/daily/status").authenticated()
                     // AI接口 - 允许匿名访问（未登录用户可试用）
                     .requestMatchers("/api/analyze", "/api/generate", "/api/edit", "/api/upload", "/api/task/**").permitAll()
+                    // 用户反馈 - 公开提交，查询自己的记录需登录
+                    .requestMatchers("/api/feedback", "/api/feedback/mine").permitAll()
                     // 数据统计接口（开发环境公开，生产需认证）
                     .requestMatchers("/api/data/**").permitAll()
                     // 健康检查 - 公开（用于负载均衡、监控探活）

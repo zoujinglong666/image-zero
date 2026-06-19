@@ -470,18 +470,11 @@ const rightCol = computed(() => prompts.value.filter((_item: PromptItem, i: numb
 
 // ── 渐变配色方案（用于无图占位）──
 const gradients = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-  'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
-  'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
-  'linear-gradient(135deg, #f5576c 0%, #ff686b 100%)',
-  'linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%)',
-  'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-  'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+  'linear-gradient(135deg, #8B9DC8 0%, #6B7EC8 100%)',  // 雾霾蓝
+  'linear-gradient(135deg, #B8A9C9 0%, #9B8BB4 100%)',  // 淡紫灰
+  'linear-gradient(135deg, #C9B8A9 0%, #B49B84 100%)',  // 暖沙驼
+  'linear-gradient(135deg, #A9C9B8 0%, #7EB89A 100%)',  // 薄荷绿
+  'linear-gradient(135deg, #C9B8A9 0%, #D4C4B0 100%)',  // 杏仁奶
   'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
   'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
   'linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%)',
@@ -941,9 +934,9 @@ $green:       #4ECB71;
   z-index: 2;
   display: flex; align-items: center; gap: 4rpx;
   padding: 6rpx 16rpx;
-  background: linear-gradient(135deg, #FF6B35, #FF2E63);
+  background: linear-gradient(135deg, #C49B84, #B8860B);
   border-radius: 999rpx;
-  box-shadow: 0 4rpx 12rpx rgba(255,46,99,0.3);
+  box-shadow: 0 4rpx 12rpx rgba(184,134,11,0.2);
 
   text {
     font-size: 20rpx; color: #FFF; font-weight: 800;
@@ -966,7 +959,7 @@ $green:       #4ECB71;
     text { color: #555; }
   }
   &.effect {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
+    background: linear-gradient(135deg, #C49B84, #D4A017);
     text { color: #FFF; }
   }
 }

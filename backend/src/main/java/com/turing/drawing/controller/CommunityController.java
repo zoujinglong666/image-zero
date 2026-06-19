@@ -8,6 +8,7 @@ import com.turing.drawing.entity.UserPrompt;
 import com.turing.drawing.security.UserPrincipal;
 import com.turing.drawing.service.CommunityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 

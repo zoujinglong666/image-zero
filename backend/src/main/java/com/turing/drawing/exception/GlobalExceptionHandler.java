@@ -79,13 +79,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 运行时异常 —— 透传原始错误消息，方便排查 AI 调用等问题
+     * 运行时异常 —— 打印完整堆栈到日志，对外隐藏详情防止信息泄露
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException e) {
-        log.error("运行时异常", e);
+        log.error("运行时异常: {} | {}", e.getClass().getSimpleName(), e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, e.getMessage()));
+                .body(ApiResponse.error(500, "服务器内部错误，请稍后重试"));
     }
 
     /**

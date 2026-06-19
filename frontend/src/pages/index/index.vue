@@ -550,6 +550,14 @@ onLoad((options?: any) => {
   if (options && options.inviteCode) {
     handleInviteCode(String(options.inviteCode))
   }
+
+  // 启用微信分享（必须！否则 onShareAppMessage 不会触发）
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline'],
+  })
+  // #endif
 })
 
 onMounted(async () => {

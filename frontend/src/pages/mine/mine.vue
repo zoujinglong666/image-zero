@@ -44,7 +44,7 @@
 
         <!-- #ifndef MP-WEIXIN -->
         <button class="dev-login-btn" @click="handleAnonymousLogin" :loading="userStore.isLoggingIn">
-          <text>访客登录</text>
+          <text>游客登录</text>
         </button>
         <!-- #endif -->
 
@@ -228,7 +228,7 @@
           <u-cell-item
             title="反馈建议"
             icon="edit-pen"
-            @click="showFeedback"
+            @click="showFeedbackPopup = true"
           />
           <!-- 退出登录（仅已登录时显示） -->
           <u-cell-item
@@ -372,6 +372,57 @@
       </view>
     </u-popup>
 
+    <!-- 反馈建议弹窗 -->
+    <u-popup v-model="showFeedbackPopup" mode="center" :round="20" closeable>
+      <view class="feedback-popup">
+        <view class="feedback-header">
+          <text class="feedback-title">反馈建议</text>
+          <text class="feedback-sub">您的意见对我们很重要</text>
+        </view>
+
+        <!-- 反馈类型 -->
+        <view class="feedback-type-row">
+          <view
+            v-for="t in feedbackTypes"
+            :key="t.value"
+            class="type-chip"
+            :class="{ active: feedbackForm.type === t.value }"
+            @click="feedbackForm.type = t.value"
+          >
+            <text>{{ t.label }}</text>
+          </view>
+        </view>
+
+        <!-- 反馈内容 -->
+        <textarea
+          v-model="feedbackForm.content"
+          class="feedback-textarea"
+          placeholder="请详细描述您的问题或建议...（至少5个字）"
+          placeholder-class="textarea-ph"
+          maxlength="500"
+        />
+        <view class="char-count"><text>{{ feedbackForm.content.length }}/500</text></view>
+
+        <!-- 联系方式（可选） -->
+        <input
+          v-model="feedbackForm.contact"
+          class="feedback-input"
+          placeholder="邮箱或微信（选填，方便我们联系您）"
+          placeholder-class="input-ph"
+        />
+
+        <!-- 提交按钮 -->
+        <button
+          class="feedback-submit-btn"
+          :loading="feedbackLoading"
+          :disabled="feedbackForm.content.trim().length < 5"
+          @click="submitFeedback"
+        >
+          <text>提交反馈</text>
+        </button>
+      </view>
+    </u-popup>
+
     <!-- 尺寸选择弹窗 -->
     <u-popup
       v-model="showSizePopup"
@@ -409,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
@@ -436,7 +487,7 @@ const avatarText = computed(() => {
 // 登录描述
 const loginDesc = computed(() => {
   if (userStore.isWechatUser) return '已绑定微信账号'
-  if (userStore.isAnonymousUser) return '访客模式 · 功能受限'
+  if (userStore.isAnonymousUser || userStore.isGuestUser) return 'AI 驱动的图像提示词工具'
   return 'AI 驱动的图像提示词工具'
 })
 
@@ -499,15 +550,22 @@ async function doCheckin() {
     })
     if (res.data?.code === 0 && res.data?.data) {
       const d = res.data.data
-      checkinStatus.value = { checkedIn: true, streakDays: d.streakDays, nextReward: 0 }
-      uni.showToast({ title: d.message || '签到成功！', icon: 'success' })
+      checkinStatus.value = { checkedIn: true, streakDays: d.streakDays || checkinStatus.value.streakDays + 1, nextReward: 0 }
+      uni.hideLoading()
+      setTimeout(() => {
+        uni.showToast({ title: d.message || '签到成功！', icon: 'success' })
+      }, 50)
     } else {
-      uni.showToast({ title: res.data?.data?.message || res.data?.message || '签到失败', icon: 'none' })
+      uni.hideLoading()
+      setTimeout(() => {
+        uni.showToast({ title: res.data?.data?.message || res.data?.message || '签到失败', icon: 'none' })
+      }, 50)
     }
   } catch (err) {
-    uni.showToast({ title: '签到失败', icon: 'none' })
-  } finally {
     uni.hideLoading()
+    setTimeout(() => {
+      uni.showToast({ title: '签到失败，请检查网络', icon: 'none' })
+    }, 50)
   }
 }
 
@@ -522,6 +580,44 @@ const currentSize = ref(0)
 const showQualityPopup = ref(false)
 const showSizePopup = ref(false)
 const showProfilePopup = ref(false)
+
+// 反馈表单
+const showFeedbackPopup = ref(false)
+const feedbackLoading = ref(false)
+const feedbackTypes = [
+  { label: '💡 功能建议', value: 'suggestion' },
+  { label: '🐛 报告 Bug', value: 'bug_report' },
+  { label: '❓ 其他', value: 'feedback' },
+]
+const feedbackForm = reactive({
+  type: 'suggestion',
+  content: '',
+  contact: '',
+})
+
+async function submitFeedback() {
+  if (feedbackForm.content.trim().length < 5) {
+    uni.showToast({ title: '请至少输入5个字', icon: 'none' })
+    return
+  }
+  feedbackLoading.value = true
+  try {
+    await import('@/api/feedback').then(m => m.submitFeedback({
+      type: feedbackForm.type,
+      content: feedbackForm.content.trim(),
+      contact: feedbackForm.contact.trim() || undefined,
+    }))
+    uni.showToast({ title: '反馈已提交，感谢您！', icon: 'success' })
+    showFeedbackPopup.value = false
+    feedbackForm.content = ''
+    feedbackForm.contact = ''
+    feedbackForm.type = 'suggestion'
+  } catch (err: any) {
+    uni.showToast({ title: err?.message || '提交失败，请重试', icon: 'none' })
+  } finally {
+    feedbackLoading.value = false
+  }
+}
 const isSavingProfile = ref(false)
 
 // 临时存储的昵称（用于编辑时暂存）
@@ -595,10 +691,6 @@ const showAbout = () => {
   })
 }
 
-const showFeedback = () => {
-  uni.showToast({ title: '感谢您的反馈！', icon: 'none' })
-}
-
 // ====== 登录操作 ======
 const onUserCardTap = () => {
   if (userStore.isLoggedIn) {
@@ -617,21 +709,32 @@ const onUserCardTap = () => {
 }
 
 const handleWechatLogin = async () => {
-  const success = await userStore.wechatLogin()
-  if (success) {
-    uni.showToast({ title: '登录成功', icon: 'success' })
-    // 首次登录且没有设置过头像/昵称 → 弹出资料编辑弹窗
-    if (!userStore.avatarUrl && !userStore.nickname) {
-      pendingNickname.value = ''
-      showProfilePopup.value = true
+  try {
+    const success = await userStore.wechatLogin()
+    if (success) {
+      uni.showToast({ title: '登录成功', icon: 'success' })
+      // 首次登录且没有设置过头像/昵称 → 弹出资料编辑弹窗
+      if (!userStore.avatarUrl && !userStore.nickname) {
+        pendingNickname.value = ''
+        showProfilePopup.value = true
+      }
     }
+  } catch (err: any) {
+    // 明确在这里 reset 加载状态（双重保险，防止卡死）
+    userStore.isLoggingIn = false
+    uni.showToast({ title: err?.message || '登录失败，请重试', icon: 'none', duration: 3000 })
   }
 }
 
 const handleAnonymousLogin = async () => {
-  const success = await userStore.anonymousLogin()
-  if (success) {
-    uni.showToast({ title: '访客登录成功', icon: 'success' })
+  try {
+    const success = await userStore.guestLogin()
+    if (success) {
+      uni.showToast({ title: '游客登录成功', icon: 'success' })
+    }
+  } catch (err: any) {
+    userStore.isLoggingIn = false
+    uni.showToast({ title: err?.message || '登录失败，请检查后端服务', icon: 'none', duration: 3000 })
   }
 }
 
@@ -905,4 +1008,48 @@ $danger:     #E8947A;
   &:active { opacity: 0.85; }
 }
 .profile-safe-bottom { height: env(safe-area-inset-bottom); }
+
+// ── 反馈建议弹窗 ──
+.feedback-popup {
+  padding: 48rpx 40rpx;
+  width: 620rpx;
+}
+.feedback-header {
+  text-align: center; margin-bottom: 36rpx;
+  .feedback-title { font-size: 36rpx; font-weight: 800; color: $text-1; display: block; }
+  .feedback-sub { font-size: 24rpx; color: $text-3; margin-top: 8rpx; display: block; }
+}
+.feedback-type-row {
+  display: flex; gap: 16rpx; margin-bottom: 28rpx;
+}
+.type-chip {
+  flex: 1; text-align: center; padding: 14rpx 0;
+  border-radius: 12rpx; background: $bg-raised;
+  border: 2rpx solid $border; font-size: 24rpx; color: $text-2;
+  &.active {
+    background: rgba(139,157,200,0.12);
+    border-color: $primary; color: $primary; font-weight: 700;
+  }
+}
+.feedback-textarea {
+  width: 100%; height: 200rpx; padding: 20rpx;
+  background: $bg-raised; border-radius: 16rpx; border: 2rpx solid $border;
+  font-size: 28rpx; color: $text-1; box-sizing: border-box; resize: none;
+  .textarea-ph { color: $text-3; font-size: 26rpx; }
+}
+.char-count { text-align: right; font-size: 22rpx; color: $text-3; margin-top: 8rpx; }
+.feedback-input {
+  margin-top: 20rpx; width: 100%; padding: 20rpx;
+  background: $bg-raised; border-radius: 16rpx; border: 2rpx solid $border;
+  font-size: 28rpx; color: $text-1; box-sizing: border-box;
+  .input-ph { color: $text-3; font-size: 26rpx; }
+}
+.feedback-submit-btn {
+  margin-top: 32rpx; width: 100%; height: 88rpx;
+  background: $primary-grad; color: #FFFFFF;
+  font-size: 30rpx; font-weight: 700; border-radius: 999rpx; border: none;
+  display: flex; align-items: center; justify-content: center;
+  &:active { opacity: 0.85; }
+  &[disabled] { opacity: 0.4; }
+}
 </style>
