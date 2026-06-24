@@ -119,10 +119,10 @@ export function getLatestPosts(params: {
   page_size?: number
 }): Promise<PageResult<CommunityWork>> {
   const query = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
+    .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
     .join('&')
-  return http.get<PageResult<CommunityWork>>(`/community/latest${query ? `?${query}` : ''}`)
+  return http.get<PageResult<CommunityWork>>(`/commuity/latest${query ? `?${query}` : ''}`)
 }
 
 // ══════════════════════════════════════════
@@ -175,4 +175,40 @@ export function submitChallengeWork(params: {
 /** 为挑战作品点赞 */
 export function likeSubmission(id: number): Promise<void> {
   return http.post<void>(`/community/submissions/${id}/like`)
+}
+
+// ══════════════════════════════════════════
+//  管理员审核
+// ══════════════════════════════════════════
+
+/** 待审核内容 */
+export interface PendingReviewItem {
+  id: number
+  type: 'prompt' | 'submission'
+  user_id: number
+  user_name: string
+  title: string
+  prompt_text: string
+  image_url: string
+  status: string
+  created_at: string
+}
+
+/** 获取待审核列表 */
+export function getPendingReviews(page = 1, pageSize = 20): Promise<{
+  prompts: PendingReviewItem[]
+  submissions: PendingReviewItem[]
+  total: number
+}> {
+  return http.get(`/community/admin/pending-reviews?page=${page}&page_size=${pageSize}`)
+}
+
+/** 审核社区作品 */
+export function reviewPrompt(id: number, verdict: 'approved' | 'rejected', reason = ''): Promise<void> {
+  return http.post(`/community/admin/review/prompt/${id}`, { verdict, reason })
+}
+
+/** 审核挑战投稿 */
+export function reviewSubmission(id: number, verdict: 'approved' | 'rejected', reason = ''): Promise<void> {
+  return http.post(`/community/admin/review/submission/${id}`, { verdict, reason })
 }

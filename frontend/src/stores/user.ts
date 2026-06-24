@@ -505,6 +505,51 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn.value = true
   }
 
+  // ══════════════════════════════════════════
+  //  登录守卫 — 操作前确保已登录
+  // ══════════════════════════════════════════
+
+  /**
+   * 确保用户已登录；未登录时弹出提示引导登录。
+   * 用于上传、生图等需要身份认证的操作前。
+   * @returns true = 已登录可继续操作, false = 未登录已取消
+   */
+  function ensureLogin(): Promise<boolean> {
+    if (isLoggedIn.value) return Promise.resolve(true)
+
+    return new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '请先登录',
+        content: '上传图片与生成图片需要先登录账号',
+        confirmText: '立即登录',
+        cancelText: '取消',
+        success: async (res) => {
+          if (!res.confirm) {
+            resolve(false)
+            return
+          }
+          // 微信小程序 → 微信登录
+          // #ifdef MP-WEIXIN
+          const ok = await wechatLogin()
+          resolve(ok)
+          // #endif
+
+          // H5 环境 → 游客登录
+          // #ifdef H5
+          const okH5 = await guestLoginAction()
+          resolve(okH5)
+          // #endif
+
+          // 其他环境兜底
+          // #ifndef MP-WEIXIN || H5
+          const okOther = await guestLoginAction()
+          resolve(okOther)
+          // #endif
+        },
+      })
+    })
+  }
+
   return {
     // 状态
     userName,
@@ -527,6 +572,7 @@ export const useUserStore = defineStore('user', () => {
     // 认证方法
     login,
     logout,
+    ensureLogin,
     wechatLogin,
     wechatH5Login,
     handleWechatH5Callback,

@@ -784,7 +784,7 @@ public class AiService {
     private String buildAnalyzeSystemPrompt() {
         return """
                 你是一个专业的AI绘画提示词反推专家。根据用户提供的图片，分析并生成高质量的AI绘画提示词。
-                
+
                 请按以下JSON格式返回分析结果（不要包含markdown代码块标记）：
                 {
                   "style": "风格类型(flat/skeuomorphic/tech/minimal/illustration/3d/watercolor/pixel/other)",
@@ -807,7 +807,7 @@ public class AiService {
                     ]
                   }
                 }
-                
+
                 要求：
                 1. 中文提示词应详细描述画面内容、风格、构图、色彩
                 2. 英文提示词应适合直接输入Midjourney/Stable Diffusion/DALL-E等AI绘图工具

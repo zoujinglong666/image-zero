@@ -51,21 +51,6 @@
         <text class="login-hint">登录后可保存历史记录和收藏</text>
       </view>
 
-      <!-- VIP 状态卡片（暂时隐藏，待微信支付商户号申请完成后开放） -->
-      <!-- <view v-if="userStore.isLoggedIn" class="vip-card" @click="goToVip">
-        <view class="vip-card-left">
-          <u-icon name="crown-fill" size="40" :color="vipStatus.isVip ? '#FFD700' : '#9A9BAC'" />
-          <view class="vip-card-info">
-            <text class="vip-card-title">{{ vipStatus.isVip ? vipLevelName : '升级 VIP' }}</text>
-            <text class="vip-card-desc">{{ vipStatus.isVip ? `剩余 ${remainingDays} 天 · 每日无限次` : '解锁无限生图、免广告、高清下载' }}</text>
-          </view>
-        </view>
-        <view class="vip-card-right">
-          <text class="vip-card-action">{{ vipStatus.isVip ? '续费' : '去开通' }}</text>
-          <u-icon name="arrow-right" size="28" color="#8B9DC8" />
-        </view>
-      </view> -->
-
       <!-- 邀请好友入口 -->
       <view v-if="userStore.isLoggedIn" class="invite-card" @click="goToInvite">
         <view class="invite-card-left">
@@ -111,7 +96,12 @@
         <view class="grid-item">
           <u-icon name="photo-fill" size="40" color="#C4B5E0" />
           <text class="grid-num">{{ generatedCount }}</text>
-          <text class="grid-label">生成图片</text>
+          <text class="grid-label">今日配额</text>
+        </view>
+        <view class="grid-item" @click="goToFavorites">
+          <u-icon name="star-fill" size="40" color="#E8C97A" />
+          <text class="grid-num">{{ favoriteCount }}</text>
+          <text class="grid-label">收藏提示词</text>
         </view>
       </view>
 
@@ -129,6 +119,16 @@
               <text v-else class="cell-value-text">暂无新消息</text>
             </template>
           </u-cell-item>
+          <!-- 我的收藏 -->
+          <u-cell-item
+            title="我的收藏"
+            icon="star"
+            @click="goToFavorites"
+          >
+            <template #value>
+              <text class="cell-value-text">{{ favoriteCount }} 个</text>
+            </template>
+          </u-cell-item>
           <!-- 历史记录 -->
           <u-cell-item
             title="历史记录"
@@ -136,6 +136,21 @@
             icon="clock"
             @click="goToHistory"
           />
+        </u-cell-group>
+      </view>
+
+      <!-- 管理员专属：内容审核 -->
+      <view v-if="userStore.isAdmin" class="menu-section">
+        <u-cell-group :border="false">
+          <u-cell-item
+            title="内容审核"
+            icon="checkmark-circle"
+            @click="goToAudit"
+          >
+            <template #value>
+              <u-tag text="管理" type="primary" size="mini" plain />
+            </template>
+          </u-cell-item>
         </u-cell-group>
       </view>
 
@@ -348,44 +363,63 @@
       </view>
     </u-popup>
 
-    <!-- 反馈建议弹窗 -->
-    <u-popup v-model="showFeedbackPopup" mode="center" :round="20" closeable>
+    <!-- 反馈建议弹窗（Bottom Sheet） -->
+    <u-popup v-model="showFeedbackPopup" mode="bottom" border-radius="24" @close="showFeedbackPopup = false">
       <view class="feedback-popup">
+        <!-- 标题栏 -->
         <view class="feedback-header">
           <text class="feedback-title">反馈建议</text>
-          <text class="feedback-sub">您的意见对我们很重要</text>
+          <u-icon name="close" size="40" color="#9A9BAC" @click="showFeedbackPopup = false" />
         </view>
+        <text class="feedback-sub">您的意见对我们很重要，帮助图灵绘境变得更好</text>
 
         <!-- 反馈类型 -->
-        <view class="feedback-type-row">
-          <view
-            v-for="t in feedbackTypes"
-            :key="t.value"
-            class="type-chip"
-            :class="{ active: feedbackForm.type === t.value }"
-            @click="feedbackForm.type = t.value"
-          >
-            <text>{{ t.label }}</text>
+        <view class="feedback-section">
+          <text class="feedback-label">问题类型</text>
+          <view class="feedback-type-row">
+            <view
+              v-for="t in feedbackTypes"
+              :key="t.value"
+              class="type-chip"
+              :class="{ active: feedbackForm.type === t.value }"
+              @click="feedbackForm.type = t.value"
+            >
+              <text>{{ t.label }}</text>
+            </view>
           </view>
         </view>
 
         <!-- 反馈内容 -->
-        <textarea
-          v-model="feedbackForm.content"
-          class="feedback-textarea"
-          placeholder="请详细描述您的问题或建议...（至少5个字）"
-          placeholder-class="textarea-ph"
-          maxlength="500"
-        />
-        <view class="char-count"><text>{{ feedbackForm.content.length }}/500</text></view>
+        <view class="feedback-section">
+          <view class="feedback-label-row">
+            <text class="feedback-label">详细描述</text>
+            <text class="char-count" :class="{ 'char-warn': feedbackForm.content.length >= 450 }">
+              {{ feedbackForm.content.length }}/500
+            </text>
+          </view>
+          <textarea
+            v-model="feedbackForm.content"
+            class="feedback-textarea"
+            placeholder="请详细描述您遇到的问题或建议，至少 5 个字&#10;&#10;例如：在使用 XX 功能时，出现了 XX 情况..."
+            placeholder-class="textarea-ph"
+            maxlength="500"
+            :auto-height="false"
+          />
+        </view>
 
         <!-- 联系方式（可选） -->
-        <input
-          v-model="feedbackForm.contact"
-          class="feedback-input"
-          placeholder="邮箱或微信（选填，方便我们联系您）"
-          placeholder-class="input-ph"
-        />
+        <view class="feedback-section">
+          <view class="feedback-label-row">
+            <text class="feedback-label">联系方式</text>
+            <text class="feedback-optional">选填</text>
+          </view>
+          <input
+            v-model="feedbackForm.contact"
+            class="feedback-input"
+            placeholder="邮箱或微信号，方便我们回复您"
+            placeholder-class="input-ph"
+          />
+        </view>
 
         <!-- 提交按钮 -->
         <button
@@ -396,6 +430,7 @@
         >
           <text>提交反馈</text>
         </button>
+        <view class="feedback-safe-bottom" />
       </view>
     </u-popup>
 
@@ -441,9 +476,8 @@ import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'
+import { getFavoriteList } from '@/api/prompt'
 import { useTheme, http } from 'uview-pro'
-import { getVipStatus, getRemainingDays } from '@/api/payment'
-import type { VipStatus } from '@/api/payment'
 
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
@@ -470,37 +504,43 @@ const loginDesc = computed(() => {
 // 版本
 const appVersion = '1.2.0'
 
-// VIP 状态
-const vipStatus = ref<VipStatus>({ vipLevel: 0, isVip: false, expireAt: 0, dailyQuota: 10 })
-const vipLevelName = computed(() => {
-  const names = ['免费', '基础版', '专业版', '旗舰版']
-  return names[vipStatus.value.vipLevel] || '免费'
-})
-const remainingDays = computed(() => getRemainingDays(vipStatus.value.expireAt))
-
 // 签到状态
 const checkinStatus = ref({ checkedIn: false, streakDays: 0, nextReward: 1 })
 
 // 统计
-const favoriteCount = computed(() => (historyStore?.history || []).filter(h => h.favorite).length)
-const savedPrompts = computed(() => [])
+const favoriteCount = ref(0)
 const generatedCount = ref(0)
 
+// 获取收藏总数
+async function fetchFavoriteCount() {
+  try {
+    const result = await getFavoriteList({ page: 1, page_size: 1 })
+    favoriteCount.value = result.pagination.total || 0
+  } catch {
+    favoriteCount.value = 0
+  }
+}
+
 // 每次页面显示时刷新最新资料（头像、昵称等）
-onShow(() => {
+onShow(async () => {
   if (userStore.isLoggedIn) {
     userStore.loadProfile()
+    fetchFavoriteCount()
+    // 加载每日配额
+    try {
+      const data: any = await http.get('/data/profile')
+      if (data) {
+        generatedCount.value = data.dailyQuota || 0
+      }
+    } catch (e) {
+      console.warn('[Mine] 加载配额失败:', e)
+    }
   }
 })
 
-// 加载 VIP 状态和签到状态
+// 加载签到状态
 onMounted(async () => {
   if (userStore.isLoggedIn) {
-    try {
-      vipStatus.value = await getVipStatus()
-    } catch (err) {
-      console.error('[Mine] 获取VIP状态失败:', err)
-    }
     try {
       const data: any = await http.get('/daily/status')
       if (data) {
@@ -596,28 +636,24 @@ const goToHistory = () => {
   uni.switchTab({ url: '/pages/history/history' })
 }
 
+const goToFavorites = () => {
+  uni.navigateTo({ url: '/pages/favorites/favorites' })
+}
+
 const goToNotifications = () => {
   uni.navigateTo({ url: '/pages/notification/notification' })
+}
+
+const goToAudit = () => {
+  uni.navigateTo({ url: '/pages/admin/audit' })
 }
 
 const goToSettings = () => {
   uni.navigateTo({ url: '/pages/about/settings' })
 }
 
-const goToVip = () => {
-  uni.navigateTo({ url: '/pages/vip/vip' })
-}
-
 const goToInvite = () => {
   uni.navigateTo({ url: '/pages/invite/invite' })
-}
-
-const showFavorites = () => {
-  uni.showToast({ title: '收藏功能开发中', icon: 'none' })
-}
-
-const showSavedPrompts = () => {
-  uni.showToast({ title: '提示词管理开发中', icon: 'none' })
 }
 
 const showQualityPicker = () => {
@@ -815,7 +851,7 @@ $warning:     #E8C97A;
 $danger:     #E8947A;
 
 .page { min-height: 100vh; background: $bg-page; }
-.main-scroll { height: calc(100vh - 44px); }
+.main-scroll { height: calc(100vh - 44px - 50px); } // 44px navbar + 50px tabbar
 
 // ── User Card ──
 .user-card {
@@ -855,35 +891,6 @@ $danger:     #E8947A;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
 }
 .cell-value-text { font-size: 24rpx; color: $text-3; }
-
-// ── VIP Card ──
-.vip-card {
-  display: flex; align-items: center; justify-content: space-between;
-  margin: 20rpx 24rpx 0; padding: 28rpx 32rpx;
-  background: linear-gradient(135deg, #8B9DC8 0%, #C4B5E0 100%);
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.25);
-
-  &:active { opacity: 0.9; }
-}
-.vip-card-left {
-  display: flex; align-items: center; gap: 20rpx;
-}
-.vip-card-info {
-  display: flex; flex-direction: column; gap: 6rpx;
-}
-.vip-card-title {
-  font-size: 30rpx; font-weight: 700; color: #FFFFFF;
-}
-.vip-card-desc {
-  font-size: 22rpx; color: rgba(255,255,255,0.85);
-}
-.vip-card-right {
-  display: flex; align-items: center; gap: 8rpx;
-}
-.vip-card-action {
-  font-size: 26rpx; color: #FFFFFF; font-weight: 600;
-}
 
 // ── Invite Card ──
 .invite-card {
@@ -978,47 +985,76 @@ $danger:     #E8947A;
 }
 .profile-safe-bottom { height: env(safe-area-inset-bottom); }
 
-// ── 反馈建议弹窗 ──
+// ── 反馈建议弹窗（Bottom Sheet）──
 .feedback-popup {
-  padding: 48rpx 40rpx;
-  width: 620rpx;
+  padding: 32rpx 32rpx 0;
 }
 .feedback-header {
-  text-align: center; margin-bottom: 36rpx;
-  .feedback-title { font-size: 36rpx; font-weight: 800; color: $text-1; display: block; }
-  .feedback-sub { font-size: 24rpx; color: $text-3; margin-top: 8rpx; display: block; }
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8rpx;
 }
+.feedback-title { font-size: 34rpx; font-weight: 800; color: $text-1; }
+.feedback-sub {
+  font-size: 24rpx; color: $text-3; line-height: 1.6;
+  display: block; margin-bottom: 28rpx;
+}
+.feedback-section { margin-bottom: 24rpx; }
+.feedback-label {
+  font-size: 26rpx; font-weight: 700; color: $text-1;
+  display: block; margin-bottom: 14rpx;
+}
+.feedback-label-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.feedback-optional { font-size: 22rpx; color: $text-3; }
+
 .feedback-type-row {
-  display: flex; gap: 16rpx; margin-bottom: 28rpx;
+  display: flex; gap: 14rpx;
 }
 .type-chip {
-  flex: 1; text-align: center; padding: 14rpx 0;
-  border-radius: 12rpx; background: $bg-raised;
+  flex: 1; text-align: center; padding: 16rpx 0;
+  border-radius: 14rpx; background: $bg-raised;
   border: 2rpx solid $border; font-size: 24rpx; color: $text-2;
+  transition: all 0.15s;
   &.active {
     background: rgba(139,157,200,0.12);
     border-color: $primary; color: $primary; font-weight: 700;
   }
 }
+
 .feedback-textarea {
-  width: 100%; height: 200rpx; padding: 20rpx;
-  background: $bg-raised; border-radius: 16rpx; border: 2rpx solid $border;
-  font-size: 28rpx; color: $text-1; box-sizing: border-box; resize: none;
-  .textarea-ph { color: $text-3; font-size: 26rpx; }
+  width: 100%; height: 300rpx; padding: 22rpx 24rpx;
+  background: $bg-raised; border-radius: 18rpx; border: 2rpx solid $border;
+  font-size: 28rpx; color: $text-1; line-height: 1.7;
+  box-sizing: border-box; resize: none;
+  transition: border-color 0.15s;
+  &:focus { border-color: rgba(139,157,200,0.4); }
+  .textarea-ph { color: $text-3; font-size: 26rpx; line-height: 1.7; }
 }
-.char-count { text-align: right; font-size: 22rpx; color: $text-3; margin-top: 8rpx; }
+
+.char-count {
+  font-size: 22rpx; color: $text-3;
+  &.char-warn { color: $warning; }
+}
+
 .feedback-input {
-  margin-top: 20rpx; width: 100%; padding: 20rpx;
-  background: $bg-raised; border-radius: 16rpx; border: 2rpx solid $border;
+  width: 100%; height: 88rpx; padding: 0 24rpx;
+  background: $bg-raised; border-radius: 18rpx; border: 2rpx solid $border;
   font-size: 28rpx; color: $text-1; box-sizing: border-box;
+  transition: border-color 0.15s;
+  &:focus { border-color: rgba(139,157,200,0.4); }
   .input-ph { color: $text-3; font-size: 26rpx; }
 }
+
 .feedback-submit-btn {
-  margin-top: 32rpx; width: 100%; height: 88rpx;
+  margin-top: 8rpx; width: 100%; height: 96rpx;
   background: $primary-grad; color: #FFFFFF;
   font-size: 30rpx; font-weight: 700; border-radius: 999rpx; border: none;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.25);
   &:active { opacity: 0.85; }
-  &[disabled] { opacity: 0.4; }
+  &[disabled] { opacity: 0.4; box-shadow: none; }
 }
+.feedback-safe-bottom { height: calc(env(safe-area-inset-bottom) + 20rpx); }
 </style>

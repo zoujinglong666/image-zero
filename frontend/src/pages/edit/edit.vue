@@ -523,7 +523,7 @@ onLoad((options) => {
       primaryColor: '#8B9DC8',
       prompt: {
         english: tmplPrompt,
-        chinese: options?.tmplId ? `（模板 #${options.tmplId}）点击上方英文提示词可编辑` : '来自词库模板的提示词，可自由编辑',
+        chinese: '',
         keywords: extractKeywords(tmplPrompt),
       },
     }

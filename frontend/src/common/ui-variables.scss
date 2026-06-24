@@ -1,36 +1,36 @@
 // 图灵绘境 - 统一UI变量
-// 灵动紫主题色系 (参考微信大厂风格)
+// Mist Canvas 薄雾白主题色系
 
 // ====== 主色 ======
-$color-primary: #7C4DFF;           // 灵动紫 - 主色
-$color-primary-dark: #6200EA;     // 深紫 - 渐变起点、强调
-$color-primary-light: #B388FF;    // 浅紫 - hover、次要强调
-$color-primary-bg: #EDE7F6;        // 淡紫底 - badge、标签底色
-$color-primary-border: #E8DEF8;   // 紫色边框
+$color-primary: #8B9DC8;           // 雾蓝 - 主色
+$color-primary-dark: #6B7FA8;     // 深雾蓝 - 渐变起点、强调
+$color-primary-light: #A3B0CC;    // 浅雾蓝 - hover、次要强调
+$color-primary-bg: rgba(139,157,200,0.1);  // 淡蓝底 - badge、标签底色
+$color-primary-border: rgba(139,157,200,0.25); // 蓝色边框
 
 // ====== 功能色 ======
-$color-success: #00C853;           // 成功绿
-$color-warning: #FF9100;           // 提示橙
-$color-error: #FF5252;             // 错误红
-$color-info: #78909C;              // 信息灰
+$color-success: #A3B8A5;           // 鼠尾草绿
+$color-warning: #E8C97A;           // 柔金
+$color-error: #E8947A;             // 柔珊瑚
+$color-info: #9A9BAC;              // 信息灰
 
 // ====== 文字色 ======
-$color-text-primary: #1C1C1C;      // 主要文字
-$color-text-secondary: #666666;    // 次要文字
-$color-text-tertiary: #999999;     // 辅助文字
-$color-text-placeholder: #CCCCCC;  // 占位文字
+$color-text-primary: #2C2E3A;      // 主文字（深海军蓝）
+$color-text-secondary: #6B6E7D;    // 次要文字
+$color-text-tertiary: #9A9BAC;     // 辅助文字
+$color-text-placeholder: #C5C8D0;  // 占位文字
 $color-text-inverse: #FFFFFF;      // 反色文字
 
 // ====== 背景色 ======
-$color-bg-page: #F5F6F7;          // 页面背景
+$color-bg-page: #F6F7FB;           // 页面背景（微冷雾蓝灰）
 $color-bg-card: #FFFFFF;           // 卡片背景
-$color-bg-grey: #FAFAFA;          // 浅灰背景
-$color-bg-hover: #F7F8FA;         // 悬停背景
+$color-bg-raised: #F0F1F5;         // 凸起表面
+$color-bg-hover: #F0F1F5;          // 悬停背景
 
 // ====== 边框色 ======
-$color-border: #E8E8E8;           // 通用边框
-$color-border-light: #F0F0F0;     // 浅色边框
+$color-border: rgba(0,0,0,0.05);   // 通用边框
+$color-border-light: rgba(0,0,0,0.03); // 浅色边框
 
 // ====== 渐变 ======
-$gradient-primary: linear-gradient(135deg, #6200EA, #7C4DFF);  // 主渐变
-$gradient-primary-soft: linear-gradient(135deg, #7C4DFF, #B388FF); // 柔和渐变
+$gradient-primary: linear-gradient(135deg, #8B9DC8, #A3B0CC);  // 主渐变
+$gradient-secondary: linear-gradient(135deg, #8B9DC8, #C4B5E0); // 辅渐变（雾蓝→薰衣草）

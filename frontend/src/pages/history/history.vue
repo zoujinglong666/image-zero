@@ -49,16 +49,50 @@
         </view>
       </view>
 
+      <!-- 状态筛选 Tab -->
+      <view class="filter-tabs">
+        <view
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          class="filter-tab"
+          :class="{ active: activeFilter === tab.value }"
+          @click="activeFilter = tab.value"
+        >
+          <text>{{ tab.label }}</text>
+          <view v-if="tab.count > 0" class="filter-count"><text>{{ tab.count }}</text></view>
+        </view>
+      </view>
+
+      <!-- 批量操作栏 -->
+      <view v-if="batchMode" class="batch-bar">
+        <view class="batch-info">
+          <text>已选 {{ selectedIds.length }} 项</text>
+        </view>
+        <view class="batch-actions">
+          <view class="batch-btn" @click="batchFavorite">
+            <u-icon name="star" size="32" color="#8B9DC8" />
+            <text>收藏</text>
+          </view>
+          <view class="batch-btn batch-danger" @click="batchDelete">
+            <u-icon name="trash" size="32" color="#E8947A" />
+            <text>删除</text>
+          </view>
+          <view class="batch-btn" @click="batchMode = false">
+            <text>取消</text>
+          </view>
+        </view>
+      </view>
+
       <!-- 生成任务区域 -->
-      <view v-if="generateTasks.length > 0" class="task-section">
+      <view v-if="filteredTasks.length > 0" class="task-section">
         <view class="section-header">
           <text class="section-title">生成任务</text>
-          <text class="section-count">{{ generateTasks.length }} 个</text>
+          <text class="section-count">{{ filteredTasks.length }} 个</text>
         </view>
 
         <view class="task-list">
           <view
-            v-for="task in generateTasks"
+            v-for="task in filteredTasks"
             :key="task.id"
             class="task-card"
             :class="'task-' + task.status"
@@ -67,10 +101,13 @@
             <view v-if="task.status === 'pending' || task.status === 'processing'" class="task-processing">
               <view class="task-thumb-placeholder">
                 <view class="task-spinner" />
-                <text class="task-status-text">{{ task.status === 'pending' ? '等待中...' : 'AI 生成中...' }}</text>
+                <text class="task-status-text">{{ task.status === 'pending' ? '等待中...' : `AI 生成中 ${getTaskProgress(task)}%` }}</text>
               </view>
               <view class="task-body">
                 <view class="task-prompt">{{ task.prompt }}</view>
+                <view v-if="task.status === 'processing'" class="task-progress-bar">
+                  <view class="task-progress-fill" :style="{ width: getTaskProgress(task) + '%' }" />
+                </view>
                 <view class="task-meta">
                   <text class="task-model">{{ task.provider }} · {{ task.model }}</text>
                   <text class="task-time">{{ formatTaskTime(task.createdAt) }}</text>
@@ -178,8 +215,14 @@
               v-for="(item, ii) in group.items"
               :key="item.id"
               class="history-card"
-              @tap="viewDetail(item)"
+              :class="{ 'card-selected': selectedIds.includes(item.id) }"
+              @tap="batchMode ? toggleSelect(item.id) : viewDetail(item)"
+              @longpress="enterBatchMode(item.id)"
             >
+              <!-- 批量选择指示器 -->
+              <view v-if="batchMode" class="card-checkbox" :class="{ checked: selectedIds.includes(item.id) }">
+                <u-icon v-if="selectedIds.includes(item.id)" name="checkmark" size="24" color="#FFF" />
+              </view>
               <!-- 缩略图 -->
               <view class="card-thumb">
                 <!-- #ifdef H5 -->
@@ -251,16 +294,90 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
+import { useUserStore } from '@/stores/user'
 import { getTaskList, type DrawingTask } from '@/api/image'
 
 const historyStore = useHistoryStore()
+const userStore = useUserStore()
 
 // ─── 生成任务 ────────────────────────
 const generateTasks = ref<DrawingTask[]>([])
 let pollingTimer: ReturnType<typeof setInterval> | null = null
 
+// ─── 状态筛选 ────────────────────────
+const activeFilter = ref('all')
+const filterTabs = computed(() => {
+  const tasks = generateTasks.value
+  return [
+    { label: '全部', value: 'all', count: 0 },
+    { label: '处理中', value: 'processing', count: tasks.filter(t => t.status === 'pending' || t.status === 'processing').length },
+    { label: '已完成', value: 'completed', count: tasks.filter(t => t.status === 'completed').length },
+    { label: '失败', value: 'failed', count: tasks.filter(t => t.status === 'failed').length },
+  ]
+})
+const filteredTasks = computed(() => {
+  if (activeFilter.value === 'all') return generateTasks.value
+  if (activeFilter.value === 'processing') return generateTasks.value.filter(t => t.status === 'pending' || t.status === 'processing')
+  return generateTasks.value.filter(t => t.status === activeFilter.value)
+})
+
+// ─── 批量操作 ────────────────────────
+const batchMode = ref(false)
+const selectedIds = ref<string[]>([])
+
+function enterBatchMode(id: string) {
+  if (batchMode.value) return
+  batchMode.value = true
+  selectedIds.value = [id]
+}
+
+function toggleSelect(id: string) {
+  const idx = selectedIds.value.indexOf(id)
+  if (idx >= 0) selectedIds.value.splice(idx, 1)
+  else selectedIds.value.push(id)
+}
+
+function batchFavorite() {
+  selectedIds.value.forEach(id => {
+    const item = (historyStore?.history || []).find(h => h.id === id)
+    if (item && !item.favorite) {
+      item.favorite = true
+      historyStore.updateFavorite(id, true)
+    }
+  })
+  uni.showToast({ title: `已收藏 ${selectedIds.value.length} 项`, icon: 'success' })
+  batchMode.value = false
+  selectedIds.value = []
+}
+
+function batchDelete() {
+  uni.showModal({
+    title: '批量删除',
+    content: `确定要删除选中的 ${selectedIds.value.length} 条记录吗？`,
+    success: (res) => {
+      if (res.confirm) {
+        selectedIds.value.forEach(id => historyStore.removeHistory(id))
+        uni.showToast({ title: '已删除', icon: 'success' })
+        batchMode.value = false
+        selectedIds.value = []
+      }
+    }
+  })
+}
+
+// ─── 任务进度模拟 ────────────────────────
+function getTaskProgress(task: DrawingTask): number {
+  if (task.status === 'pending') return 0
+  if (task.status === 'completed') return 100
+  // processing: 基于创建时间估算（30s 内从 10% 到 90%）
+  const elapsed = Date.now() - new Date(task.createdAt).getTime()
+  const progress = Math.min(90, Math.max(10, Math.floor(elapsed / 300)))
+  return progress
+}
+
 /** 加载生图任务列表 */
 async function loadTasks() {
+  if (!userStore.isLoggedIn) return
   try {
     const tasks = await getTaskList(20)
     generateTasks.value = tasks || []
@@ -295,9 +412,11 @@ function stopPolling() {
   }
 }
 
-// 每次页面显示时刷新
+// 每次页面显示时刷新（仅登录状态下加载任务）
 onShow(() => {
-  loadTasks()
+  if (userStore.isLoggedIn) {
+    loadTasks()
+  }
 })
 
 onUnmounted(() => {
@@ -560,7 +679,7 @@ $warning:     #E8C97A;
 $danger:     #E8947A;
 
 .page { min-height: 100vh; background: $bg-page; }
-.main-scroll { height: calc(100vh - 44px); }
+.main-scroll { height: calc(100vh - 44px - 50px); }
 
 // ── Stats Bar ──
 .stats-bar {
@@ -576,6 +695,62 @@ $danger:     #E8947A;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
 }
 .stat-label { font-size: 22rpx; color: $text-3; }
+
+// ── Filter Tabs ──
+.filter-tabs {
+  display: flex; gap: 12rpx;
+  padding: 16rpx 24rpx;
+  background: $bg-card;
+  border-bottom: 1rpx solid $border;
+}
+.filter-tab {
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 10rpx 24rpx; border-radius: 999rpx;
+  background: $bg-raised; font-size: 24rpx; color: $text-2;
+  border: 1rpx solid transparent;
+  transition: all 0.2s;
+  &.active {
+    background: rgba(139,157,200,0.12);
+    color: $primary; font-weight: 700;
+    border-color: rgba(139,157,200,0.25);
+  }
+}
+.filter-count {
+  font-size: 18rpx; color: $text-3;
+  background: rgba(0,0,0,0.04); padding: 2rpx 10rpx; border-radius: 10rpx;
+  .active & { background: rgba(139,157,200,0.15); color: $primary; }
+}
+
+// ── Batch Bar ──
+.batch-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16rpx 24rpx;
+  background: rgba(139,157,200,0.06);
+  border-bottom: 1rpx solid rgba(139,157,200,0.15);
+}
+.batch-info { font-size: 26rpx; color: $primary; font-weight: 600; }
+.batch-actions { display: flex; gap: 16rpx; }
+.batch-btn {
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 10rpx 20rpx; border-radius: 999rpx;
+  background: $bg-card; border: 1rpx solid $border;
+  font-size: 24rpx; color: $text-2;
+  &:active { opacity: 0.7; }
+  text { font-size: 24rpx; }
+}
+.batch-danger { border-color: rgba(232,148,122,0.3); }
+
+// ── Task Progress Bar ──
+.task-progress-bar {
+  height: 6rpx; border-radius: 3rpx;
+  background: $bg-raised; overflow: hidden;
+  margin: 8rpx 0;
+}
+.task-progress-fill {
+  height: 100%; border-radius: 3rpx;
+  background: $primary-grad;
+  transition: width 0.5s ease;
+}
 
 // ── Search ──
 .search-wrap { padding: 20rpx 24rpx; background: $bg-card;
@@ -598,7 +773,23 @@ $danger:     #E8947A;
   background: $bg-card; border-radius: 20rpx; overflow: hidden;
   border: 1rpx solid $border;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  transition: all 0.15s;
+  position: relative;
   &:active { transform: scale(0.98); }
+  &.card-selected {
+    border-color: $primary;
+    box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.15);
+  }
+}
+.card-checkbox {
+  position: absolute; top: 16rpx; left: 16rpx; z-index: 3;
+  width: 40rpx; height: 40rpx; border-radius: 50%;
+  background: rgba(255,255,255,0.9); border: 2rpx solid $border;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  &.checked {
+    background: $primary-grad; border-color: $primary;
+  }
 }
 .card-thumb { position: relative; height: 240rpx; overflow: hidden; }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; }

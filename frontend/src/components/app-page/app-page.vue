@@ -31,9 +31,9 @@ defineProps({
 })
 
 const background = reactive({
-  backgroundColor: 'var(--u-type-primary)',
-  // 渐变色
-  backgroundImage: 'linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))',
+  backgroundColor: '#FFFFFF',
+  // 纯白背景，与所有页面 Mist Canvas 导航栏一致
+  backgroundImage: 'none',
 })
 </script>
 
@@ -42,8 +42,8 @@ const background = reactive({
     <!-- #ifndef MP-ALIPAY -->
     <u-navbar
       v-if="!hideNav" :is-back="showNavBack && !showTabbar" :title="navTitle" :background="background" :is-fixed="true"
-      :immersive="false" back-icon-name="arrow-leftward" title-width="350" title-color="#ffffff"
-      back-icon-color="#ffffff"
+      :immersive="false" back-icon-name="arrow-leftward" title-width="350" title-color="#2C2E3A"
+      back-icon-color="#2C2E3A"
     />
     <!-- #endif -->
     <u-transition name="slide-left" :appear="true">
@@ -57,19 +57,14 @@ const background = reactive({
 .app-page {
     width: 100%;
     min-height: 100vh;
-    // padding-bottom: 30rpx;
     overflow-y: auto;
-    background-color: $u-bg-white;
+    background-color: #F6F7FB;
     -webkit-font-smoothing: antialiased;
-    color: $u-main-color;
+    color: #2C2E3A;
     transition: background 0.3s ease;
 
     &.has-tabbar {
-        background-image: linear-gradient(135deg,
-                rgba(var(--u-type-primary-rgb, 41, 121, 255), 0.04) 0%,
-                rgba(var(--u-type-success-rgb, 25, 190, 107), 0.04) 40%,
-                rgba(var(--u-type-warning-rgb, 255, 153, 0), 0.04) 100%);
+        background-image: none;
     }
-
 }
 </style>

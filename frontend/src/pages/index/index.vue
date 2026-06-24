@@ -31,26 +31,53 @@
       <!-- ====== 搜索框 ====== -->
       <view class="search-bar animate-item" @click="goToSearch">
         <u-icon name="search" size="36" color="#9A9BAC" />
-        <text class="search-placeholder">搜索提示词、风格、标签...</text>
+        <text class="search-placeholder">{{ hotSearchKeywords[hotSearchIdx] }}</text>
       </view>
 
       <!-- ====== 核心功能区：上传图片获取提示词 ====== -->
-      <view class="hero-upload animate-item" @click="triggerUpload">
+      <view class="hero-upload animate-item" :class="{ 'upload-active': uploadPressed }" @click="triggerUpload" @touchstart="uploadPressed = true" @touchend="uploadPressed = false" @touchcancel="uploadPressed = false">
+        <view class="hero-bg-orbs">
+          <view class="hero-orb hero-orb-1" />
+          <view class="hero-orb hero-orb-2" />
+          <view class="hero-orb hero-orb-3" />
+        </view>
         <view class="upload-area">
           <view class="upload-icon-wrap">
-            <view class="upload-ring" />
-            <u-icon name="plus" size="56" color="#8B9DC8" />
+            <view class="upload-ring upload-ring-1" />
+            <view class="upload-ring upload-ring-2" />
+            <view class="upload-icon-inner">
+              <u-icon name="camera" size="48" color="#FFFFFF" />
+            </view>
           </view>
           <text class="upload-title">{{ sceneUploadTitle }}</text>
           <text class="upload-desc">{{ sceneUploadDesc }}</text>
           <view v-if="selectedScene" class="scene-badge">
             <text>{{ sceneConfig[selectedScene]?.name || '' }}</text>
           </view>
+          <view v-else class="hero-cta">
+            <text>点击或拖拽图片到这里</text>
+          </view>
         </view>
-        <view class="hero-glow" />
       </view>
 
       <!-- ====== 场景选择（四大垂直场景）====== -->
+      <view class="trust-strip animate-item">
+        <view class="trust-item">
+          <text class="trust-num">10万+</text>
+          <text class="trust-label">创作者信赖</text>
+        </view>
+        <view class="trust-divider" />
+        <view class="trust-item">
+          <text class="trust-num">50万+</text>
+          <text class="trust-label">图片已生成</text>
+        </view>
+        <view class="trust-divider" />
+        <view class="trust-item">
+          <text class="trust-num">3秒</text>
+          <text class="trust-label">极速出图</text>
+        </view>
+      </view>
+
       <view class="scene-section">
         <view class="section-header section-header-col">
           <view class="section-title-row">
@@ -60,80 +87,72 @@
           <text class="section-sub-title">选一个场景，AI 自动优化分析策略</text>
         </view>
 
-        <view class="scene-grid">
+        <view class="scene-grid-2x2">
           <!-- 场景1: 电商主图 -->
-          <view class="scene-card animate-item" :class="{ active: selectedScene === 'ecommerce' }" @click="selectScene('ecommerce')">
-            <view class="scene-icon-wrap scene-icon-gold">
-              <text class="scene-emoji">🛒</text>
+          <view class="sc2-card sc2-gold" :class="{ active: selectedScene === 'ecommerce' }" @click="selectScene('ecommerce')">
+            <view class="sc2-deco" />
+            <view class="sc2-icon sc2-icon-gold">
+              <text class="sc2-emoji">🛒</text>
             </view>
-            <view class="scene-body">
-              <text class="scene-name">电商主图</text>
-              <text class="scene-desc">反推竞品构图/光影/材质 → 换色换背景一键出图</text>
-              <view class="scene-tags">
-                <text class="scene-tag">白底图</text>
-                <text class="scene-tag">场景图</text>
-                <text class="scene-tag">多尺寸</text>
-              </view>
+            <text class="sc2-name">电商主图</text>
+            <text class="sc2-desc">反推构图·换色换背景</text>
+            <view class="sc2-tags">
+              <text class="sc2-tag">白底图</text>
+              <text class="sc2-tag">多尺寸</text>
             </view>
-            <view v-if="selectedScene === 'ecommerce'" class="scene-check">
-              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            <view v-if="selectedScene === 'ecommerce'" class="sc2-check">
+              <u-icon name="checkmark" size="24" color="#FFF" />
             </view>
           </view>
 
           <!-- 场景2: 社交头像 -->
-          <view class="scene-card animate-item" :class="{ active: selectedScene === 'avatar' }" @click="selectScene('avatar')">
-            <view class="scene-icon-wrap scene-icon-pink">
-              <text class="scene-emoji">📱</text>
+          <view class="sc2-card sc2-pink" :class="{ active: selectedScene === 'avatar' }" @click="selectScene('avatar')">
+            <view class="sc2-deco" />
+            <view class="sc2-icon sc2-icon-pink">
+              <text class="sc2-emoji">📱</text>
             </view>
-            <view class="scene-body">
-              <text class="scene-name">社交头像</text>
-              <text class="scene-desc">提取参考图风格 → 换脸/换背景/换发型 → 多尺寸导出</text>
-              <view class="scene-tags">
-                <text class="scene-tag">1:1</text>
-                <text class="scene-tag">9:16</text>
-                <text class="scene-tag">病毒传播</text>
-              </view>
+            <text class="sc2-name">社交头像</text>
+            <text class="sc2-desc">换脸换背景·多尺寸</text>
+            <view class="sc2-tags">
+              <text class="sc2-tag">1:1</text>
+              <text class="sc2-tag">9:16</text>
             </view>
-            <view v-if="selectedScene === 'avatar'" class="scene-check">
-              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            <view v-if="selectedScene === 'avatar'" class="sc2-check">
+              <u-icon name="checkmark" size="24" color="#FFF" />
             </view>
           </view>
 
           <!-- 场景3: PPT配图 -->
-          <view class="scene-card animate-item" :class="{ active: selectedScene === 'ppt' }" @click="selectScene('ppt')">
-            <view class="scene-icon-wrap scene-icon-green">
-              <text class="scene-emoji">📊</text>
+          <view class="sc2-card sc2-green" :class="{ active: selectedScene === 'ppt' }" @click="selectScene('ppt')">
+            <view class="sc2-deco" />
+            <view class="sc2-icon sc2-icon-green">
+              <text class="sc2-emoji">📊</text>
             </view>
-            <view class="scene-body">
-              <text class="scene-name">PPT配图</text>
-              <text class="scene-desc">上传风格参考 → 匹配配色排版 → 批量生成商务插图</text>
-              <view class="scene-tags">
-                <text class="scene-tag">16:9</text>
-                <text class="scene-tag">扁平风</text>
-                <text class="scene-tag">批量</text>
-              </view>
+            <text class="sc2-name">PPT配图</text>
+            <text class="sc2-desc">配色排版·批量生成</text>
+            <view class="sc2-tags">
+              <text class="sc2-tag">16:9</text>
+              <text class="sc2-tag">扁平风</text>
             </view>
-            <view v-if="selectedScene === 'ppt'" class="scene-check">
-              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            <view v-if="selectedScene === 'ppt'" class="sc2-check">
+              <u-icon name="checkmark" size="24" color="#FFF" />
             </view>
           </view>
 
           <!-- 场景4: 风格迁移 -->
-          <view class="scene-card animate-item" :class="{ active: selectedScene === 'style-transfer' }" @click="selectScene('style-transfer')">
-            <view class="scene-icon-wrap scene-icon-purple">
-              <text class="scene-emoji">🎨</text>
+          <view class="sc2-card sc2-purple" :class="{ active: selectedScene === 'style-transfer' }" @click="selectScene('style-transfer')">
+            <view class="sc2-deco" />
+            <view class="sc2-icon sc2-icon-purple">
+              <text class="sc2-emoji">🎨</text>
             </view>
-            <view class="scene-body">
-              <text class="scene-name">风格迁移</text>
-              <text class="scene-desc">照片→油画/动漫/赛博朋克 → 强度可调 → 对比预览</text>
-              <view class="scene-tags">
-                <text class="scene-tag">梵高</text>
-                <text class="scene-tag">宫崎骏</text>
-                <text class="scene-tag">赛博</text>
-              </view>
+            <text class="sc2-name">风格迁移</text>
+            <text class="sc2-desc">油画·动漫·赛博朋克</text>
+            <view class="sc2-tags">
+              <text class="sc2-tag">梵高</text>
+              <text class="sc2-tag">宫崎骏</text>
             </view>
-            <view v-if="selectedScene === 'style-transfer'" class="scene-check">
-              <u-icon name="checkmark-circle-fill" size="44" color="#D4A017" />
+            <view v-if="selectedScene === 'style-transfer'" class="sc2-check">
+              <u-icon name="checkmark" size="24" color="#FFF" />
             </view>
           </view>
         </view>
@@ -148,7 +167,7 @@
         <scroll-view scroll-x :show-scrollbar="false" class="tmpl-scroll">
           <view class="tmpl-row">
             <view v-for="i in 3" :key="'sk-tmpl-'+i" class="skeleton-card tmpl-mini-card">
-              <view class="skeleton-shimmer" style="height: 200rpx;" />
+              <view class="skeleton-shimmer" style="height: 240rpx;" />
               <view style="padding: 16rpx 18rpx;">
                 <view class="skeleton-line" style="width: 70%; height: 24rpx; margin-bottom: 10rpx;" />
                 <view class="skeleton-line" style="width: 90%; height: 20rpx;" />
@@ -186,6 +205,10 @@
                 />
                 <text v-else class="tmpl-emoji">{{ getTmplEmoji(tmpl) }}</text>
                 <view v-if="isTmplHot(tmpl)" class="tmpl-hot"><text>🔥</text></view>
+                <view v-if="isRecentlyUsed(tmpl.id)" class="tmpl-used"><text>用过</text></view>
+                <view v-if="tmpl.view_count" class="tmpl-uses">
+                  <text>{{ formatTmplUses(tmpl.view_count) }}</text>
+                </view>
               </view>
               <!-- 信息 -->
               <view class="tmpl-info">
@@ -335,12 +358,16 @@
               class="work-card"
               @click="goToWorkDetail(item)"
             >
-              <image
-                class="work-img"
-                :src="item.image_url || '/static/logo.png'"
-                mode="widthFix"
-                :style="{ height: item._imgHeight || 'auto' }"
-              />
+              <view class="work-img-wrap">
+                <view v-if="!item._imgLoaded" class="img-shimmer" />
+                <image
+                  class="work-img"
+                  :src="item.image_url || '/static/logo.png'"
+                  mode="widthFix"
+                  :style="{ height: item._imgHeight || 'auto', opacity: item._imgLoaded ? 1 : 0 }"
+                  @load="item._imgLoaded = true"
+                />
+              </view>
               <view class="work-info">
                 <text class="work-title">{{ item.title || 'AI创作' }}</text>
                 <view class="work-meta">
@@ -366,12 +393,16 @@
               class="work-card"
               @click="goToWorkDetail(item)"
             >
-              <image
-                class="work-img"
-                :src="item.image_url || '/static/logo.png'"
-                mode="widthFix"
-                :style="{ height: item._imgHeight || 'auto' }"
-              />
+              <view class="work-img-wrap">
+                <view v-if="!item._imgLoaded" class="img-shimmer" />
+                <image
+                  class="work-img"
+                  :src="item.image_url || '/static/logo.png'"
+                  mode="widthFix"
+                  :style="{ height: item._imgHeight || 'auto', opacity: item._imgLoaded ? 1 : 0 }"
+                  @load="item._imgLoaded = true"
+                />
+              </view>
               <view class="work-info">
                 <text class="work-title">{{ item.title || 'AI创作' }}</text>
                 <view class="work-meta">
@@ -412,6 +443,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { useHistoryStore } from '@/stores/history'
+import { useUserStore } from '@/stores/user'
 import { analyzeImage as apiAnalyze, generateImage as apiGenerate, uploadImage as apiUpload, checkNetwork, watchNetworkChange } from '@/api/image'
 import { getHomeData, getLatestPosts, likeSubmission } from '@/api/community'
 import { toggleCommunityLike, getPromptList, type PromptItem } from '@/api/prompt'
@@ -420,7 +452,44 @@ import { getFriendlyError } from '@/common/http.interceptor'
 import type { ImageAnalysisResult } from '@/types'
 
 const historyStore = useHistoryStore()
+const userStore = useUserStore()
 const historyCount = computed(() => historyStore?.history?.length ?? 0)
+
+// ─── 搜索热词轮播 ──────────────────────────────
+const hotSearchKeywords = [
+  '搜索提示词、风格、标签...',
+  '赛博朋克头像',
+  '电商白底图',
+  '宫崎骏动漫风',
+  '极简商务 PPT 配图',
+  '梵高星空风格迁移',
+]
+const hotSearchIdx = ref(0)
+let hotSearchTimer: ReturnType<typeof setInterval> | null = null
+
+// ─── 上传区按压反馈 ─────────────────────────────
+const uploadPressed = ref(false)
+
+// ─── 最近使用的模板 ─────────────────────────────
+const recentTmplIds = ref<number[]>([])
+
+function loadRecentTmplIds() {
+  try {
+    const raw = uni.getStorageSync('recent_tmpl_ids')
+    if (raw) recentTmplIds.value = JSON.parse(raw)
+  } catch {}
+}
+
+function saveRecentTmplId(id: number) {
+  const ids = recentTmplIds.value.filter(i => i !== id)
+  ids.unshift(id)
+  recentTmplIds.value = ids.slice(0, 20)
+  try { uni.setStorageSync('recent_tmpl_ids', JSON.stringify(recentTmplIds.value)) } catch {}
+}
+
+function isRecentlyUsed(id: number): boolean {
+  return recentTmplIds.value.includes(id)
+}
 
 // ─── 社区数据 ────────────────────────────────
 const dailyPicks = ref<CommunityWork[]>([])
@@ -569,6 +638,14 @@ onMounted(async () => {
     if (!online) uni.showToast({ title: '网络已断开', icon: 'none' })
   })
 
+  // 加载最近使用模板
+  loadRecentTmplIds()
+
+  // 搜索热词轮播（3s 切换）
+  hotSearchTimer = setInterval(() => {
+    hotSearchIdx.value = (hotSearchIdx.value + 1) % hotSearchKeywords.length
+  }, 3000)
+
   // 加载首页数据
   await loadHomeData()
 })
@@ -576,6 +653,7 @@ onMounted(async () => {
 onUnmounted(() => {
   unwatchNetwork?.()
   if (analyzeTimer) clearInterval(analyzeTimer)
+  if (hotSearchTimer) clearInterval(hotSearchTimer)
 })
 
 // ─── 下拉刷新 ──────────────────────────────
@@ -606,6 +684,7 @@ async function loadHomeData() {
       latestPostsList.value = data.latest_posts.list.map(item => ({
         ...item,
         _liked: false,
+        _imgLoaded: false,
         _imgHeight: `${280 + Math.random() * 200}rpx`,
       }))
       currentPage.value = data.latest_posts.pagination?.page || 1
@@ -639,6 +718,7 @@ async function loadMorePosts() {
     const newItems = (result.list || []).map(item => ({
       ...item,
       _liked: false,
+      _imgLoaded: false,
       _imgHeight: `${280 + Math.random() * 200}rpx`,
     }))
     latestPostsList.value = [...latestPostsList.value, ...newItems]
@@ -731,7 +811,11 @@ const joinChallenge = (challenge: Challenge) => {
 }
 
 // ====== 图片上传（含自动压缩）======
-const triggerUpload = () => {
+const triggerUpload = async () => {
+  // 登录守卫：未登录不允许上传
+  const loggedIn = await userStore.ensureLogin()
+  if (!loggedIn) return
+
   // #ifdef H5
   const existingInput = document.getElementById('__turing_file_input__') as HTMLInputElement
   if (existingInput) existingInput.remove()
@@ -895,8 +979,15 @@ function truncateTmpl(text: string, max: number): string {
   return text?.length > max ? text.substring(0, max) + '...' : (text || '')
 }
 
+function formatTmplUses(n: number): string {
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n) + ' 次使用'
+}
+
 /** 从首页模板卡片跳转编辑页 */
 function generateFromTemplate(tmpl: PromptItem) {
+  saveRecentTmplId(tmpl.id)
   uni.navigateTo({
     url: `/pages/edit/edit?promptText=${encodeURIComponent(tmpl.prompt_text)}&tmplId=${tmpl.id}`,
   })
@@ -942,7 +1033,7 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
     radial-gradient(circle at 50% 80%, rgba(163,184,165,0.03) 0%, transparent 50%);
 }
 
-.main-scroll { height: calc(100vh - 44px); }
+.main-scroll { height: calc(100vh - 44px - 50px); }
 .bottom-spacer { height: calc(env(safe-area-inset-bottom) + 120rpx); }
 
 // ── Skeleton / Shimmer ──
@@ -1001,73 +1092,159 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
 .search-bar {
   display: flex; align-items: center; gap: 16rpx;
   margin: 20rpx 24rpx 0;
-  padding: 22rpx 32rpx;
+  padding: 24rpx 32rpx;
   background: $bg-card;
   border-radius: 999rpx;
   border: 1rpx solid $border;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
-  transition: box-shadow 0.2s;
-  &:active { box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.12); }
+  box-shadow: 0 4rpx 20rpx rgba(139,157,200,0.1), 0 1rpx 4rpx rgba(0,0,0,0.04);
+  transition: box-shadow 0.25s, transform 0.15s;
+  &:active { box-shadow: 0 6rpx 28rpx rgba(139,157,200,0.18); transform: scale(0.985); }
 }
-.search-placeholder { font-size: 28rpx; color: $text-3; }
+.search-placeholder {
+  font-size: 28rpx; color: $text-3;
+  animation: fadeInSearch 0.4s ease;
+}
+@keyframes fadeInSearch {
+  from { opacity: 0; transform: translateY(4rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 // ── Hero Upload ──
 .hero-upload {
   margin: 24rpx 24rpx 0;
-  border-radius: 28rpx;
+  border-radius: 32rpx;
   overflow: hidden;
   position: relative;
-  background: $bg-card;
-  border: 1rpx solid $border;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.04);
+  background: linear-gradient(135deg, #8B9DC8 0%, #A3B0CC 40%, #C4B5E0 100%);
+  border: none;
+  box-shadow: 0 8rpx 40rpx rgba(139,157,200,0.3), 0 2rpx 8rpx rgba(0,0,0,0.06);
+  transition: all 0.25s ease;
 
-  &:active { transform: scale(0.985); }
+  &:active, &.upload-active {
+    transform: scale(0.98);
+    box-shadow: 0 4rpx 24rpx rgba(139,157,200,0.4), 0 1rpx 4rpx rgba(0,0,0,0.08);
+  }
 }
-.hero-glow {
-  position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(ellipse 60% 50% at 25% 40%, rgba(139,157,200,0.06), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 75% 60%, rgba(196,181,224,0.05), transparent 60%);
+.hero-bg-orbs {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.hero-orb {
+  position: absolute; border-radius: 50%; filter: blur(40rpx); opacity: 0.35;
+  animation: orbFloat 6s ease-in-out infinite;
+}
+.hero-orb-1 {
+  width: 300rpx; height: 300rpx; background: rgba(255,255,255,0.4);
+  top: -60rpx; right: -40rpx;
+  animation-delay: 0s;
+}
+.hero-orb-2 {
+  width: 200rpx; height: 200rpx; background: rgba(196,181,224,0.5);
+  bottom: -40rpx; left: -20rpx;
+  animation-delay: -2s;
+}
+.hero-orb-3 {
+  width: 160rpx; height: 160rpx; background: rgba(255,255,255,0.3);
+  top: 40%; left: 60%;
+  animation-delay: -4s;
+}
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20rpx, -15rpx) scale(1.08); }
+  66% { transform: translate(-10rpx, 10rpx) scale(0.95); }
 }
 .upload-area {
   display: flex; flex-direction: column; align-items: center; gap: 20rpx;
-  padding: 56rpx 40rpx;
+  padding: 64rpx 40rpx 56rpx;
   position: relative; z-index: 1;
 }
 .upload-icon-wrap {
-  width: 100rpx; height: 100rpx; border-radius: 50%;
-  background: rgba(139,157,200,0.08);
+  width: 140rpx; height: 140rpx; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
   display: flex; align-items: center; justify-content: center;
-  border: 1rpx solid rgba(139,157,200,0.18);
+  border: 2rpx solid rgba(255,255,255,0.35);
   position: relative;
+  backdrop-filter: blur(8px);
 }
-.upload-ring {
-  position: absolute; inset: -8rpx; border-radius: 50%;
-  border: 2rpx solid rgba(139,157,200,0.12);
-  animation: ringPulse 2.4s ease-in-out infinite;
+.upload-icon-inner {
+  width: 108rpx; height: 108rpx; border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+.upload-ring-1 {
+  position: absolute; inset: -12rpx; border-radius: 50%;
+  border: 2rpx solid rgba(255,255,255,0.25);
+  animation: ringPulse 2.8s ease-in-out infinite;
+}
+.upload-ring-2 {
+  position: absolute; inset: -28rpx; border-radius: 50%;
+  border: 1.5rpx solid rgba(255,255,255,0.12);
+  animation: ringPulse 2.8s ease-in-out infinite;
+  animation-delay: 0.5s;
 }
 @keyframes ringPulse {
   0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.12); opacity: 0.15; }
+  50% { transform: scale(1.15); opacity: 0; }
 }
-.upload-title { font-size: 34rpx; font-weight: 700; color: $text-1; }
-.upload-desc  { font-size: 24rpx; color: $text-3; }
+.upload-title {
+  font-size: 36rpx; font-weight: 800; color: #FFFFFF;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+.upload-desc {
+  font-size: 24rpx; color: rgba(255,255,255,0.8);
+}
+.hero-cta {
+  margin-top: 4rpx;
+  padding: 14rpx 36rpx;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999rpx;
+  backdrop-filter: blur(4px);
+  text { font-size: 24rpx; color: #FFFFFF; font-weight: 600; }
+}
+
+// ── Trust Strip（社会证明条）──
+.trust-strip {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  margin: 24rpx 24rpx 0;
+  padding: 20rpx 0;
+  background: $bg-card;
+  border-radius: 20rpx;
+  border: 1rpx solid $border;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+}
+.trust-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4rpx;
+}
+.trust-num {
+  font-size: 28rpx; font-weight: 800; color: $primary;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
+}
+.trust-label { font-size: 20rpx; color: $text-3; }
+.trust-divider {
+  width: 1rpx; height: 40rpx; background: $border; flex-shrink: 0;
+}
 
 // ── Section ──
-.section { margin-top: 40rpx; }
+.section { margin-top: 44rpx; }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 28rpx 20rpx;
 }
 .section-title-row { display: flex; align-items: center; gap: 14rpx; }
 .section-dot {
-  width: 6rpx; height: 28rpx; border-radius: 3rpx;
+  width: 7rpx; height: 30rpx; border-radius: 4rpx;
   background: $primary-grad;
+  box-shadow: 0 2rpx 8rpx rgba(139,157,200,0.3);
 }
 .section-title {
   font-size: 34rpx; font-weight: 800; color: $text-1; letter-spacing: 0.5rpx;
 }
-.section-more { font-size: 26rpx; color: $primary; font-weight: 600; }
+.section-more {
+  font-size: 26rpx; color: $primary; font-weight: 700;
+  padding: 6rpx 16rpx;
+  background: rgba(139,157,200,0.08);
+  border-radius: 12rpx;
+}
 .section-header-col {
   flex-direction: column; align-items: flex-start; gap: 10rpx;
 }
@@ -1147,7 +1324,14 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   transition: transform 0.15s, box-shadow 0.2s;
   &:active { transform: scale(0.97); box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08); }
 }
-.work-img { width: 100%; min-height: 200rpx; background: $bg-raised; }
+.work-img-wrap { position: relative; width: 100%; min-height: 200rpx; overflow: hidden; }
+.img-shimmer {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(90deg, $bg-raised 25%, rgba(196,181,224,0.12) 50%, $bg-raised 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+.work-img { width: 100%; min-height: 200rpx; background: $bg-raised; transition: opacity 0.3s ease; }
 .work-info { padding: 16rpx 18rpx; }
 .work-title {
   font-size: 26rpx; font-weight: 600; color: $text-1;
@@ -1174,48 +1358,170 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
   text { font-size: 24rpx; color: $text-3; }
 }
 
-// ── Scene Cards（场景选择卡片）──
-.scene-section { margin-top: 48rpx; padding: 0 28rpx; }
-.scene-grid { display: flex; flex-direction: column; gap: 20rpx; margin-top: 24rpx; }
+// ── Scene Cards 2x2 网格 ──
+.scene-section { margin-top: 40rpx; padding: 0 28rpx; }
+.scene-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
 
-.scene-card {
-  display: flex; align-items: center; gap: 20rpx;
-  background: $bg-card; border-radius: 20rpx; padding: 24rpx;
-  border: 2rpx solid transparent;
-  transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.15s;
-  position: relative;
-  &:active { transform: scale(0.98); }
+.sc2-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6rpx;
+  padding: 32rpx 16rpx 24rpx;
+  border-radius: 28rpx;
+  border: 2rpx solid $border;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative; overflow: hidden;
+  cursor: pointer;
+
+  &:active { transform: scale(0.95); }
+
+  // ── 装饰圆（右上角大光圈） ──
+  .sc2-deco {
+    position: absolute; top: -30rpx; right: -30rpx;
+    width: 100rpx; height: 100rpx; border-radius: 50%;
+    opacity: 0.12;
+    transition: opacity 0.3s;
+  }
+
+  // ── 每个卡片独立配色 ──
+  &.sc2-gold {
+    background: linear-gradient(155deg, #FFF8ED 0%, #FFF2E0 60%, #FFE9CC 100%);
+    border-color: rgba(255, 200, 87, 0.25);
+    box-shadow: 0 6rpx 24rpx rgba(255, 200, 87, 0.12);
+    .sc2-deco { background: #FFC857; }
+    .sc2-name { color: #7A5C1E; }
+    .sc2-desc { color: #B89440; }
+    .sc2-tag { background: rgba(255, 200, 87, 0.2); color: #8B6B20; }
+    .sc2-check { background: linear-gradient(135deg, #FFC857, #F5A623); box-shadow: 0 4rpx 14rpx rgba(255,200,87,0.4); }
+
+    &.active {
+      border-color: #FFC857;
+      box-shadow: 0 12rpx 40rpx rgba(255, 200, 87, 0.28), 0 0 0 3rpx rgba(255, 200, 87, 0.15);
+      .sc2-deco { opacity: 0.22; }
+      .sc2-icon { transform: scale(1.18) rotate(-3deg); box-shadow: 0 10rpx 32rpx rgba(255, 200, 87, 0.4); }
+      .sc2-tag { background: rgba(255, 200, 87, 0.35); color: #6B4F10; }
+    }
+  }
+
+  &.sc2-pink {
+    background: linear-gradient(155deg, #FFF0F5 0%, #FFE8F0 60%, #FDDCE8 100%);
+    border-color: rgba(232, 168, 204, 0.25);
+    box-shadow: 0 6rpx 24rpx rgba(232, 168, 204, 0.12);
+    .sc2-deco { background: #E8A8CC; }
+    .sc2-name { color: #7A3A5C; }
+    .sc2-desc { color: #B86E90; }
+    .sc2-tag { background: rgba(232, 168, 204, 0.2); color: #7A3A5C; }
+    .sc2-check { background: linear-gradient(135deg, #E8A8CC, #D484A8); box-shadow: 0 4rpx 14rpx rgba(232,168,204,0.4); }
+
+    &.active {
+      border-color: #E8A8CC;
+      box-shadow: 0 12rpx 40rpx rgba(232, 168, 204, 0.28), 0 0 0 3rpx rgba(232, 168, 204, 0.15);
+      .sc2-deco { opacity: 0.22; }
+      .sc2-icon { transform: scale(1.18) rotate(-3deg); box-shadow: 0 10rpx 32rpx rgba(232, 168, 204, 0.4); }
+      .sc2-tag { background: rgba(232, 168, 204, 0.35); color: #5C2848; }
+    }
+  }
+
+  &.sc2-green {
+    background: linear-gradient(155deg, #F0FBF4 0%, #E6F7ED 60%, #D4F0DE 100%);
+    border-color: rgba(86, 171, 145, 0.25);
+    box-shadow: 0 6rpx 24rpx rgba(86, 171, 145, 0.12);
+    .sc2-deco { background: #56AB91; }
+    .sc2-name { color: #2A6B55; }
+    .sc2-desc { color: #5E9E88; }
+    .sc2-tag { background: rgba(86, 171, 145, 0.2); color: #2A6B55; }
+    .sc2-check { background: linear-gradient(135deg, #56AB91, #3D9177); box-shadow: 0 4rpx 14rpx rgba(86,171,145,0.4); }
+
+    &.active {
+      border-color: #56AB91;
+      box-shadow: 0 12rpx 40rpx rgba(86, 171, 145, 0.28), 0 0 0 3rpx rgba(86, 171, 145, 0.15);
+      .sc2-deco { opacity: 0.22; }
+      .sc2-icon { transform: scale(1.18) rotate(-3deg); box-shadow: 0 10rpx 32rpx rgba(86, 171, 145, 0.4); }
+      .sc2-tag { background: rgba(86, 171, 145, 0.35); color: #1A4A38; }
+    }
+  }
+
+  &.sc2-purple {
+    background: linear-gradient(155deg, #F3F0FF 0%, #EAE4FD 60%, #E0D6F8 100%);
+    border-color: rgba(139, 157, 200, 0.25);
+    box-shadow: 0 6rpx 24rpx rgba(139, 157, 200, 0.12);
+    .sc2-deco { background: #8B9DC8; }
+    .sc2-name { color: #4A5680; }
+    .sc2-desc { color: #7E8BA8; }
+    .sc2-tag { background: rgba(139, 157, 200, 0.2); color: #4A5680; }
+    .sc2-check { background: linear-gradient(135deg, #8B9DC8, #C4B5E0); box-shadow: 0 4rpx 14rpx rgba(139,157,200,0.4); }
+
+    &.active {
+      border-color: #8B9DC8;
+      box-shadow: 0 12rpx 40rpx rgba(139, 157, 200, 0.28), 0 0 0 3rpx rgba(139, 157, 200, 0.15);
+      .sc2-deco { opacity: 0.22; }
+      .sc2-icon { transform: scale(1.18) rotate(-3deg); box-shadow: 0 10rpx 32rpx rgba(139, 157, 200, 0.4); }
+      .sc2-tag { background: rgba(139, 157, 200, 0.35); color: #3A4570; }
+    }
+  }
+
+  // ── 通用 active 提升 ──
   &.active {
-    border-color: #D4A017; background: #FFFBF0;
-    box-shadow: 0 4rpx 16rpx rgba(212, 160, 23, 0.12);
+    transform: scale(1.02);
+    .sc2-name { font-weight: 900; }
   }
 }
-.scene-icon-wrap {
-  width: 88rpx; height: 88rpx; border-radius: 20rpx;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  .scene-emoji { font-size: 40rpx; }
+
+.sc2-icon {
+  width: 96rpx; height: 96rpx; border-radius: 28rpx;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8rpx;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.12);
 }
-.scene-icon-gold  { background: linear-gradient(135deg, #FFE5B4, #FFD700); }
-.scene-icon-pink  { background: linear-gradient(135deg, #F0C8E0, #E8A8CC); }
-.scene-icon-green { background: linear-gradient(135deg, #A8E6CF, #56AB91); }
-.scene-icon-purple { background: linear-gradient(135deg, #8B9DC8, #C4B5E0); }
-.scene-body { flex: 1; min-width: 0; }
-.scene-name { font-size: 30rpx; font-weight: 700; color: $text-1; display: block; }
-.scene-desc { font-size: 22rpx; color: $text-3; margin-top: 6rpx; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scene-tags { display: flex; gap: 10rpx; margin-top: 10rpx; flex-wrap: wrap; }
-.scene-tag {
-  font-size: 18rpx; color: $primary; background: rgba(139,157,200,0.1);
-  padding: 4rpx 14rpx; border-radius: 8rpx; line-height: 1.4;
+.sc2-emoji { font-size: 44rpx; filter: drop-shadow(0 3rpx 8rpx rgba(0,0,0,0.15)); }
+.sc2-icon-gold  { background: linear-gradient(135deg, #FFE5B4, #FFC857); }
+.sc2-icon-pink  { background: linear-gradient(135deg, #F8D7E8, #E8A8CC); }
+.sc2-icon-green { background: linear-gradient(135deg, #B8EDCF, #56AB91); }
+.sc2-icon-purple { background: linear-gradient(135deg, #8B9DC8, #C4B5E0); }
+
+.sc2-name {
+  font-size: 30rpx; font-weight: 800;
+  transition: all 0.2s;
 }
-.scene-check { flex-shrink: 0; }
+.sc2-desc {
+  font-size: 20rpx; text-align: center;
+  line-height: 1.4; opacity: 0.85;
+}
+
+.sc2-tags {
+  display: flex; gap: 10rpx; margin-top: 8rpx;
+}
+.sc2-tag {
+  font-size: 18rpx;
+  padding: 6rpx 16rpx; border-radius: 12rpx;
+  font-weight: 600;
+  transition: all 0.25s;
+}
+
+.sc2-check {
+  position: absolute; top: 14rpx; right: 14rpx;
+  width: 42rpx; height: 42rpx; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  animation: checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes checkPop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
 
 // 场景徽章（上传区）
 .scene-badge {
   display: inline-flex; align-items: center; gap: 6rpx;
-  margin-top: 12rpx; padding: 8rpx 20rpx;
-  background: linear-gradient(135deg, rgba(139,157,200,0.08), rgba(196,181,224,0.1));
-  border-radius: 20rpx; border: 1rpx solid rgba(139,157,200,0.2);
-  text { font-size: 22rpx; color: $primary; font-weight: 600; }
+  margin-top: 12rpx; padding: 8rpx 24rpx;
+  background: rgba(255,255,255,0.25);
+  border-radius: 20rpx; border: 1rpx solid rgba(255,255,255,0.4);
+  backdrop-filter: blur(4px);
+  text { font-size: 22rpx; color: #FFFFFF; font-weight: 700; }
 }
 
 // ══════════════════════════════
@@ -1240,48 +1546,71 @@ $danger:     #E8947A;   // 危险（柔珊瑚）
 
 .tmpl-mini-card {
   display: inline-flex; flex-direction: column;
-  width: 280rpx;
+  width: 300rpx;
   background: $bg-card;
-  border-radius: 20rpx;
+  border-radius: 22rpx;
   overflow: hidden;
   border: 1rpx solid $border;
-  box-shadow: 0 4rpx 18rpx rgba(0,0,0,0.05);
+  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06);
   transition: transform 0.2s, box-shadow 0.2s;
 
   &:active {
     transform: scale(0.96);
-    box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.08);
+    box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.1);
   }
 }
 
 .tmpl-cover {
-  width: 100%; height: 200rpx;
+  width: 100%; height: 240rpx;
   position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
 }
 .tmpl-img { width: 100%; height: 100%; object-fit: cover; }
-.tmpl-emoji { font-size: 64rpx; filter: drop-shadow(0 4rpx 12rpx rgba(0,0,0,0.15)); }
+.tmpl-emoji { font-size: 72rpx; filter: drop-shadow(0 4rpx 12rpx rgba(0,0,0,0.15)); }
 .tmpl-hot {
-  position: absolute; top: 10rpx; left: 10rpx;
-  text { font-size: 28rpx; }
+  position: absolute; top: 12rpx; left: 12rpx;
+  padding: 4rpx 14rpx;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  border-radius: 12rpx;
+  text { font-size: 22rpx; }
+}
+.tmpl-used {
+  position: absolute; top: 12rpx; right: 12rpx;
+  padding: 4rpx 14rpx;
+  background: rgba(163,184,165,0.9);
+  backdrop-filter: blur(6px);
+  border-radius: 10rpx;
+  text { font-size: 18rpx; color: #FFF; font-weight: 700; }
 }
 
-.tmpl-info { padding: 16rpx 18rpx 18rpx; }
+// 使用次数角标
+.tmpl-uses {
+  position: absolute; bottom: 12rpx; right: 12rpx;
+  display: flex; align-items: center; gap: 4rpx;
+  padding: 4rpx 14rpx;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+  border-radius: 10rpx;
+  text { font-size: 18rpx; color: #FFF; font-weight: 600; }
+}
+
+.tmpl-info { padding: 18rpx 20rpx 20rpx; }
 .tmpl-name {
-  font-size: 27rpx; font-weight: 800; color: $text-1;
+  font-size: 28rpx; font-weight: 800; color: $text-1;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   display: block;
 }
 .tmpl-desc {
   font-size: 22rpx; color: $text-3; line-height: 1.4;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .tmpl-gen-btn {
   display: flex; align-items: center; justify-content: center; gap: 6rpx;
-  margin-top: 14rpx; padding: 12rpx 0;
+  margin-top: 16rpx; padding: 14rpx 0;
   background: $primary-grad;
   border-radius: 999rpx;
   box-shadow: 0 4rpx 16rpx rgba(139,157,200,0.25);

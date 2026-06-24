@@ -4,7 +4,7 @@
     <u-navbar
       title="万能词库"
       :bgColor="'#FFFFFF'"
-      :titleStyle="{ color: '#1C1C1C', fontWeight: '800', fontSize: '18px' }"
+      :titleStyle="{ color: '#2C2E3A', fontWeight: '800', fontSize: '18px' }"
       :borderBottom="false"
       :placeholder="true"
     >
@@ -21,14 +21,14 @@
       @scrolltolower="loadMore"
       :lower-threshold="200"
     >
-      <!-- 搜索栏（带总数展示） -->
+      <!-- 搜索栏（带总数展示 + 排序） -->
       <view class="search-header">
         <view class="search-box">
           <u-icon name="search" size="34" color="#9A9BAC" />
           <input
             class="search-input"
             v-model="searchKeyword"
-            placeholder="在 {{ promptTotal }} 个词库里搜索文案、标题..."
+            :placeholder="`在 ${promptTotal} 个词库里搜索文案、标题...`"
             placeholder-class="search-ph"
             confirm-type="search"
             @confirm="onSearch"
@@ -36,6 +36,10 @@
           <view v-if="searchKeyword" class="search-clear" @click="clearSearch">
             <u-icon name="close-circle-fill" size="32" color="#C5C8D0" />
           </view>
+        </view>
+        <view class="sort-btn" @click="toggleSort">
+          <u-icon :name="sortIcon" size="32" :color="currentSort !== 'popular' ? '#8B9DC8' : '#9A9BAC'" />
+          <text :class="{ 'sort-active': currentSort !== 'popular' }">{{ sortLabel }}</text>
         </view>
       </view>
 
@@ -71,7 +75,7 @@
           :class="{ active: !isCommunityMode }"
           @click="switchTab(false)"
         >
-          <u-icon name="book-fill" size="34" :color="!isCommunityMode ? '#D4A017' : '#9A9BAC'" />
+          <u-icon name="book-fill" size="34" :color="!isCommunityMode ? '#8B9DC8' : '#9A9BAC'" />
           <text>官方词库</text>
           <view v-if="promptTotal > 0" class="tab-num"><text>{{ promptTotal }}</text></view>
         </view>
@@ -80,7 +84,7 @@
           :class="{ active: isCommunityMode }"
           @click="switchTab(true)"
         >
-          <u-icon name="chat-fill" size="34" :color="isCommunityMode ? '#D4A017' : '#9A9BAC'" />
+          <u-icon name="chat-fill" size="34" :color="isCommunityMode ? '#8B9DC8' : '#9A9BAC'" />
           <text>社区</text>
           <view v-if="communityTotal > 0" class="tab-badge"><text>{{ communityTotal > 99 ? '99+' : communityTotal }}</text></view>
         </view>
@@ -107,6 +111,10 @@
               />
               <view v-else class="cover-fallback">
                 <text class="cover-emoji">{{ getCoverEmoji(item) }}</text>
+              </view>
+              <!-- 收藏按钮 -->
+              <view class="card-fav-btn" @click.stop="toggleFav(item)">
+                <u-icon :name="item.is_favorited ? 'heart-fill' : 'heart'" size="36" :color="item.is_favorited ? '#E8947A' : '#FFFFFF'" />
               </view>
               <!-- Hot 标签 -->
               <view v-if="isHot(item)" class="hot-badge">
@@ -135,6 +143,10 @@
               <view class="card-bottom">
                 <view class="card-stats">
                   <text class="stat-text">{{ formatCount(item.view_count) }} 浏览</text>
+                  <view v-if="item.favorite_count" class="stat-fav">
+                    <u-icon name="heart-fill" size="24" color="#E8947A" />
+                    <text class="stat-text">{{ formatCount(item.favorite_count) }}</text>
+                  </view>
                 </view>
                 <view class="gen-btn" @click.stop="generateFromPrompt(item)">
                   <text>生成同款</text>
@@ -162,6 +174,10 @@
               <view v-else class="cover-fallback">
                 <text class="cover-emoji">{{ getCoverEmoji(item) }}</text>
               </view>
+              <!-- 收藏按钮 -->
+              <view class="card-fav-btn" @click.stop="toggleFav(item)">
+                <u-icon :name="item.is_favorited ? 'heart-fill' : 'heart'" size="36" :color="item.is_favorited ? '#E8947A' : '#FFFFFF'" />
+              </view>
               <view v-if="isHot(item)" class="hot-badge">
                 <text>🔥 Hot</text>
               </view>
@@ -184,6 +200,10 @@
               <view class="card-bottom">
                 <view class="card-stats">
                   <text class="stat-text">{{ formatCount(item.view_count) }} 浏览</text>
+                  <view v-if="item.favorite_count" class="stat-fav">
+                    <u-icon name="heart-fill" size="24" color="#E8947A" />
+                    <text class="stat-text">{{ formatCount(item.favorite_count) }}</text>
+                  </view>
                 </view>
                 <view class="gen-btn" @click.stop="generateFromPrompt(item)">
                   <text>生成同款</text>
@@ -303,6 +323,25 @@
               <view class="d-stat"><u-icon name="eye" size="36" color="#9A9BAC" /><text>{{ detailData.view_count }} 浏览</text></view>
               <view class="d-stat"><u-icon name="heart-fill" size="36" color="#E8947A" /><text>{{ detailData.like_count }} 点赞</text></view>
               <view class="d-stat"><u-icon name="file-text" size="36" color="#9A9BAC" /><text>{{ detailData.copy_count }} 复制</text></view>
+            </view>
+
+            <!-- 相关推荐 -->
+            <view v-if="relatedPrompts.length > 0" class="related-section">
+              <text class="related-title">相关推荐</text>
+              <view class="related-row">
+                <view
+                  v-for="rp in relatedPrompts"
+                  :key="'rel-' + rp.id"
+                  class="related-card"
+                  @click.stop="viewDetail(rp)"
+                >
+                  <view class="related-cover" :style="coverStyle(rp, 0)">
+                    <image v-if="rp.image_url" class="related-img" :src="rp.image_url" mode="aspectFill" />
+                    <text v-else class="related-emoji">{{ getCoverEmoji(rp) }}</text>
+                  </view>
+                  <text class="related-name">{{ rp.title }}</text>
+                </view>
+              </view>
             </view>
           </view>
         </scroll-view>
@@ -427,6 +466,38 @@ const communityPosts = ref<CommunityPost[]>([])
 const currentCategory = ref(0)
 const currentSort = ref('popular')
 const searchKeyword = ref('')
+
+// ── 排序控件 ──
+const sortOptions = [
+  { value: 'popular', label: '最热', icon: 'fire' },
+  { value: 'newest', label: '最新', icon: 'clock' },
+  { value: 'most_used', label: '最多使用', icon: 'checkmark-circle' },
+]
+let sortIdx = 0
+const sortLabel = computed(() => sortOptions.find(s => s.value === currentSort.value)?.label || '最热')
+const sortIcon = computed(() => sortOptions.find(s => s.value === currentSort.value)?.icon || 'fire')
+
+function toggleSort() {
+  sortIdx = (sortIdx + 1) % sortOptions.length
+  currentSort.value = sortOptions[sortIdx].value
+  if (isCommunityMode.value) loadCommunityPosts(true)
+  else loadPrompts(true)
+}
+
+// ── 相关推荐 ──
+const relatedPrompts = ref<PromptItem[]>([])
+
+async function loadRelated(item: PromptItem) {
+  try {
+    const result = await getPromptList({
+      category_id: item.category_id || undefined,
+      sort: 'popular',
+      page: 1,
+      page_size: 4,
+    })
+    relatedPrompts.value = (result.list || []).filter(p => p.id !== item.id).slice(0, 3)
+  } catch { relatedPrompts.value = [] }
+}
 const page = ref(1)
 const total = ref(0)
 const promptTotal = ref(0)
@@ -641,9 +712,11 @@ async function viewDetail(item: PromptItem) {
     const detail = await getPromptDetail(item.id)
     detailData.value = detail
     showDetail.value = true
+    loadRelated(detail)
   } catch (e) {
     detailData.value = item
     showDetail.value = true
+    loadRelated(item)
   }
 }
 
@@ -779,22 +852,21 @@ function formatTime(timestamp: number): string {
    ══════════════════════════════════════════════ */
 
 // ── Palette ──
-$bg-page:     #F7F8FC;
+$bg-page:     #F6F7FB;
 $bg-card:     #FFFFFF;
-$bg-raised:   #F4F5FA;
-$border:      rgba(0,0,0,0.06);
-$text-1:      #1C1C1C;
-$text-2:      #5A5D66;
-$text-3:      #9BA0AD;
+$bg-raised:   #F0F1F5;
+$border:      rgba(0,0,0,0.05);
+$text-1:      #2C2E3A;
+$text-2:      #6B6E7D;
+$text-3:      #9A9BAC;
 $primary:     #8B9DC8;
-$primary-dark: #5B73B8;
-$amber:       #D4A017;
-$amber-light: #FFF5D6;
+$primary-dark: #6B7FA8;
+$primary-light: rgba(139,157,200,0.12);
 $coral:       #E8947A;
-$green:       #4ECB71;
+$green:       #A3B8A5;
 
 .page { min-height: 100vh; background: $bg-page; }
-.main-scroll { height: calc(100vh - 44px); }
+.main-scroll { height: calc(100vh - 44px - 50px); }
 
 // ── 导航右侧按钮 ──
 .nav-right {
@@ -807,13 +879,25 @@ $green:       #4ECB71;
   padding: 16rpx 28rpx 12rpx;
   background: $bg-card;
   border-bottom: 1rpx solid $border;
+  display: flex; align-items: center; gap: 16rpx;
 }
 .search-box {
+  flex: 1;
   display: flex; align-items: center; gap: 14rpx;
   padding: 18rpx 28rpx;
   background: $bg-raised;
   border-radius: 16rpx;
   border: 1rpx solid $border;
+}
+.sort-btn {
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 16rpx 20rpx; border-radius: 16rpx;
+  background: $bg-raised; border: 1rpx solid $border;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  &:active { background: rgba(139,157,200,0.08); }
+  text { font-size: 22rpx; color: $text-3; font-weight: 600; }
+  .sort-active { color: $primary; }
 }
 .search-input {
   flex: 1; font-size: 28rpx; color: $text-1;
@@ -838,17 +922,17 @@ $green:       #4ECB71;
   border: 1rpx solid transparent;
   transition: all 0.2s ease;
   &.active {
-    background: $amber-light;
-    color: #B8860B;
+    background: $primary-light;
+    color: $primary;
     font-weight: 700;
-    border-color: rgba(212,160,23,0.3);
-    box-shadow: 0 2rpx 8rpx rgba(212,160,23,0.12);
+    border-color: rgba(139,157,200,0.3);
+    box-shadow: 0 2rpx 8rpx rgba(139,157,200,0.12);
   }
 }
 .cat-count {
   font-size: 20rpx; color: $text-3;
   background: rgba(0,0,0,0.04); padding: 2rpx 10rpx; border-radius: 10rpx;
-  .active & { background: rgba(184,134,11,0.15); color: #8B7500; }
+  .active & { background: rgba(139,157,200,0.15); color: $primary-dark; }
 }
 
 // ── Tab 条 ──
@@ -865,15 +949,15 @@ $green:       #4ECB71;
   transition: all 0.2s ease;
   border: 1rpx solid transparent;
   &.active {
-    background: $amber-light;
-    color: #B8860B;
-    border-color: rgba(212,160,23,0.25);
-    box-shadow: 0 2rpx 12rpx rgba(212,160,23,0.15);
+    background: $primary-light;
+    color: $primary;
+    border-color: rgba(139,157,200,0.25);
+    box-shadow: 0 2rpx 12rpx rgba(139,157,200,0.15);
   }
 }
 .tab-num {
-  font-size: 20rpx; background: rgba(212,160,23,0.2);
-  color: #B8860B; padding: 2rpx 12rpx; border-radius: 10rpx; font-weight: 700;
+  font-size: 20rpx; background: rgba(139,157,200,0.2);
+  color: $primary; padding: 2rpx 12rpx; border-radius: 10rpx; font-weight: 700;
 }
 .tab-badge {
   min-width: 28rpx; height: 28rpx;
@@ -939,9 +1023,9 @@ $green:       #4ECB71;
   z-index: 2;
   display: flex; align-items: center; gap: 4rpx;
   padding: 6rpx 16rpx;
-  background: linear-gradient(135deg, #C49B84, #B8860B);
+  background: linear-gradient(135deg, $primary, $primary-dark);
   border-radius: 999rpx;
-  box-shadow: 0 4rpx 12rpx rgba(184,134,11,0.2);
+  box-shadow: 0 4rpx 12rpx rgba(139,157,200,0.2);
 
   text {
     font-size: 20rpx; color: #FFF; font-weight: 800;
@@ -949,9 +1033,9 @@ $green:       #4ECB71;
   }
 }
 
-// 原图/效果标签
+// 原图/效果标签（移至底部右侧，给收藏按钮腾位置）
 .cover-labels {
-  position: absolute; top: 14rpx; right: 14rpx;
+  position: absolute; bottom: 14rpx; right: 14rpx;
   z-index: 2;
   display: flex; gap: 8rpx;
 }
@@ -964,9 +1048,22 @@ $green:       #4ECB71;
     text { color: #555; }
   }
   &.effect {
-    background: linear-gradient(135deg, #C49B84, #D4A017);
+    background: linear-gradient(135deg, $primary, #A3B0CC);
     text { color: #FFF; }
   }
+}
+
+// 收藏按钮（卡片封面右上角）
+.card-fav-btn {
+  position: absolute; top: 12rpx; right: 12rpx;
+  width: 52rpx; height: 52rpx;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.25);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  z-index: 3;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.85); }
 }
 
 // ── 卡片信息体 ──
@@ -1001,8 +1098,12 @@ $green:       #4ECB71;
   margin-top: 14rpx; padding-top: 14rpx;
   border-top: 1rpx solid $border;
 }
-.card-stats { flex: 1; }
+.card-stats { flex: 1; display: flex; align-items: center; gap: 10rpx; }
 .stat-text { font-size:21rpx; color: $text-3; }
+.stat-fav {
+  display: flex; align-items: center; gap: 4rpx;
+  margin-left: 4rpx;
+}
 
 .gen-btn {
   display: flex; align-items: center; gap: 6rpx;
@@ -1029,7 +1130,7 @@ $green:       #4ECB71;
   margin-bottom: 20rpx; border: 1rpx solid $border;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
 }
-.post-image-wrap { width: 100%; height: 360rpx; overflow: hidden; background: $bg-raised; }
+.post-image-wrap { width: 100%; height: 420rpx; overflow: hidden; background: $bg-raised; }
 .post-image { width: 100%; height: 100%; object-fit: cover; }
 .post-content { padding: 20rpx 24rpx; }
 .post-author { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
@@ -1064,7 +1165,7 @@ $green:       #4ECB71;
 }
 .empty-icon-wrap {
   width: 160rpx; height: 160rpx;
-  background: linear-gradient(135deg, #FFF5D6, #FFE8A0);
+  background: $primary-light;
   border-radius: 48rpx;
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 8rpx;
@@ -1075,9 +1176,9 @@ $green:       #4ECB71;
 .empty-action {
   display: flex; align-items: center; gap: 8rpx;
   margin-top: 16rpx; padding: 18rpx 40rpx;
-  background: linear-gradient(135deg, $amber, #E8B84A);
+  background: linear-gradient(135deg, $primary, #A3B0CC);
   border-radius: 999rpx;
-  box-shadow: 0 6rpx 20rpx rgba(212,160,23,0.3);
+  box-shadow: 0 6rpx 20rpx rgba(139,157,200,0.3);
   text { font-size: 28rpx; color: #FFF; font-weight: 800; }
 }
 
@@ -1088,7 +1189,7 @@ $green:       #4ECB71;
 .load-more { display: flex; justify-content: center; align-items: center; padding: 32rpx; gap: 12rpx; }
 .loading-spinner {
   width: 32rpx; height: 32rpx;
-  border: 3rpx solid $bg-raised; border-top-color: $amber; border-radius: 50%;
+  border: 3rpx solid $bg-raised; border-top-color: $primary; border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -1124,8 +1225,8 @@ $green:       #4ECB71;
 .detail-meta-row { display: flex; align-items: center; gap: 12rpx; margin-bottom: 20rpx; flex-wrap: wrap; }
 .d-meta-tag {
   padding: 6rpx 18rpx; border-radius: 10rpx;
-  background: $amber-light;
-  text { font-size: 22rpx; color: #B8860B; font-weight: 700; }
+  background: $primary-light;
+  text { font-size: 22rpx; color: $primary; font-weight: 700; }
 }
 .d-lang { font-size: 22rpx; color: $text-3; }
 
@@ -1161,7 +1262,7 @@ $green:       #4ECB71;
   &.copy { background: linear-gradient(135deg, $primary, #A3B0CC); color: #FFF; }
   &.gen { background: linear-gradient(135deg, #1C1C1C, #3A3A4A); color: #FFF; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.2); }
   &.fav { background: $bg-raised; color: $text-2; border: 1rpx solid $border; }
-  &.fav.favored { background: $amber-light; color: #B8860B; border-color: rgba(212,160,23,0.3); }
+  &.fav.favored { background: $primary-light; color: $primary; border-color: rgba(139,157,200,0.3); }
 }
 
 // ══════════════════════════════
@@ -1201,6 +1302,38 @@ $green:       #4ECB71;
   color: $text-1; margin-bottom: 12rpx;
   background: $bg-raised; border: 1rpx solid $border;
   transition: all 0.15s;
-  &.active { background: $amber-light; color: #B8860B; font-weight: 700; border-color: rgba(212,160,23,0.3); }
+  &.active { background: $primary-light; color: $primary; font-weight: 700; border-color: rgba(139,157,200,0.3); }
+}
+
+// ══════════════════════════════
+//  相关推荐
+// ══════════════════════════════
+
+.related-section {
+  margin-top: 28rpx; padding-top: 24rpx;
+  border-top: 1rpx solid $border;
+}
+.related-title {
+  font-size: 26rpx; font-weight: 700; color: $text-1;
+  margin-bottom: 16rpx; display: block;
+}
+.related-row {
+  display: flex; gap: 14rpx;
+}
+.related-card {
+  flex: 1; display: flex; flex-direction: column; gap: 8rpx;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.95); }
+}
+.related-cover {
+  width: 100%; height: 120rpx; border-radius: 14rpx;
+  overflow: hidden; background: $bg-raised;
+  display: flex; align-items: center; justify-content: center;
+}
+.related-img { width: 100%; height: 100%; object-fit: cover; }
+.related-emoji { font-size: 40rpx; }
+.related-name {
+  font-size: 20rpx; color: $text-2; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 </style>
